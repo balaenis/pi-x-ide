@@ -22,10 +22,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const packageJson = context.extension.packageJSON as { version?: string };
   const authToken = createAuthToken();
 
-  server = new IdeWebSocketServer(authToken, {
-    name: "Pi x IDE VS Code",
-    version: packageJson.version,
-  });
+  server = new IdeWebSocketServer(
+    authToken,
+    {
+      name: "Pi x IDE VS Code",
+      version: packageJson.version,
+    },
+    getActiveSelectionSnapshot,
+  );
 
   const port = await server.start();
   lockFilePath = createLockFilePath(port);

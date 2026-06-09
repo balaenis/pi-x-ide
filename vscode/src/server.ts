@@ -1,6 +1,11 @@
 import { createServer, type Server } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
-import { AUTH_HEADER, PROTOCOL_VERSION, type InitializeResult } from "../../src/shared/protocol";
+import {
+  AUTH_HEADER,
+  PROTOCOL_VERSION,
+  type EditorSelectionSnapshot,
+  type InitializeResult,
+} from "../../src/shared/protocol";
 import { isJsonRpcRequest } from "../../src/shared/schema";
 import { decodeRawData } from "../../src/shared/ws";
 
@@ -12,6 +17,7 @@ export class IdeWebSocketServer {
   constructor(
     private readonly authToken: string,
     private readonly serverInfo: { name: string; version?: string },
+    private readonly getInitialSelection?: () => EditorSelectionSnapshot | undefined,
   ) {}
 
   get port(): number {
@@ -90,5 +96,19 @@ export class IdeWebSocketServer {
     };
 
     socket.send(JSON.stringify({ jsonrpc: "2.0", id: parsed.id, result }));
+
+    const snapshot = this.getInitialSelection?.();
+    if (snapshot) {
+      socket.send(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          method: "selection_changed",
+          params: {
+            ...snapshot,
+            receivedAt: Date.now(),
+          },
+        }),
+      );
+    }
   }
 }

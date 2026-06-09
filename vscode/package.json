@@ -4,7 +4,7 @@
   "description": "Send the active VS Code file and selection to Pi.",
   "version": "0.1.0",
   "publisher": "local",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "commonjs",
   "engines": {
     "vscode": "^1.90.0"
