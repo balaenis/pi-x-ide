@@ -16,6 +16,17 @@ export interface IdeCommandActions {
 export function registerIdeCommand(pi: ExtensionAPI, runtime: PiIdeRuntime, actions: IdeCommandActions): void {
   pi.registerCommand("ide", {
     description: "Manage IDE connection and editor selection context",
+    getArgumentCompletions: (argumentPrefix: string) => {
+      const subcommands = [
+        { value: "status", label: "status", description: "Show IDE connection status" },
+        { value: "list", label: "list", description: "List available IDE connections" },
+        { value: "auto", label: "auto", description: "Auto-connect to the most recent IDE" },
+        { value: "off", label: "off", description: "Disable IDE integration" },
+        { value: "attach", label: "attach", description: "Attach latest IDE selection to the prompt" },
+      ];
+      const filtered = subcommands.filter((s) => s.value.startsWith(argumentPrefix));
+      return filtered.length > 0 ? filtered : null;
+    },
     handler: async (args, ctx) => {
       runtime.ctx = ctx;
       const [subcommand] = args.trim().split(/\s+/, 1);
