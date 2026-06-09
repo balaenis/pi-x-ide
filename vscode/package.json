@@ -1,0 +1,59 @@
+{
+  "name": "pi-x-ide-vscode",
+  "displayName": "Pi x IDE",
+  "description": "Send the active VS Code file and selection to Pi.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:pi-x-ide.attachSelection"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "pi-x-ide.attachSelection",
+        "title": "Pi x IDE: Attach Selection to Pi"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "pi-x-ide.attachSelection",
+        "key": "ctrl+alt+k",
+        "mac": "cmd+alt+k",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "Pi x IDE",
+      "properties": {
+        "piXIde.rangeFormat": {
+          "type": "string",
+          "enum": ["comma", "dash"],
+          "default": "comma",
+          "description": "Line range format used for manual @file references."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "node -e \"require('node:fs').rmSync('out',{recursive:true,force:true})\" && tsc -p tsconfig.json --noEmit && node esbuild.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "package": "pnpm compile && mkdir -p dist && vsce package --no-dependencies --out ./dist/pi-x-ide-vscode-0.1.0.vsix"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/vscode": "^1.90.0",
+    "@types/ws": "^8.5.13",
+    "typescript": "^5.7.2"
+  }
+}

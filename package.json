@@ -1,0 +1,43 @@
+{
+  "name": "pi-x-ide",
+  "version": "0.1.0",
+  "description": "Pi extension package for IDE selection context integration.",
+  "private": true,
+  "keywords": [
+    "pi-package",
+    "pi",
+    "ide",
+    "vscode"
+  ],
+  "license": "MIT",
+  "packageManager": "pnpm@11.5.2",
+  "type": "commonjs",
+  "main": "./dist/src/pi/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && pnpm --filter pi-x-ide-vscode compile",
+    "typecheck": "tsc -p tsconfig.json --noEmit && pnpm --filter pi-x-ide-vscode typecheck",
+    "test": "pnpm build && node --test dist/test/*.test.js",
+    "compile:vscode": "pnpm --filter pi-x-ide-vscode compile",
+    "package:vscode": "pnpm --filter pi-x-ide-vscode package",
+    "vsix": "pnpm package:vscode"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.79.0",
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "@vscode/vsce": "^3.2.2",
+    "esbuild": "^0.27.0",
+    "typescript": "^5.7.2"
+  },
+  "pi": {
+    "extensions": [
+      "./src/pi/index.ts"
+    ]
+  }
+}
