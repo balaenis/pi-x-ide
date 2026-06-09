@@ -11,6 +11,7 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 jobs:
   process:
@@ -92,3 +93,16 @@ jobs:
         with:
           tag_name: ${{ needs.process.outputs.tag_name }}
           files: vscode/dist/*.vsix
+
+      - name: Azure login
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Publish to VS Code Marketplace
+        run: |
+          VSIX_FILE=$(ls vscode/dist/*.vsix | head -1)
+          echo "Publishing $VSIX_FILE to VS Code Marketplace..."
+          npx @vscode/vsce publish --azure-credential --packagePath "$VSIX_FILE"
