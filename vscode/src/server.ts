@@ -98,17 +98,21 @@ export class IdeWebSocketServer {
     socket.send(JSON.stringify({ jsonrpc: "2.0", id: parsed.id, result }));
 
     const snapshot = this.getInitialSelection?.();
-    if (snapshot) {
-      socket.send(
-        JSON.stringify({
-          jsonrpc: "2.0",
-          method: "selection_changed",
-          params: {
-            ...snapshot,
-            receivedAt: Date.now(),
-          },
-        }),
-      );
-    }
+    socket.send(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        method: snapshot ? "selection_changed" : "selection_cleared",
+        params: snapshot
+          ? {
+              ...snapshot,
+              receivedAt: Date.now(),
+            }
+          : {
+              source: "vscode",
+              reason: "no-active-editor",
+              receivedAt: Date.now(),
+            },
+      }),
+    );
   }
 }

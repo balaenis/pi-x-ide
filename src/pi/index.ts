@@ -6,7 +6,7 @@ import type { AtMentionedParams, LockFileCandidate } from "../shared/protocol";
 import { discoverIdeCandidates } from "./discovery";
 import { IdeConnection } from "./connection";
 import { registerIdeCommand } from "./commands";
-import { registerContextHandlers, setLatestSelection } from "./context";
+import { clearLatestSelection, registerContextHandlers, setLatestSelection } from "./context";
 import { createRuntime, type PiIdeRuntime } from "./state";
 import { clearIdeUi, updateIdeUi } from "./ui";
 
@@ -110,6 +110,10 @@ async function connectCandidate(
     onSelectionChanged: (snapshot) => {
       if (runtime.connection !== connection) return;
       setLatestSelection(runtime, snapshot);
+    },
+    onSelectionCleared: () => {
+      if (runtime.connection !== connection) return;
+      clearLatestSelection(runtime);
     },
     onAtMentioned: (params) => {
       if (runtime.connection !== connection) return;

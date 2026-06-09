@@ -7,14 +7,16 @@ import {
   type JsonRpcResponse,
   type LockFileCandidate,
   type SelectionChangedParams,
+  type SelectionClearedParams,
 } from "../shared/protocol";
-import { isAtMentionedParams, isSelectionChangedParams } from "../shared/schema";
+import { isAtMentionedParams, isSelectionChangedParams, isSelectionClearedParams } from "../shared/schema";
 import { decodeRawData } from "../shared/ws";
 
 export interface IdeConnectionCallbacks {
   onConnected?: (server: { name: string; version?: string; ide?: string }) => void;
   onDisconnected?: (reason: string) => void;
   onSelectionChanged?: (snapshot: EditorSelectionSnapshot) => void;
+  onSelectionCleared?: (params: SelectionClearedParams) => void;
   onAtMentioned?: (params: AtMentionedParams) => void;
   onError?: (error: Error) => void;
 }
@@ -108,6 +110,8 @@ export class IdeConnection {
     if (!isNotification(parsed)) return;
     if (parsed.method === "selection_changed" && isSelectionChangedParams(parsed.params)) {
       this.callbacks.onSelectionChanged?.(withReceivedAt(parsed.params));
+    } else if (parsed.method === "selection_cleared" && isSelectionClearedParams(parsed.params)) {
+      this.callbacks.onSelectionCleared?.(withReceivedAt(parsed.params));
     } else if (parsed.method === "at_mentioned" && isAtMentionedParams(parsed.params)) {
       const params = withReceivedAt(parsed.params);
       this.callbacks.onAtMentioned?.(params);
@@ -115,7 +119,7 @@ export class IdeConnection {
   }
 }
 
-function withReceivedAt<T extends SelectionChangedParams>(params: T): T {
+function withReceivedAt<T extends SelectionChangedParams | SelectionClearedParams>(params: T): T {
   return { ...params, receivedAt: params.receivedAt ?? Date.now() };
 }
 

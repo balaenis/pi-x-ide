@@ -92,7 +92,21 @@ function scheduleSelectionBroadcast(delayMs = 150): void {
 
 function broadcastSelection(): void {
   const snapshot = getActiveSelectionSnapshot();
-  if (!snapshot || !server) {
+  if (!server) {
+    updateStatus("no-file");
+    return;
+  }
+
+  if (!snapshot) {
+    server.broadcast({
+      jsonrpc: "2.0",
+      method: "selection_cleared",
+      params: {
+        source: "vscode",
+        reason: "no-active-editor",
+        receivedAt: Date.now(),
+      },
+    });
     updateStatus("no-file");
     return;
   }

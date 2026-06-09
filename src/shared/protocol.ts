@@ -89,10 +89,19 @@ export interface EditorSelectionSnapshot {
 
 export interface SelectionChangedParams extends EditorSelectionSnapshot {}
 
+export interface SelectionClearedParams {
+  source: IdeSource;
+  reason: "no-active-editor";
+  receivedAt?: number;
+}
+
 export interface AtMentionedParams extends EditorSelectionSnapshot {
   rangeText: string;
 }
 
-export type IdeNotification = JsonRpcNotification<SelectionChangedParams> | JsonRpcNotification<AtMentionedParams>;
+export type IdeNotification =
+  | JsonRpcNotification<SelectionChangedParams>
+  | JsonRpcNotification<SelectionClearedParams>
+  | JsonRpcNotification<AtMentionedParams>;
 
 export type AttachState = "pending" | "sent" | "idle";

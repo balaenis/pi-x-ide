@@ -49,6 +49,14 @@ export function setLatestSelection(
   updateIdeUi(runtime, ctx);
 }
 
+export function clearLatestSelection(runtime: PiIdeRuntime, ctx?: ExtensionContext): void {
+  runtime.latestSelection = undefined;
+  runtime.latestSelectionKey = undefined;
+  runtime.turnSelection = undefined;
+  runtime.attachState = "idle";
+  updateIdeUi(runtime, ctx);
+}
+
 type UserContentBlock =
   | { type: "text"; text: string; textSignature?: string }
   | { type: "image"; data: string; mimeType: string };

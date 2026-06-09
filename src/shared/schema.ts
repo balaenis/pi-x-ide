@@ -5,6 +5,7 @@ import type {
   IdeSource,
   JsonRpcRequest,
   SelectionChangedParams,
+  SelectionClearedParams,
   SelectionRange,
 } from "./protocol";
 
@@ -73,6 +74,15 @@ export function isEditorSelectionSnapshot(value: unknown): value is EditorSelect
 
 export function isSelectionChangedParams(value: unknown): value is SelectionChangedParams {
   return isEditorSelectionSnapshot(value);
+}
+
+export function isSelectionClearedParams(value: unknown): value is SelectionClearedParams {
+  return (
+    isRecord(value) &&
+    isIdeSource(value.source) &&
+    value.reason === "no-active-editor" &&
+    (value.receivedAt === undefined || isFiniteNumber(value.receivedAt))
+  );
 }
 
 export function isAtMentionedParams(value: unknown): value is AtMentionedParams {

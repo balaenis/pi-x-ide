@@ -6,8 +6,10 @@ import test from "node:test";
 import { formatEditorContext, formatRangeMention, parseRangeMention } from "../src/shared/format";
 import { relationshipMatchLength } from "../src/shared/paths";
 import type { EditorSelectionSnapshot, IdeLockFile } from "../src/shared/protocol";
-import { parseLockFileContent } from "../src/shared/schema";
+import { parseLockFileContent, isSelectionClearedParams } from "../src/shared/schema";
 import { discoverIdeCandidates } from "../src/pi/discovery";
+import { clearLatestSelection, setLatestSelection } from "../src/pi/context";
+import { createRuntime } from "../src/pi/state";
 
 const snapshot: EditorSelectionSnapshot = {
   source: "vscode",
@@ -36,6 +38,28 @@ void test("formats bounded editor context", () => {
   assert.match(context, /src\/main\.ts/);
   assert.match(context, /lines 10-20/);
   assert.match(context, /truncated/i);
+});
+
+void test("validates selection cleared params", () => {
+  assert.equal(isSelectionClearedParams({ source: "vscode", reason: "no-active-editor" }), true);
+  assert.equal(isSelectionClearedParams({ source: "vscode", reason: "no-active-editor", receivedAt: 123 }), true);
+  assert.equal(isSelectionClearedParams({ source: "vscode", reason: "unknown" }), false);
+  assert.equal(isSelectionClearedParams({ source: "vscode" }), false);
+});
+
+void test("clears stale editor selection state", () => {
+  const runtime = createRuntime();
+  setLatestSelection(runtime, snapshot);
+
+  assert.equal(runtime.latestSelection, snapshot);
+  assert.equal(runtime.attachState, "pending");
+
+  clearLatestSelection(runtime);
+
+  assert.equal(runtime.latestSelection, undefined);
+  assert.equal(runtime.latestSelectionKey, undefined);
+  assert.equal(runtime.turnSelection, undefined);
+  assert.equal(runtime.attachState, "idle");
 });
 
 void test("validates lock file content", () => {
