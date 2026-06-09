@@ -2,14 +2,26 @@
 node = "22"
 pnpm = "11.5.2"
 
+[tasks.setup]
+description = "Install project dependencies"
+run = "pnpm install --frozen-lockfile"
+
 [tasks.build]
 description = "Build the pi extension package (TypeScript + VS Code extension)"
 run = "pnpm build"
 
+[tasks.lint]
+description = "Lint the project"
+run = "pnpm lint"
+
+[tasks.test]
+description = "Build and run unit tests"
+run = "pnpm test"
+
 [tasks.publish]
 description = "Build and publish the pi extension package to npm"
 depends = ["build"]
-run = "pnpm publish --access public --no-git-checks"
+run = 'pnpm publish --access public --no-git-checks --tag "${NPM_TAG:-latest}"'
 
 [tasks."vscode:compile"]
 description = "Build the VS Code extension for local debugging"

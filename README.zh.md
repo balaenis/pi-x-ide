@@ -125,6 +125,12 @@ Pi 通过 `ctx.cwd` 与 lock file 中的 `workspaceFolders` 做最长路径匹�
 
 协议详情见 [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md)。
 
+## 发布
+
+本项目使用 [Release Please](https://github.com/googleapis/release-please) 和 [Conventional Commits](https://www.conventionalcommits.org/) 来自动化版本管理和发布流程。
+
+详见 [RELEASE.md](RELEASE.md)。
+
 ## VS Code 配置项
 
 | 键                   | 类型                  | 默认值    | 说明                         |

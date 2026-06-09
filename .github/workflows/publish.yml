@@ -1,0 +1,49 @@
+name: Publish Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "npm tag (latest or next)"
+        required: true
+        type: choice
+        options:
+          - latest
+          - next
+  repository_dispatch:
+    types: [publish-package]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: jdx/mise-action@d6e32c1796099e0f1f3ac741c220a8b7eae9e5dd
+        with:
+          install: true
+          cache: true
+          experimental: true
+
+      - name: Install dependencies
+        run: mise run setup
+
+      - id: inputs
+        uses: simenandre/setup-inputs@v1
+
+      - name: Publish to npm
+        run: |
+          TAG="${{ steps.inputs.outputs.tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="latest"
+          fi
+
+          echo "Publishing with tag: $TAG"
+          NPM_TAG="$TAG" mise run publish

@@ -125,6 +125,12 @@ Pi uses `ctx.cwd` to find the longest path match against `workspaceFolders` in t
 
 See [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md) for protocol details.
 
+## Release
+
+This project uses [Release Please](https://github.com/googleapis/release-please) with [Conventional Commits](https://www.conventionalcommits.org/) to automate versioning and publishing.
+
+See [RELEASE.md](RELEASE.md) for the full release guide.
+
 ## VS Code Configuration
 
 | Key                  | Type                  | Default   | Description                                   |
