@@ -42,10 +42,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.window.onDidChangeActiveTextEditor(() => scheduleSelectionBroadcast()),
     vscode.window.onDidChangeTextEditorSelection(() => scheduleSelectionBroadcast()),
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
-      refreshLock().catch((error: unknown) => console.error("pi-x-ide: failed to refresh lock", error));
+      refreshLock().catch(handleRefreshLockError);
       scheduleSelectionBroadcast();
     }),
-    vscode.commands.registerCommand("pi-x-ide.attachSelection", async () => attachSelection()),
+    vscode.commands.registerCommand("pi-x-ide.attachSelection", () => attachSelection()),
     { dispose: () => void cleanup() },
   );
 
@@ -71,6 +71,11 @@ async function refreshLock(): Promise<void> {
   if (!lockFilePath || !lockFile) return;
   lockFile = refreshLockFile(lockFile);
   await writeIdeLockFile(lockFilePath, lockFile);
+}
+
+function handleRefreshLockError(error: unknown): void {
+  const suffix = error instanceof Error ? `: ${error.message}` : "";
+  void vscode.window.showWarningMessage(`Pi x IDE: failed to refresh lock file${suffix}`);
 }
 
 function scheduleSelectionBroadcast(delayMs = 150): void {
@@ -99,7 +104,7 @@ function broadcastSelection(): void {
   updateStatus(snapshot.ranges.length > 0 ? "selection" : "file");
 }
 
-async function attachSelection(): Promise<void> {
+function attachSelection(): void {
   const snapshot = getActiveSelectionSnapshot();
   if (!snapshot || !server) {
     vscode.window.showWarningMessage("Pi x IDE: no active file to attach.");

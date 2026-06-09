@@ -9,6 +9,7 @@ import {
   type SelectionChangedParams,
 } from "../shared/protocol";
 import { isAtMentionedParams, isSelectionChangedParams } from "../shared/schema";
+import { decodeRawData } from "../shared/ws";
 
 export interface IdeConnectionCallbacks {
   onConnected?: (server: { name: string; version?: string; ide?: string }) => void;
@@ -43,7 +44,7 @@ export class IdeConnection {
     });
     this.socket = socket;
 
-    socket.on("message", (raw) => this.handleMessage(raw.toString("utf8")));
+    socket.on("message", (raw) => this.handleMessage(decodeRawData(raw)));
     socket.on("close", (_code, reason) => {
       if (this.socket === socket) this.socket = undefined;
       this.callbacks.onDisconnected?.(reason.toString("utf8") || (this.closedByUser ? "closed" : "disconnected"));
@@ -108,7 +109,7 @@ export class IdeConnection {
     if (parsed.method === "selection_changed" && isSelectionChangedParams(parsed.params)) {
       this.callbacks.onSelectionChanged?.(withReceivedAt(parsed.params));
     } else if (parsed.method === "at_mentioned" && isAtMentionedParams(parsed.params)) {
-      const params = withReceivedAt(parsed.params) as AtMentionedParams;
+      const params = withReceivedAt(parsed.params);
       this.callbacks.onAtMentioned?.(params);
     }
   }

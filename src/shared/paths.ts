@@ -3,8 +3,8 @@ import { isAbsolute, relative, resolve, sep } from "node:path";
 import { LOCK_DIR_ENV } from "./protocol";
 
 export function resolveLockDir(env: NodeJS.ProcessEnv = process.env): string {
-  return env[LOCK_DIR_ENV] && env[LOCK_DIR_ENV]!.trim()
-    ? resolve(env[LOCK_DIR_ENV]!)
+  return env[LOCK_DIR_ENV] && env[LOCK_DIR_ENV].trim()
+    ? resolve(env[LOCK_DIR_ENV])
     : resolve(homedir(), ".pi", "pi-x-ide");
 }
 

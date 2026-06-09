@@ -24,21 +24,21 @@ const snapshot: EditorSelectionSnapshot = {
   ],
 };
 
-test("formats and parses range mentions", () => {
+void test("formats and parses range mentions", () => {
   assert.equal(formatRangeMention(snapshot), "@src/main.ts#L10,20");
   assert.deepEqual(parseRangeMention("@src/main.ts#L10,20"), { path: "src/main.ts", startLine: 10, endLine: 20 });
   assert.deepEqual(parseRangeMention("@src/main.ts#L10-L20"), { path: "src/main.ts", startLine: 10, endLine: 20 });
   assert.deepEqual(parseRangeMention("@src/main.ts#L10"), { path: "src/main.ts", startLine: 10, endLine: 10 });
 });
 
-test("formats bounded editor context", () => {
+void test("formats bounded editor context", () => {
   const context = formatEditorContext(snapshot, { maxChars: 6 });
   assert.match(context, /src\/main\.ts/);
   assert.match(context, /lines 10-20/);
   assert.match(context, /truncated/i);
 });
 
-test("validates lock file content", () => {
+void test("validates lock file content", () => {
   const lock: IdeLockFile = {
     version: 1,
     ide: "vscode",
@@ -55,12 +55,12 @@ test("validates lock file content", () => {
   assert.equal(parseLockFileContent(JSON.stringify({ ...lock, port: 99999 })), undefined);
 });
 
-test("matches workspace relationship", () => {
+void test("matches workspace relationship", () => {
   assert.ok(relationshipMatchLength("/repo/src", "/repo/src/app") > relationshipMatchLength("/repo", "/repo/src/app"));
   assert.equal(relationshipMatchLength("/other", "/repo"), 0);
 });
 
-test("discovers and sorts matching lock files", async () => {
+void test("discovers and sorts matching lock files", async () => {
   const dir = await mkdtemp(join(tmpdir(), "pi-x-ide-test-"));
   const baseLock: IdeLockFile = {
     version: 1,

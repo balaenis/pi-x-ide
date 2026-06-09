@@ -9,7 +9,7 @@ import { updateIdeUi } from "./ui";
 const CONTEXT_MARKER = "pi-x-ide/editor-context";
 
 export function registerContextHandlers(pi: ExtensionAPI, runtime: PiIdeRuntime): void {
-  pi.on("before_agent_start", async (_event, ctx) => {
+  pi.on("before_agent_start", (_event, ctx) => {
     runtime.ctx = ctx;
     if (!runtime.enabled) return;
     if (!runtime.latestSelection) return;
@@ -17,17 +17,17 @@ export function registerContextHandlers(pi: ExtensionAPI, runtime: PiIdeRuntime)
     runtime.turnSelection = runtime.latestSelection;
   });
 
-  // The runtime supports the documented `context` event, but the top-level package
-  // does not currently export all helper result/message types. Keep the cast local.
-  (pi.on as any)("context", async (event: { messages: unknown[] }, ctx: ExtensionContext) => {
+  // The runtime uses the `context` event to append the active editor context
+  // once per turn when a pending selection attachment exists.
+  pi.on("context", (event, ctx) => {
     runtime.ctx = ctx;
     if (!runtime.enabled || !runtime.turnSelection) return;
     if (messagesContainMarker(event.messages)) return;
 
     const text = `${formatEditorContext(runtime.turnSelection, { cwd: ctx.cwd })}\n<!-- ${CONTEXT_MARKER} -->`;
     const editorContextMessage = {
-      role: "user",
-      content: [{ type: "text", text }],
+      role: "user" as const,
+      content: [{ type: "text" as const, text }],
       timestamp: Date.now(),
     };
     return {
@@ -35,7 +35,7 @@ export function registerContextHandlers(pi: ExtensionAPI, runtime: PiIdeRuntime)
     };
   });
 
-  pi.on("agent_end", async (_event, ctx) => {
+  pi.on("agent_end", (_event, ctx) => {
     runtime.ctx = ctx;
     if (runtime.turnSelection) {
       runtime.attachState = "sent";

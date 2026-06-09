@@ -34,7 +34,7 @@ export default function (pi: ExtensionAPI): void {
     await connectAuto(runtime, ctx);
   });
 
-  pi.on("session_shutdown", async (_event, ctx) => {
+  pi.on("session_shutdown", (_event, ctx) => {
     runtime.ctx = ctx;
     if (runtime.reconnectTimer) clearTimeout(runtime.reconnectTimer);
     runtime.reconnectTimer = undefined;

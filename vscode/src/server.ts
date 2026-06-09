@@ -1,8 +1,8 @@
 import { createServer, type Server } from "node:http";
-import { AddressInfo } from "node:net";
 import WebSocket, { WebSocketServer } from "ws";
 import { AUTH_HEADER, PROTOCOL_VERSION, type InitializeResult } from "../../src/shared/protocol";
 import { isJsonRpcRequest } from "../../src/shared/schema";
+import { decodeRawData } from "../../src/shared/ws";
 
 export class IdeWebSocketServer {
   private httpServer?: Server;
@@ -17,7 +17,7 @@ export class IdeWebSocketServer {
   get port(): number {
     const address = this.httpServer?.address();
     if (!address || typeof address === "string") return 0;
-    return (address as AddressInfo).port;
+    return address.port;
   }
 
   get clientCount(): number {
@@ -39,7 +39,7 @@ export class IdeWebSocketServer {
       this.sockets.add(socket);
       socket.on("close", () => this.sockets.delete(socket));
       socket.on("error", () => this.sockets.delete(socket));
-      socket.on("message", (raw) => this.handleMessage(socket, raw.toString("utf8")));
+      socket.on("message", (raw) => this.handleMessage(socket, decodeRawData(raw)));
     });
 
     await new Promise<void>((resolve, reject) => {

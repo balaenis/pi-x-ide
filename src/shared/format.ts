@@ -38,12 +38,12 @@ export function parseRangeMention(input: string): ParsedRangeMention | undefined
   const endLine = match[3] ? Number(match[3]) : startLine;
   if (startLine !== undefined && (!Number.isInteger(startLine) || startLine < 1)) return undefined;
   if (endLine !== undefined && (!Number.isInteger(endLine) || endLine < 1)) return undefined;
-  return { path: match[1]!, startLine, endLine };
+  return { path: match[1], startLine, endLine };
 }
 
 export function describeRanges(ranges: SelectionRange[], format: RangeFormat = "comma"): string {
   if (ranges.length === 0) return "open file";
-  if (ranges.length === 1) return formatLineSpan(ranges[0]!, format);
+  if (ranges.length === 1) return formatLineSpan(ranges[0], format);
   return ranges.map((range, index) => `${index + 1}:${formatLineSpan(range, format)}`).join(" ");
 }
 
