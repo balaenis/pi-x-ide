@@ -4,7 +4,7 @@
   "description": "Send the active VS Code file and selection to Pi.",
   "icon": "assets/icons/icon-mark-128.png",
   "version": "0.1.0",
-  "publisher": "local",
+  "publisher": "balaenis",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
