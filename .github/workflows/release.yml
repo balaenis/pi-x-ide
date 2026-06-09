@@ -20,7 +20,7 @@ jobs:
       prs_created: ${{ steps.release-please.outputs.prs_created }}
       tag_name: ${{ steps.release-please.outputs.tag_name }}
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: release-please
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -34,7 +34,7 @@ jobs:
     steps:
       - name: Dispatch publish for releases
         if: needs.process.outputs.releases_created == 'true'
-        uses: peter-evans/repository-dispatch@v2
+        uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           event-type: publish-package
@@ -42,7 +42,7 @@ jobs:
 
       - name: Dispatch publish for prerelease
         if: needs.process.outputs.prs_created == 'true'
-        uses: peter-evans/repository-dispatch@v2
+        uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           event-type: publish-package
@@ -53,11 +53,11 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.process.outputs.releases_created == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.process.outputs.tag_name }}
 
-      - uses: jdx/mise-action@d6e32c1796099e0f1f3ac741c220a8b7eae9e5dd
+      - uses: jdx/mise-action@v4
         with:
           install: true
           cache: true
@@ -70,7 +70,7 @@ jobs:
         run: mise run vscode:package
 
       - name: Upload VSIX to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.process.outputs.tag_name }}
           files: vscode/dist/*.vsix
