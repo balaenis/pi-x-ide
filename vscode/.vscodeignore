@@ -1,6 +1,7 @@
 src/**
 tsconfig.json
 esbuild.mjs
+scripts/**
 out/**/*.map
 dist/**
 node_modules/**

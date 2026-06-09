@@ -1,5 +1,7 @@
 import * as esbuild from "esbuild";
 
+const production = process.argv.includes("--production");
+
 await esbuild.build({
   entryPoints: ["src/extension.ts"],
   bundle: true,
@@ -7,7 +9,8 @@ await esbuild.build({
   format: "cjs",
   target: "node20",
   outfile: "out/extension.js",
-  sourcemap: true,
+  sourcemap: !production,
+  minify: production,
   external: ["vscode"],
   sourcesContent: false,
 });

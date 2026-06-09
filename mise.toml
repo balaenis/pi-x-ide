@@ -1,0 +1,15 @@
+[tools]
+node = "22"
+pnpm = "11.5.2"
+
+[tasks."vscode:compile"]
+description = "Build the VS Code extension for local debugging"
+run = "pnpm --filter pi-x-ide-vscode compile"
+
+[tasks."vscode:package"]
+description = "Build the production VS Code VSIX package"
+run = "pnpm --filter pi-x-ide-vscode package"
+
+[tasks.vsix]
+description = "Alias for vscode:package"
+depends = ["vscode:package"]

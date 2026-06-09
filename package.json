@@ -22,6 +22,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "compile:vscode": "pnpm --filter pi-x-ide-vscode compile",
+    "sync:vscode-assets": "pnpm --filter pi-x-ide-vscode sync:assets",
     "package:vscode": "pnpm --filter pi-x-ide-vscode package",
     "vsix": "pnpm package:vscode"
   },

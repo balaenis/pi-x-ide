@@ -2,6 +2,7 @@ node_modules/
 dist/
 vscode/out/
 vscode/dist/
+vscode/assets/icons/
 *.vsix
 .DS_Store
 .pi

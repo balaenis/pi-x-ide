@@ -2,131 +2,131 @@
 
 Pi extension package for IDE selection context integration.
 
-VS Code 中打开或选中的文件和文本范围，自动推送到 Pi TUI，并作为对话上下文提交给 LLM。
+Automatically pushes the currently opened or selected file and text range in VS Code to the Pi TUI, submitting them as conversation context to the LLM.
 
-## 环境依赖
+## Prerequisites
 
 - Node.js ≥ 20
-- pnpm ≥ 11（`packageManager` 声明为 `pnpm@11.5.2`）
-- VS Code ≥ 1.90（仅 VS Code 扩展需要）
-- Pi CLI（`@earendil-works/pi-coding-agent ≥ 0.79`）
+- pnpm ≥ 11 (declared as `pnpm@11.5.2` in `packageManager`)
+- VS Code ≥ 1.90 (VS Code extension only)
+- Pi CLI (`@earendil-works/pi-coding-agent ≥ 0.79`)
 
-## 安装与构建
+## Install & Build
 
 ```bash
 pnpm install
 pnpm build
 ```
 
-常用命令：
+Common commands:
 
-| 命令                  | 说明                                                                        |
-| --------------------- | --------------------------------------------------------------------------- |
-| `pnpm build`          | 编译 Pi 侧 TypeScript → `dist/` + VS Code 侧 esbuild bundle → `vscode/out/` |
-| `pnpm typecheck`      | 类型检查（不产出文件）                                                      |
-| `pnpm test`           | 编译 + 运行单元测试                                                         |
-| `pnpm package:vscode` | 打包 VS Code 扩展为 VSIX                                                    |
-| `pnpm vsix`           | `pnpm package:vscode` 的别名                                                |
+| Command               | Description                                                                      |
+| --------------------- | -------------------------------------------------------------------------------- |
+| `pnpm build`          | Build Pi-side TypeScript → `dist/` + VS Code-side esbuild bundle → `vscode/out/` |
+| `pnpm typecheck`      | Type-check only (no output files)                                                |
+| `pnpm test`           | Build + run unit tests                                                           |
+| `pnpm package:vscode` | Package VS Code extension as VSIX                                                |
+| `pnpm vsix`           | Alias for `pnpm package:vscode`                                                  |
 
-## 本地测试 VS Code 扩展
+## Testing the VS Code Extension Locally
 
-### 方式一：F5 启动 Extension Development Host（推荐）
+### Option 1: F5 Extension Development Host (Recommended)
 
-1. 用 VS Code 打开 **项目根目录**。
-2. 进入 **Run and Debug** 面板（`Ctrl+Shift+D`）。
-3. 选择 **Run Pi x IDE VS Code Extension**。
-4. 按 **F5**：
-   - preLaunchTask 会自动执行 `pnpm build`。
-   - 打开一个标题包含 `[Extension Development Host]` 的新 VS Code 窗口。
+1. Open the **project root** in VS Code.
+2. Go to the **Run and Debug** panel (`Ctrl+Shift+D`).
+3. Select **Run Pi x IDE VS Code Extension**.
+4. Press **F5**:
+   - The `preLaunchTask` will automatically run `pnpm build`.
+   - A new VS Code window titled `[Extension Development Host]` opens.
 
-### 方式二：打包 VSIX 后安装
+### Option 2: Package VSIX and Install
 
 ```bash
 pnpm package:vscode
 code --install-extension pi-x-ide-vscode-0.1.0.vsix
 ```
 
-这样安装的扩展在所有 VS Code 窗口中运行，不依赖 F5 Extension Host。
+The extension installed this way runs in all VS Code windows, independent of the F5 Extension Host.
 
-### 验证扩展是否运行
+### Verify the Extension is Running
 
 ```bash
 ls -l ~/.pi/pi-x-ide
 ```
 
-应看到类似 `vscode-12345-48123.lock` 的文件。
+You should see a file like `vscode-12345-48123.lock`.
 
-如果没有，在 VS Code 中执行 **Developer: Reload Window**。
+If not, run **Developer: Reload Window** in VS Code.
 
-## 连接 Pi
+## Connecting to Pi
 
-在 **同一个项目目录** 启动 Pi：
+Start Pi in the **same project directory**:
 
 ```bash
 pi -e ./src/pi/index.ts
 ```
 
-Pi TUI 应显示：
+The Pi TUI should display:
 
-- Footer：`IDE: vscode ✓`
-- 输入框下方 widget：IDE 名称、workspace、当前文件、选区范围、`pending/sent` 状态
+- Footer: `IDE: vscode ✓`
+- A widget below the input box showing: IDE name, workspace, current file, selection range, and `pending/sent` status
 
-如果 VS Code 后启动，在 Pi 里执行：
+If VS Code was started after Pi, run the following in Pi:
 
-```text
+```
 /ide auto
 ```
 
-## 功能验证
+## Feature Verification
 
-### 实时选区
+### Live Selection
 
-在 VS Code 中打开文件并选中文本，Pi TUI widget 应实时显示：
+Open a file in VS Code and select some text. The Pi TUI widget should update in real time:
 
-```text
+```
 IDE: vscode ✓ src/foo.ts#L10,20 pending
 ```
 
-### 手动快捷键
+### Manual Keyboard Shortcut
 
-在 VS Code 中选中文本后按：
+Select text in VS Code and press:
 
-- Linux/Windows：`Ctrl+Alt+K`
-- macOS：`Cmd+Alt+K`
+- Linux/Windows: `Ctrl+Alt+K`
+- macOS: `Cmd+Alt+K`
 
-Pi 输入框应插入：
+The Pi input box should insert:
 
-```text
+```
 @src/foo.ts#L10,20
 ```
 
-### LLM 上下文注入
+### LLM Context Injection
 
-在 Pi 中输入普通对话提示，提交后进行 LLM 调用时，当前 `pending` 的选中文本会临时注入 `context` 事件，不写入 session 历史。
+Type a normal chat prompt in Pi. When you submit it to the LLM, the currently `pending` selected text is temporarily injected as a `context` event — it does not persist in the session history.
 
-提交完成后 TUI 显示 `sent`。
+After submission, the TUI displays `sent`.
 
-## `/ide` 命令参考
+## `/ide` Command Reference
 
-| 命令          | 行为                                    |
-| ------------- | --------------------------------------- |
-| `/ide`        | 打开 TUI 选择器，列出可用 IDE 连接      |
-| `/ide status` | 显示当前连接、workspace、最近 selection |
-| `/ide list`   | 列出 lock 目录中的候选连接              |
-| `/ide auto`   | 重新按 cwd 自动匹配并连接               |
-| `/ide off`    | 断开并关闭自动上下文附加                |
-| `/ide attach` | 手动把最新 selection range 插入输入框   |
+| Command       | Behavior                                                      |
+| ------------- | ------------------------------------------------------------- |
+| `/ide`        | Open the TUI selector to list available IDE connections       |
+| `/ide status` | Show current connection, workspace, and most recent selection |
+| `/ide list`   | List candidate connections from the lock directory            |
+| `/ide auto`   | Re-attempt automatic matching by `cwd` and connect            |
+| `/ide off`    | Disconnect and disable automatic context attachment           |
+| `/ide attach` | Manually insert the latest selection range into the input box |
 
-## Lock file 协议
+## Lock File Protocol
 
-IDE WebSocket server 启动后将连接信息写入 `~/.pi/pi-x-ide/`.
+After the IDE WebSocket server starts, connection information is written to `~/.pi/pi-x-ide/`.
 
-Pi 通过 `ctx.cwd` 与 lock file 中的 `workspaceFolders` 做最长路径匹配，选中最匹配且最新的 IDE 连接。
+Pi uses `ctx.cwd` to find the longest path match against `workspaceFolders` in the lock files, selecting the best-matching and most recent IDE connection.
 
-协议详情见 [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md)。
+See [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md) for protocol details.
 
-## VS Code 配置项
+## VS Code Configuration
 
-| 键                   | 类型                  | 默认值    | 说明                         |
-| -------------------- | --------------------- | --------- | ---------------------------- |
-| `piXIde.rangeFormat` | `"comma"` \| `"dash"` | `"comma"` | 手动快捷键生成的文件引用格式 |
+| Key                  | Type                  | Default   | Description                                   |
+| -------------------- | --------------------- | --------- | --------------------------------------------- |
+| `piXIde.rangeFormat` | `"comma"` \| `"dash"` | `"comma"` | File reference format for the manual shortcut |
