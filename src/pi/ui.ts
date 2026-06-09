@@ -1,4 +1,4 @@
-import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with { "resolution-mode": "import" };
 import { describeRanges } from "../shared/format";
 import { toRelativeDisplayPath } from "../shared/paths";
 import type { PiIdeRuntime } from "./state";
@@ -22,7 +22,8 @@ export function clearIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undefi
 export function buildStatusLine(runtime: PiIdeRuntime, cwd?: string): string {
   if (!runtime.enabled || runtime.connectionStatus === "disabled") return "IDE: off";
   if (runtime.connectionStatus === "connecting") return "IDE: connecting";
-  if (runtime.connectionStatus === "error") return `IDE: error${runtime.connectionMessage ? ` ${runtime.connectionMessage}` : ""}`;
+  if (runtime.connectionStatus === "error")
+    return `IDE: error${runtime.connectionMessage ? ` ${runtime.connectionMessage}` : ""}`;
   if (runtime.connectionStatus !== "connected") return "IDE: disconnected";
 
   const ide = runtime.connectedServer?.ide ?? runtime.currentCandidate?.lock.ide ?? "ide";
@@ -35,7 +36,11 @@ export function buildStatusLine(runtime: PiIdeRuntime, cwd?: string): string {
 
 export function buildWidget(runtime: PiIdeRuntime, cwd?: string): string[] | undefined {
   if (!runtime.enabled || runtime.connectionStatus === "disabled") return undefined;
-  if (runtime.connectionStatus !== "connected" && runtime.connectionStatus !== "connecting" && runtime.connectionStatus !== "error") {
+  if (
+    runtime.connectionStatus !== "connected" &&
+    runtime.connectionStatus !== "connecting" &&
+    runtime.connectionStatus !== "error"
+  ) {
     return undefined;
   }
 

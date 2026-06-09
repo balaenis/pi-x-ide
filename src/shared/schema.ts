@@ -45,7 +45,13 @@ export function isIdeLockFile(value: unknown): value is IdeLockFile {
 }
 
 function isPosition(value: unknown): value is { line: number; character: number } {
-  return isRecord(value) && isFiniteNumber(value.line) && isFiniteNumber(value.character) && value.line >= 0 && value.character >= 0;
+  return (
+    isRecord(value) &&
+    isFiniteNumber(value.line) &&
+    isFiniteNumber(value.character) &&
+    value.line >= 0 &&
+    value.character >= 0
+  );
 }
 
 function isSelectionRange(value: unknown): value is SelectionRange {
@@ -88,5 +94,10 @@ export function parseLockFileContent(content: string): IdeLockFile | undefined {
 }
 
 export function isJsonRpcRequest(value: unknown): value is JsonRpcRequest {
-  return isRecord(value) && value.jsonrpc === "2.0" && (isString(value.id) || isFiniteNumber(value.id)) && isString(value.method);
+  return (
+    isRecord(value) &&
+    value.jsonrpc === "2.0" &&
+    (isString(value.id) || isFiniteNumber(value.id)) &&
+    isString(value.method)
+  );
 }

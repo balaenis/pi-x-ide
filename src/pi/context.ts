@@ -1,4 +1,6 @@
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
+  "resolution-mode": "import",
+};
 import { formatEditorContext, snapshotKey } from "../shared/format";
 import type { EditorSelectionSnapshot } from "../shared/protocol";
 import type { PiIdeRuntime } from "./state";
@@ -43,7 +45,11 @@ export function registerContextHandlers(pi: ExtensionAPI, runtime: PiIdeRuntime)
   });
 }
 
-export function setLatestSelection(runtime: PiIdeRuntime, snapshot: EditorSelectionSnapshot, ctx?: ExtensionContext): void {
+export function setLatestSelection(
+  runtime: PiIdeRuntime,
+  snapshot: EditorSelectionSnapshot,
+  ctx?: ExtensionContext,
+): void {
   const key = snapshotKey(snapshot);
   runtime.latestSelection = snapshot;
   if (runtime.latestSelectionKey !== key) {

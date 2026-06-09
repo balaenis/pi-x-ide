@@ -21,7 +21,10 @@ function isProcessAlive(pid: number): boolean {
   }
 }
 
-function bestWorkspaceMatch(lock: IdeLockFile, cwd: string): { matchLength: number; workspaceFolder: string } | undefined {
+function bestWorkspaceMatch(
+  lock: IdeLockFile,
+  cwd: string,
+): { matchLength: number; workspaceFolder: string } | undefined {
   let best: { matchLength: number; workspaceFolder: string } | undefined;
   for (const workspaceFolder of lock.workspaceFolders) {
     const matchLength = relationshipMatchLength(workspaceFolder, cwd);
@@ -34,7 +37,9 @@ function bestWorkspaceMatch(lock: IdeLockFile, cwd: string): { matchLength: numb
 }
 
 export function sortCandidates(candidates: LockFileCandidate[]): LockFileCandidate[] {
-  return [...candidates].sort((a, b) => b.matchLength - a.matchLength || b.mtimeMs - a.mtimeMs || a.path.localeCompare(b.path));
+  return [...candidates].sort(
+    (a, b) => b.matchLength - a.matchLength || b.mtimeMs - a.mtimeMs || a.path.localeCompare(b.path),
+  );
 }
 
 export async function discoverIdeCandidates(options: DiscoverOptions): Promise<LockFileCandidate[]> {

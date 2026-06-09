@@ -1,4 +1,6 @@
-import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent" with {
+  "resolution-mode": "import",
+};
 import { formatRangeMention } from "../shared/format";
 import type { LockFileCandidate } from "../shared/protocol";
 import type { PiIdeRuntime } from "./state";
@@ -44,14 +46,20 @@ export function registerIdeCommand(pi: ExtensionAPI, runtime: PiIdeRuntime, acti
   });
 }
 
-async function showPicker(runtime: PiIdeRuntime, actions: IdeCommandActions, ctx: ExtensionCommandContext): Promise<void> {
+async function showPicker(
+  runtime: PiIdeRuntime,
+  actions: IdeCommandActions,
+  ctx: ExtensionCommandContext,
+): Promise<void> {
   const candidates = await actions.refreshCandidates(ctx);
   if (candidates.length === 0) {
     ctx.ui.notify("No matching IDE connections found.", "warning");
     return;
   }
 
-  const labels = candidates.map((candidate, index) => `${index + 1}. ${candidate.lock.name} — ${candidate.workspaceFolder}`);
+  const labels = candidates.map(
+    (candidate, index) => `${index + 1}. ${candidate.lock.name} — ${candidate.workspaceFolder}`,
+  );
   labels.push("Disable IDE integration");
   const choice = await ctx.ui.select("Select IDE connection", labels);
   if (!choice) return;
@@ -81,7 +89,10 @@ async function listCandidates(actions: IdeCommandActions, ctx: ExtensionCommandC
   }
   ctx.ui.notify(
     candidates
-      .map((candidate, index) => `${index + 1}. ${candidate.lock.name} ${candidate.lock.host}:${candidate.lock.port}\n   ${candidate.workspaceFolder}\n   ${candidate.path}`)
+      .map(
+        (candidate, index) =>
+          `${index + 1}. ${candidate.lock.name} ${candidate.lock.host}:${candidate.lock.port}\n   ${candidate.workspaceFolder}\n   ${candidate.path}`,
+      )
       .join("\n"),
     "info",
   );

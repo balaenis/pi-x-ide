@@ -80,5 +80,5 @@ test("discovers and sorts matching lock files", async () => {
 
   const candidates = await discoverIdeCandidates({ cwd: "/repo/src/app", lockDir: dir, checkPid: false });
   assert.equal(candidates.length, 2);
-  assert.equal(candidates[0]!.lock.port, 40001);
+  assert.equal(candidates[0].lock.port, 40001);
 });

@@ -1,4 +1,6 @@
-import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
+  "resolution-mode": "import",
+};
 import { formatRangeMention } from "../shared/format";
 import type { AtMentionedParams, LockFileCandidate } from "../shared/protocol";
 import { discoverIdeCandidates } from "./discovery";
@@ -42,7 +44,10 @@ export default function (pi: ExtensionAPI): void {
   });
 }
 
-async function refreshCandidates(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionCommandContext): Promise<LockFileCandidate[]> {
+async function refreshCandidates(
+  runtime: PiIdeRuntime,
+  ctx: ExtensionContext | ExtensionCommandContext,
+): Promise<LockFileCandidate[]> {
   runtime.ctx = ctx;
   runtime.cwd = ctx.cwd;
   runtime.candidates = await discoverIdeCandidates({ cwd: ctx.cwd });
@@ -64,7 +69,11 @@ async function connectAuto(runtime: PiIdeRuntime, ctx: ExtensionContext | Extens
   await connectCandidate(runtime, candidate, ctx);
 }
 
-async function connectCandidate(runtime: PiIdeRuntime, candidate: LockFileCandidate, ctx: ExtensionContext | ExtensionCommandContext): Promise<void> {
+async function connectCandidate(
+  runtime: PiIdeRuntime,
+  candidate: LockFileCandidate,
+  ctx: ExtensionContext | ExtensionCommandContext,
+): Promise<void> {
   runtime.ctx = ctx;
   runtime.cwd = ctx.cwd;
   runtime.enabled = true;

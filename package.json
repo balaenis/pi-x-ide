@@ -17,6 +17,10 @@
     "build": "tsc -p tsconfig.json && pnpm --filter pi-x-ide-vscode compile",
     "typecheck": "tsc -p tsconfig.json --noEmit && pnpm --filter pi-x-ide-vscode typecheck",
     "test": "pnpm build && node --test dist/test/*.test.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "compile:vscode": "pnpm --filter pi-x-ide-vscode compile",
     "package:vscode": "pnpm --filter pi-x-ide-vscode package",
     "vsix": "pnpm package:vscode"
@@ -29,11 +33,16 @@
   },
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "^0.79.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.10.0",
     "@types/ws": "^8.5.13",
     "@vscode/vsce": "^3.2.2",
     "esbuild": "^0.27.0",
-    "typescript": "^5.7.2"
+    "eslint": "^10.4.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.3",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.60.1"
   },
   "pi": {
     "extensions": [

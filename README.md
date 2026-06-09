@@ -20,13 +20,13 @@ pnpm build
 
 常用命令：
 
-| 命令 | 说明 |
-| --- | --- |
-| `pnpm build` | 编译 Pi 侧 TypeScript → `dist/` + VS Code 侧 esbuild bundle → `vscode/out/` |
-| `pnpm typecheck` | 类型检查（不产出文件） |
-| `pnpm test` | 编译 + 运行单元测试 |
-| `pnpm package:vscode` | 打包 VS Code 扩展为 VSIX |
-| `pnpm vsix` | `pnpm package:vscode` 的别名 |
+| 命令                  | 说明                                                                        |
+| --------------------- | --------------------------------------------------------------------------- |
+| `pnpm build`          | 编译 Pi 侧 TypeScript → `dist/` + VS Code 侧 esbuild bundle → `vscode/out/` |
+| `pnpm typecheck`      | 类型检查（不产出文件）                                                      |
+| `pnpm test`           | 编译 + 运行单元测试                                                         |
+| `pnpm package:vscode` | 打包 VS Code 扩展为 VSIX                                                    |
+| `pnpm vsix`           | `pnpm package:vscode` 的别名                                                |
 
 ## 本地测试 VS Code 扩展
 
@@ -108,14 +108,14 @@ Pi 输入框应插入：
 
 ## `/ide` 命令参考
 
-| 命令 | 行为 |
-| --- | --- |
-| `/ide` | 打开 TUI 选择器，列出可用 IDE 连接 |
+| 命令          | 行为                                    |
+| ------------- | --------------------------------------- |
+| `/ide`        | 打开 TUI 选择器，列出可用 IDE 连接      |
 | `/ide status` | 显示当前连接、workspace、最近 selection |
-| `/ide list` | 列出 lock 目录中的候选连接 |
-| `/ide auto` | 重新按 cwd 自动匹配并连接 |
-| `/ide off` | 断开并关闭自动上下文附加 |
-| `/ide attach` | 手动把最新 selection range 插入输入框 |
+| `/ide list`   | 列出 lock 目录中的候选连接              |
+| `/ide auto`   | 重新按 cwd 自动匹配并连接               |
+| `/ide off`    | 断开并关闭自动上下文附加                |
+| `/ide attach` | 手动把最新 selection range 插入输入框   |
 
 ## Lock file 协议
 
@@ -127,6 +127,6 @@ Pi 通过 `ctx.cwd` 与 lock file 中的 `workspaceFolders` 做最长路径匹�
 
 ## VS Code 配置项
 
-| 键 | 类型 | 默认值 | 说明 |
-| --- | --- | --- | --- |
+| 键                   | 类型                  | 默认值    | 说明                         |
+| -------------------- | --------------------- | --------- | ---------------------------- |
 | `piXIde.rangeFormat` | `"comma"` \| `"dash"` | `"comma"` | 手动快捷键生成的文件引用格式 |

@@ -1,4 +1,4 @@
-import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with { "resolution-mode": "import" };
 import type { AttachState, EditorSelectionSnapshot, LockFileCandidate } from "../shared/protocol";
 import type { IdeConnection } from "./connection";
 

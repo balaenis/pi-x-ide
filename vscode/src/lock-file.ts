@@ -10,9 +10,7 @@ export function createAuthToken(): string {
 }
 
 export function currentWorkspaceFolders(): string[] {
-  return (vscode.workspace.workspaceFolders ?? [])
-    .map((folder) => folder.uri.fsPath)
-    .filter((path) => path.length > 0);
+  return (vscode.workspace.workspaceFolders ?? []).map((folder) => folder.uri.fsPath).filter((path) => path.length > 0);
 }
 
 export function createLockFilePath(port: number): string {

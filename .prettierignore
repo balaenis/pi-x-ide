@@ -1,0 +1,8 @@
+dist/
+vscode/out/
+vscode/dist/
+node_modules/
+.pnpm-store/
+.pi/
+pnpm-lock.yaml
+*.vsix

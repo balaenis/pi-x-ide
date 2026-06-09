@@ -84,7 +84,9 @@ export function formatEditorContext(
       truncated = true;
     }
     remaining -= text.length;
-    sections.push(`${label} lines ${startLine}-${endLine} from \`${rel}\` in ${snapshot.source}:\n\n\`\`\`\n${text}\n\`\`\``);
+    sections.push(
+      `${label} lines ${startLine}-${endLine} from \`${rel}\` in ${snapshot.source}:\n\n\`\`\`\n${text}\n\`\`\``,
+    );
     if (remaining <= 0) break;
   }
 

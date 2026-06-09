@@ -1,5 +1,13 @@
 import WebSocket from "ws";
-import { AUTH_HEADER, PROTOCOL_VERSION, type AtMentionedParams, type EditorSelectionSnapshot, type JsonRpcResponse, type LockFileCandidate, type SelectionChangedParams } from "../shared/protocol";
+import {
+  AUTH_HEADER,
+  PROTOCOL_VERSION,
+  type AtMentionedParams,
+  type EditorSelectionSnapshot,
+  type JsonRpcResponse,
+  type LockFileCandidate,
+  type SelectionChangedParams,
+} from "../shared/protocol";
 import { isAtMentionedParams, isSelectionChangedParams } from "../shared/schema";
 
 export interface IdeConnectionCallbacks {
@@ -111,11 +119,18 @@ function withReceivedAt<T extends SelectionChangedParams>(params: T): T {
 }
 
 function isNotification(value: unknown): value is { jsonrpc: "2.0"; method: string; params?: unknown } {
-  return typeof value === "object" && value !== null && (value as { jsonrpc?: unknown }).jsonrpc === "2.0" && typeof (value as { method?: unknown }).method === "string";
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as { jsonrpc?: unknown }).jsonrpc === "2.0" &&
+    typeof (value as { method?: unknown }).method === "string"
+  );
 }
 
 function isRpcResponse(value: unknown): value is JsonRpcResponse {
-  return typeof value === "object" && value !== null && (value as { jsonrpc?: unknown }).jsonrpc === "2.0" && "id" in value;
+  return (
+    typeof value === "object" && value !== null && (value as { jsonrpc?: unknown }).jsonrpc === "2.0" && "id" in value
+  );
 }
 
 function getServerInfo(response: JsonRpcResponse): { name: string; version?: string; ide?: string } | undefined {

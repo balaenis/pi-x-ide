@@ -28,17 +28,17 @@
 
 ### 需要补齐的设计点
 
-| 缺口 | 补充方案 |
-| --- | --- |
-| 通信协议未定义 | 采用 JSON-RPC 风格的 WebSocket 协议，IDE 端为 server，Pi 端为 client。 |
-| Lock file 格式未定义 | 定义版本化 JSON lock file，包含 `ide`、`port`、`authToken`、`workspaceFolders`、`pid`、`updatedAt`。 |
-| 自动附加如何进入 Pi 上下文未定义 | 优先使用 Pi `context` 事件做非破坏式注入，避免把选中文本永久写进用户消息。 |
-| 手动 `@path#L...` 是否由 Pi 原生解析不确定 | 扩展自身解析并补充上下文；输入框中的 `@...` 只作为用户可见引用。 |
-| 多 IDE / 多 workspace 选择规则未定义 | 采用最长 workspace 路径匹配 + lock file 更新时间排序，并提供 `/ide` 手动切换。 |
-| 大段选中文本风险未定义 | 对自动注入内容设置大小上限与截断提示。 |
-| TUI 实时反馈未定义 | 使用 `ctx.ui.setStatus()` 显示紧凑连接态，使用 `ctx.ui.setWidget()` 展示当前文件、选区范围、`pending` / `sent` 状态和更新时间。 |
-| 安全模型未定义 | lock 目录 `0700`，lock 文件 `0600`，WebSocket 使用随机 token 鉴权。 |
-| 快捷键冲突未定义 | VS Code 的 `Ctrl+Shift+K` 默认是 Delete Line；建议默认 `Ctrl+Alt+K`，并允许用户改成草稿示例。 |
+| 缺口                                       | 补充方案                                                                                                                        |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| 通信协议未定义                             | 采用 JSON-RPC 风格的 WebSocket 协议，IDE 端为 server，Pi 端为 client。                                                          |
+| Lock file 格式未定义                       | 定义版本化 JSON lock file，包含 `ide`、`port`、`authToken`、`workspaceFolders`、`pid`、`updatedAt`。                            |
+| 自动附加如何进入 Pi 上下文未定义           | 优先使用 Pi `context` 事件做非破坏式注入，避免把选中文本永久写进用户消息。                                                      |
+| 手动 `@path#L...` 是否由 Pi 原生解析不确定 | 扩展自身解析并补充上下文；输入框中的 `@...` 只作为用户可见引用。                                                                |
+| 多 IDE / 多 workspace 选择规则未定义       | 采用最长 workspace 路径匹配 + lock file 更新时间排序，并提供 `/ide` 手动切换。                                                  |
+| 大段选中文本风险未定义                     | 对自动注入内容设置大小上限与截断提示。                                                                                          |
+| TUI 实时反馈未定义                         | 使用 `ctx.ui.setStatus()` 显示紧凑连接态，使用 `ctx.ui.setWidget()` 展示当前文件、选区范围、`pending` / `sent` 状态和更新时间。 |
+| 安全模型未定义                             | lock 目录 `0700`，lock 文件 `0600`，WebSocket 使用随机 token 鉴权。                                                             |
+| 快捷键冲突未定义                           | VS Code 的 `Ctrl+Shift+K` 默认是 Delete Line；建议默认 `Ctrl+Alt+K`，并允许用户改成草稿示例。                                   |
 
 ## 3. 从 OpenCode 方案迁移的设计决策
 
@@ -228,6 +228,7 @@ The user selected lines 10-20 from `src/main.ts` in VS Code. This may or may not
 ```ts
 ...selected text...
 ```
+
 </system-reminder>
 ````
 
@@ -247,14 +248,14 @@ The user selected lines 10-20 from `src/main.ts` in VS Code. This may or may not
 
 建议子命令：
 
-| 命令 | 行为 |
-| --- | --- |
-| `/ide` | 打开 TUI 选择器，列出可用 IDE 连接。 |
+| 命令          | 行为                                      |
+| ------------- | ----------------------------------------- |
+| `/ide`        | 打开 TUI 选择器，列出可用 IDE 连接。      |
 | `/ide status` | 显示当前连接、workspace、最近 selection。 |
-| `/ide list` | 列出 lock 目录中的候选连接。 |
-| `/ide auto` | 重新按 cwd 自动匹配并连接。 |
-| `/ide off` | 断开并关闭自动附加。 |
-| `/ide attach` | 手动把最新 selection range 插入输入框。 |
+| `/ide list`   | 列出 lock 目录中的候选连接。              |
+| `/ide auto`   | 重新按 cwd 自动匹配并连接。               |
+| `/ide off`    | 断开并关闭自动附加。                      |
+| `/ide attach` | 手动把最新 selection range 插入输入框。   |
 
 ## 8. 建议文件结构
 
@@ -399,15 +400,15 @@ VS Code extension 的 `package.json` 独立放在 `vscode/` 下，包含 command
 
 ## 11. 主要风险与处理
 
-| 风险 | 处理 |
-| --- | --- |
-| Pi `context` 事件插入 `custom` message 的 provider 序列化行为需要验证 | 阶段 4 先做 spike；若不可用，退回 `before_agent_start` hidden custom message。 |
-| `@path#Lx,y` 可能被 Pi 原生路径解析误判 | 扩展在 `input` / turn snapshot 中自行注入真实 selected text；必要时将可见 mention 转义或改为纯文本标签。 |
-| VS Code 快捷键冲突 | 默认使用非冲突快捷键，并文档说明如何改成 `Ctrl+Shift+K`。 |
-| 多 workspace 路径映射复杂 | 阶段 1 仅支持本地或远端同文件系统路径；不同机器路径映射后续加配置。 |
-| 大选区导致上下文膨胀 | 默认截断上限，保留路径和行号，提示用户可手动扩大范围。 |
-| TUI 状态过度占屏 | Footer 保持单行，widget 只展示 IDE、workspace、文件、范围和状态；默认不显示选中文本正文。 |
-| 多 Pi 实例连接同一 VS Code | IDE server 允许多 client；每个 Pi 根据 cwd 自行过滤。 |
+| 风险                                                                  | 处理                                                                                                     |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Pi `context` 事件插入 `custom` message 的 provider 序列化行为需要验证 | 阶段 4 先做 spike；若不可用，退回 `before_agent_start` hidden custom message。                           |
+| `@path#Lx,y` 可能被 Pi 原生路径解析误判                               | 扩展在 `input` / turn snapshot 中自行注入真实 selected text；必要时将可见 mention 转义或改为纯文本标签。 |
+| VS Code 快捷键冲突                                                    | 默认使用非冲突快捷键，并文档说明如何改成 `Ctrl+Shift+K`。                                                |
+| 多 workspace 路径映射复杂                                             | 阶段 1 仅支持本地或远端同文件系统路径；不同机器路径映射后续加配置。                                      |
+| 大选区导致上下文膨胀                                                  | 默认截断上限，保留路径和行号，提示用户可手动扩大范围。                                                   |
+| TUI 状态过度占屏                                                      | Footer 保持单行，widget 只展示 IDE、workspace、文件、范围和状态；默认不显示选中文本正文。                |
+| 多 Pi 实例连接同一 VS Code                                            | IDE server 允许多 client；每个 Pi 根据 cwd 自行过滤。                                                    |
 
 ## 12. 阶段 1 完成定义
 

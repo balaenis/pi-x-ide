@@ -9,10 +9,11 @@
   "engines": {
     "vscode": "^1.90.0"
   },
-  "categories": ["Other"],
+  "categories": [
+    "Other"
+  ],
   "activationEvents": [
-    "onStartupFinished",
-    "onCommand:pi-x-ide.attachSelection"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -35,7 +36,10 @@
       "properties": {
         "piXIde.rangeFormat": {
           "type": "string",
-          "enum": ["comma", "dash"],
+          "enum": [
+            "comma",
+            "dash"
+          ],
           "default": "comma",
           "description": "Line range format used for manual @file references."
         }

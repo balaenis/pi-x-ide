@@ -1,7 +1,14 @@
 import * as vscode from "vscode";
 import { PROTOCOL_VERSION } from "../../src/shared/protocol";
 import { formatRangeMention } from "../../src/shared/format";
-import { createAuthToken, createLockFile, createLockFilePath, refreshLockFile, removeIdeLockFile, writeIdeLockFile } from "./lock-file";
+import {
+  createAuthToken,
+  createLockFile,
+  createLockFilePath,
+  refreshLockFile,
+  removeIdeLockFile,
+  writeIdeLockFile,
+} from "./lock-file";
 import { IdeWebSocketServer } from "./server";
 import { getActiveSelectionSnapshot, getConfiguredRangeFormat } from "./selection";
 

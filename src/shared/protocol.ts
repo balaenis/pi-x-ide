@@ -93,8 +93,6 @@ export interface AtMentionedParams extends EditorSelectionSnapshot {
   rangeText: string;
 }
 
-export type IdeNotification =
-  | JsonRpcNotification<SelectionChangedParams>
-  | JsonRpcNotification<AtMentionedParams>;
+export type IdeNotification = JsonRpcNotification<SelectionChangedParams> | JsonRpcNotification<AtMentionedParams>;
 
 export type AttachState = "pending" | "sent" | "idle";
