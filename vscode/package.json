@@ -6,6 +6,15 @@
   "version": "0.1.0",
   "publisher": "local",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/balaenis/pi-x-ide",
+    "directory": "vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/balaenis/pi-x-ide/issues"
+  },
+  "homepage": "https://github.com/balaenis/pi-x-ide#readme",
   "type": "commonjs",
   "engines": {
     "vscode": "^1.90.0"
