@@ -6,17 +6,36 @@ import type { PiIdeRuntime } from "./state";
 export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undefined = runtime.ctx): void {
   if (!ctx?.hasUI) return;
 
-  const status = buildStatusLine(runtime, ctx.cwd);
-  ctx.ui.setStatus("pi-x-ide", status);
-
-  const widget = buildWidget(runtime, ctx.cwd);
-  ctx.ui.setWidget("pi-x-ide", widget, { placement: "belowEditor" });
+  ctx.ui.setWidget(
+    "pi-x-ide",
+    (_tui, theme) => ({
+      render(width: number): string[] {
+        const status = buildStatusLine(runtime, ctx.cwd);
+        const text = truncatePlainStatus(status, width);
+        const pad = " ".repeat(Math.max(0, width - text.length));
+        const color = isPendingEditorContext(runtime) ? "success" : "dim";
+        return [pad + theme.fg(color, text)];
+      },
+      invalidate() {},
+    }),
+    { placement: "aboveEditor" },
+  );
 }
 
 export function clearIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undefined = runtime.ctx): void {
   if (!ctx?.hasUI) return;
-  ctx.ui.setStatus("pi-x-ide", undefined);
   ctx.ui.setWidget("pi-x-ide", undefined);
+}
+
+function truncatePlainStatus(text: string, width: number): string {
+  if (width <= 0) return "";
+  if (text.length <= width) return text;
+  if (width <= 3) return ".".repeat(width);
+  return `${text.slice(0, width - 3)}...`;
+}
+
+function isPendingEditorContext(runtime: PiIdeRuntime): boolean {
+  return !!runtime.latestSelection && runtime.attachState === "pending";
 }
 
 export function buildStatusLine(runtime: PiIdeRuntime, cwd?: string): string {
