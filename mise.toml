@@ -2,6 +2,15 @@
 node = "22"
 pnpm = "11.5.2"
 
+[tasks.build]
+description = "Build the pi extension package (TypeScript + VS Code extension)"
+run = "pnpm build"
+
+[tasks.publish]
+description = "Build and publish the pi extension package to npm"
+depends = ["build"]
+run = "pnpm publish --access public --no-git-checks"
+
 [tasks."vscode:compile"]
 description = "Build the VS Code extension for local debugging"
 run = "pnpm --filter pi-x-ide-vscode compile"

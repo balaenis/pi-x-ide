@@ -2,7 +2,10 @@
   "name": "pi-x-ide",
   "version": "0.1.0",
   "description": "Pi extension package for IDE selection context integration.",
-  "private": true,
+  "files": [
+    "dist",
+    "src"
+  ],
   "keywords": [
     "pi-package",
     "pi",
