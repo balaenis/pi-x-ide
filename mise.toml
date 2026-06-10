@@ -10,27 +10,47 @@ run = "pnpm install --frozen-lockfile"
 description = "Build the pi extension package (TypeScript + VS Code extension)"
 run = "pnpm build"
 
-[tasks.lint]
-description = "Lint the project"
-run = "pnpm lint"
+[tasks.typecheck]
+description = "Type-check TypeScript and VS Code extension"
+run = "pnpm typecheck"
 
 [tasks.test]
 description = "Build and run unit tests"
 run = "pnpm test"
 
+[tasks.lint]
+description = "Lint the project"
+run = "pnpm lint"
+
+[tasks."lint:fix"]
+description = "Lint and auto-fix the project"
+run = "pnpm lint:fix"
+
+[tasks.format]
+description = "Format the project with prettier"
+run = "pnpm format"
+
+[tasks."format:check"]
+description = "Check formatting with prettier"
+run = "pnpm format:check"
+
+[tasks."vscode:compile"]
+description = "Build the VS Code extension for local debugging"
+run = "pnpm compile:vscode"
+
+[tasks."sync:vscode-assets"]
+description = "Sync VS Code extension assets"
+run = "pnpm sync:vscode-assets"
+
+[tasks."vscode:package"]
+description = "Build the production VS Code VSIX package"
+run = "pnpm package:vscode"
+
+[tasks.vsix]
+description = "Alias for vscode:package"
+run = "pnpm vsix"
+
 [tasks.publish]
 description = "Build and publish the pi extension package to npm"
 depends = ["build"]
 run = 'pnpm publish --access public --no-git-checks --tag "${NPM_TAG:-latest}"'
-
-[tasks."vscode:compile"]
-description = "Build the VS Code extension for local debugging"
-run = "pnpm --filter './vscode' compile"
-
-[tasks."vscode:package"]
-description = "Build the production VS Code VSIX package"
-run = "pnpm --filter './vscode' package"
-
-[tasks.vsix]
-description = "Alias for vscode:package"
-depends = ["vscode:package"]
