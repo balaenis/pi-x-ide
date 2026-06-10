@@ -1,6 +1,6 @@
-import { readFileSync, statSync } from "node:fs";
-import { homedir } from "node:os";
-import { resolve } from "node:path";
+import { copyFileSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
@@ -21,19 +21,83 @@ export function isZedTerminal(env: NodeJS.ProcessEnv = process.env): boolean {
   return env.ZED_TERM === "true" || env.TERM_PROGRAM?.toLowerCase() === "zed";
 }
 
+export function isWsl(env: NodeJS.ProcessEnv = process.env): boolean {
+  if (env.WSL_DISTRO_NAME || env.WSL_INTEROP) return true;
+  if (env !== process.env) return false;
+  try {
+    return /microsoft|wsl/i.test(readFileSync("/proc/version", "utf8"));
+  } catch {
+    return false;
+  }
+}
+
+export function normalizeZedPathForHost(input: string, env: NodeJS.ProcessEnv = process.env): string {
+  if (!input || !isWsl(env)) return input;
+
+  const driveMatch = input.match(/^([a-zA-Z]):[\\/](.*)$/);
+  if (driveMatch) {
+    const drive = driveMatch[1].toLowerCase();
+    const rest = driveMatch[2].replaceAll("\\", "/");
+    return `/mnt/${drive}/${rest}`;
+  }
+
+  const uncMatch = input.match(/^\\\\(?:wsl\$|wsl\.localhost)\\([^\\]+)\\(.*)$/i);
+  if (uncMatch) {
+    const distro = uncMatch[1];
+    const rest = uncMatch[2].replaceAll("\\", "/");
+    const currentDistro = env.WSL_DISTRO_NAME;
+    if (!currentDistro || distro.toLowerCase() === currentDistro.toLowerCase()) {
+      return `/${rest}`;
+    }
+  }
+
+  return input;
+}
+
 // ── DB path resolution ─────────────────────────────────────────
 
 export function resolveZedDbPath(env: NodeJS.ProcessEnv = process.env, home: string = homedir()): string | undefined {
   const override = env[PI_X_IDE_ZED_DB_ENV]?.trim();
-  if (override) return isFile(override) ? override : undefined;
+  if (override) {
+    const normalizedOverride = normalizeZedPathForHost(override, env);
+    return isFile(normalizedOverride) ? normalizedOverride : undefined;
+  }
 
   const candidates = [
     resolve(home, ".local", "share", "zed", "db", "0-stable", "db.sqlite"), // Linux
     resolve(home, "Library", "Application Support", "Zed", "db", "0-stable", "db.sqlite"), // macOS
     resolve(home, "AppData", "Local", "Zed", "db", "0-stable", "db.sqlite"), // Windows
+    ...zedDbCandidatesFromWindowsEnv(env),
+    ...zedDbCandidatesFromWslMount(env),
   ];
 
   return candidates.find(isFile);
+}
+
+function zedDbCandidatesFromWindowsEnv(env: NodeJS.ProcessEnv): string[] {
+  const localAppData = env.LOCALAPPDATA?.trim();
+  if (localAppData) return [resolve(normalizeZedPathForHost(localAppData, env), "Zed", "db", "0-stable", "db.sqlite")];
+
+  const userProfile = env.USERPROFILE?.trim();
+  if (userProfile) {
+    return [
+      resolve(normalizeZedPathForHost(userProfile, env), "AppData", "Local", "Zed", "db", "0-stable", "db.sqlite"),
+    ];
+  }
+
+  return [];
+}
+
+function zedDbCandidatesFromWslMount(env: NodeJS.ProcessEnv): string[] {
+  if (!isWsl(env)) return [];
+  const usersRoot = "/mnt/c/Users";
+  try {
+    return readdirSync(usersRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+      .map((entry) => resolve(usersRoot, entry.name, "AppData", "Local", "Zed", "db", "0-stable", "db.sqlite"));
+  } catch {
+    return [];
+  }
 }
 
 function isFile(path: string): boolean {
@@ -41,6 +105,47 @@ function isFile(path: string): boolean {
     return statSync(path).isFile();
   } catch {
     return false;
+  }
+}
+
+interface ZedDatabaseHandle {
+  db: DatabaseSync;
+  cleanup: () => void;
+}
+
+function openZedDatabase(dbPath: string, env: NodeJS.ProcessEnv = process.env): ZedDatabaseHandle | undefined {
+  // Direct open on live WAL-mode databases can succeed at construction time
+  // but fail on the first query on WSL/Windows mounts. Always snapshot
+  // under WSL to avoid "disk I/O error" during SQL execution.
+  if (isWsl(env)) return openZedDatabaseSnapshot(dbPath);
+
+  try {
+    return { db: new DatabaseSync(dbPath, { readOnly: true }), cleanup: () => undefined };
+  } catch {
+    // Fall back to snapshot if direct open throws (e.g. file lock on non-WSL).
+    return openZedDatabaseSnapshot(dbPath);
+  }
+}
+
+function openZedDatabaseSnapshot(dbPath: string): ZedDatabaseHandle | undefined {
+  let snapshotDir: string | undefined;
+
+  try {
+    snapshotDir = mkdtempSync(join(tmpdir(), "pi-x-ide-zed-db-"));
+    const cleanupDir = snapshotDir;
+    const snapshotPath = join(cleanupDir, "db.sqlite");
+    copyFileSync(dbPath, snapshotPath);
+    // Do not copy WAL/SHM sidecars: on WSL/Windows mounts the copied WAL
+    // can trigger checkpoint/recovery inside the temp snapshot, causing a
+    // disk I/O error even when the main DB file alone opens fine.
+
+    return {
+      db: new DatabaseSync(snapshotPath, { readOnly: true }),
+      cleanup: () => rmSync(cleanupDir, { recursive: true, force: true }),
+    };
+  } catch {
+    if (snapshotDir) rmSync(snapshotDir, { recursive: true, force: true });
+    return undefined;
   }
 }
 
@@ -134,10 +239,12 @@ function byteOffsetToSelection(
 
 // ── SQLite query ───────────────────────────────────────────────
 
-function scoreWorkspace(workspacePaths: string | null, cwd: string): number {
+function scoreWorkspace(workspacePaths: string | null, cwd: string, env: NodeJS.ProcessEnv): number {
+  const normalizedCwd = normalizeZedPathForHost(cwd, env);
   return parseZedWorkspacePaths(workspacePaths).reduce((best, workspacePath) => {
-    if (isPathInsideOrEqual(workspacePath, cwd)) {
-      const resolved = resolve(workspacePath);
+    const normalizedWorkspacePath = normalizeZedPathForHost(workspacePath, env);
+    if (isPathInsideOrEqual(normalizedWorkspacePath, normalizedCwd)) {
+      const resolved = resolve(normalizedWorkspacePath);
       return Math.max(best, resolved.length);
     }
     return best;
@@ -149,16 +256,15 @@ export interface ResolveZedSelectionOptions {
   cwd: string;
   now?: number;
   readFile?: (path: string) => string;
+  env?: NodeJS.ProcessEnv;
 }
 
 export function resolveZedSelection(options: ResolveZedSelectionOptions): EditorSelectionSnapshot | undefined {
-  const { dbPath, cwd, readFile = (path) => readFileSync(path, "utf8") } = options;
-  let db: DatabaseSync;
-  try {
-    db = new DatabaseSync(dbPath, { readOnly: true });
-  } catch {
-    return undefined;
-  }
+  const { dbPath, cwd, readFile = (path) => readFileSync(path, "utf8"), env = process.env } = options;
+  const dbHandle = openZedDatabase(dbPath, env);
+  if (!dbHandle) return undefined;
+
+  const { db, cleanup } = dbHandle;
 
   try {
     const rows = db
@@ -185,15 +291,17 @@ export function resolveZedSelection(options: ResolveZedSelectionOptions): Editor
       buffer_path: string | null;
     }>;
 
-    // Filter to Editor rows only, score by workspace match
+    // Filter to Editor rows only, score by workspace match.
+    // editor_id may be string or number — Zed uses INTEGER primary keys,
+    // node:sqlite returns them as JS numbers.
     const scored = rows
       .filter(
-        (row): row is typeof row & { editor_id: string; buffer_path: string } =>
-          row.item_kind === "Editor" && typeof row.editor_id === "string" && typeof row.buffer_path === "string",
+        (row): row is typeof row & { editor_id: string | number; buffer_path: string } =>
+          row.item_kind === "Editor" && row.editor_id != null && typeof row.buffer_path === "string",
       )
       .map((row) => ({
         ...row,
-        score: scoreWorkspace(row.workspace_paths, cwd),
+        score: scoreWorkspace(row.workspace_paths, cwd, env),
       }))
       .filter((row) => row.score > 0);
 
@@ -205,9 +313,10 @@ export function resolveZedSelection(options: ResolveZedSelectionOptions): Editor
     if (!best) return undefined;
 
     const { editor_id, workspace_id, buffer_path, workspace_paths } = best;
+    const normalizedBufferPath = normalizeZedPathForHost(buffer_path, env);
 
     // Determine workspace folder from matching path
-    const workspaceFolder = bestWorkspaceFolder(workspace_paths, cwd);
+    const workspaceFolder = bestWorkspaceFolder(workspace_paths, cwd, env);
 
     // Query editor contents
     let contents: string | undefined;
@@ -220,7 +329,7 @@ export function resolveZedSelection(options: ResolveZedSelectionOptions): Editor
     } else {
       // Fall back to reading the file on disk.
       try {
-        contents = readFile(buffer_path);
+        contents = readFile(normalizedBufferPath);
       } catch {
         return undefined;
       }
@@ -261,7 +370,7 @@ export function resolveZedSelection(options: ResolveZedSelectionOptions): Editor
 
     return {
       source: "zed",
-      filePath: buffer_path,
+      filePath: normalizedBufferPath,
       workspaceFolder,
       ranges,
       receivedAt: options.now ?? Date.now(),
@@ -269,13 +378,20 @@ export function resolveZedSelection(options: ResolveZedSelectionOptions): Editor
   } catch {
     return undefined;
   } finally {
-    db.close();
+    try {
+      db.close();
+    } finally {
+      cleanup();
+    }
   }
 }
 
-function bestWorkspaceFolder(workspacePaths: string | null, cwd: string): string | undefined {
-  const paths = parseZedWorkspacePaths(workspacePaths);
-  const matches = paths.filter((workspacePath) => isPathInsideOrEqual(workspacePath, cwd));
+function bestWorkspaceFolder(workspacePaths: string | null, cwd: string, env: NodeJS.ProcessEnv): string | undefined {
+  const paths = parseZedWorkspacePaths(workspacePaths).map((workspacePath) =>
+    normalizeZedPathForHost(workspacePath, env),
+  );
+  const normalizedCwd = normalizeZedPathForHost(cwd, env);
+  const matches = paths.filter((workspacePath) => isPathInsideOrEqual(workspacePath, normalizedCwd));
   if (matches.length === 0) return paths[0];
   return matches.sort((a, b) => resolve(b).length - resolve(a).length)[0];
 }
@@ -333,7 +449,7 @@ export function startZedPolling(
 
       let snapshot: EditorSelectionSnapshot | undefined;
       try {
-        snapshot = resolveZedSelection({ dbPath, cwd: ctx.cwd });
+        snapshot = resolveZedSelection({ dbPath, cwd: ctx.cwd, env });
       } catch {
         snapshot = undefined;
       }

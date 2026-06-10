@@ -11,6 +11,8 @@ import { createRuntime } from "../src/pi/state";
 import type { LockFileCandidate } from "../src/shared/protocol";
 import {
   isZedTerminal,
+  isWsl,
+  normalizeZedPathForHost,
   resolveZedDbPath,
   parseZedWorkspacePaths,
   resolveZedSelection,
@@ -28,6 +30,52 @@ void test("isZedTerminal detects Zed env markers", () => {
   assert.equal(isZedTerminal({ TERM_PROGRAM: "ZED" }), true);
   assert.equal(isZedTerminal({ ZED_TERM: "true", TERM_PROGRAM: "vscode" }), true);
   assert.equal(isZedTerminal({ TERM_PROGRAM: "vscode" }), false);
+});
+
+void test("isWsl detects WSL env markers", () => {
+  assert.equal(isWsl({ WSL_DISTRO_NAME: "Ubuntu" }), true);
+  assert.equal(isWsl({ WSL_INTEROP: "/run/WSL/1_interop" }), true);
+  assert.equal(isWsl({}), false);
+});
+
+void test("normalizeZedPathForHost maps Windows paths for WSL", () => {
+  assert.equal(
+    normalizeZedPathForHost("C:\\Users\\czllo\\project\\src\\main.ts", { WSL_DISTRO_NAME: "Ubuntu" }),
+    "/mnt/c/Users/czllo/project/src/main.ts",
+  );
+  assert.equal(
+    normalizeZedPathForHost("D:/work/repo/file.ts", { WSL_DISTRO_NAME: "Ubuntu" }),
+    "/mnt/d/work/repo/file.ts",
+  );
+});
+
+void test("normalizeZedPathForHost maps matching WSL UNC paths", () => {
+  assert.equal(
+    normalizeZedPathForHost("\\\\wsl.localhost\\Ubuntu\\home\\julian\\project\\file.ts", {
+      WSL_DISTRO_NAME: "Ubuntu",
+    }),
+    "/home/julian/project/file.ts",
+  );
+  assert.equal(
+    normalizeZedPathForHost("\\\\wsl$\\Ubuntu\\home\\julian\\project\\file.ts", { WSL_DISTRO_NAME: "Ubuntu" }),
+    "/home/julian/project/file.ts",
+  );
+});
+
+void test("normalizeZedPathForHost leaves other distro UNC paths untouched", () => {
+  const path = "\\\\wsl.localhost\\Debian\\home\\julian\\project\\file.ts";
+  assert.equal(normalizeZedPathForHost(path, { WSL_DISTRO_NAME: "Ubuntu" }), path);
+});
+
+void test("resolveZedDbPath detects Windows LOCALAPPDATA path in WSL", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pi-x-ide-zed-localappdata-"));
+  const localAppData = join(root, "AppData", "Local");
+  const dbPath = join(localAppData, "Zed", "db", "0-stable", "db.sqlite");
+  await mkdir(join(localAppData, "Zed", "db", "0-stable"), { recursive: true });
+  await writeFile(dbPath, "{}");
+  after(() => rm(root, { recursive: true, force: true }).catch(() => undefined));
+
+  assert.equal(resolveZedDbPath({ WSL_DISTRO_NAME: "Ubuntu", LOCALAPPDATA: localAppData }, "/home/test"), dbPath);
 });
 
 void test("resolveZedDbPath respects env override", async () => {
@@ -133,6 +181,53 @@ async function createFixture(): Promise<Fixture> {
   return { dir, dbPath, cleanup };
 }
 
+async function createNumericFixture(): Promise<Fixture> {
+  const dir = await mkdtemp(join(tmpdir(), "pi-x-ide-zed-numeric-"));
+  const dbPath = join(dir, "db.sqlite");
+  const db = new DatabaseSync(dbPath);
+
+  db.exec(`
+    CREATE TABLE workspaces (
+      workspace_id INTEGER PRIMARY KEY,
+      paths TEXT,
+      timestamp INTEGER
+    );
+    CREATE TABLE panes (
+      pane_id INTEGER PRIMARY KEY,
+      workspace_id INTEGER,
+      active INTEGER
+    );
+    CREATE TABLE items (
+      item_id INTEGER PRIMARY KEY,
+      workspace_id INTEGER,
+      pane_id INTEGER,
+      kind TEXT,
+      active INTEGER
+    );
+    CREATE TABLE editors (
+      item_id INTEGER,
+      workspace_id INTEGER,
+      buffer_path TEXT,
+      contents TEXT,
+      PRIMARY KEY (item_id, workspace_id)
+    );
+    CREATE TABLE editor_selections (
+      editor_id INTEGER,
+      workspace_id INTEGER,
+      start INTEGER,
+      end INTEGER
+    );
+  `);
+
+  db.close();
+
+  async function cleanup() {
+    await rm(dir, { recursive: true, force: true });
+  }
+
+  return { dir, dbPath, cleanup };
+}
+
 function openFixture(dbPath: string): DatabaseSync {
   return new DatabaseSync(dbPath);
 }
@@ -190,6 +285,74 @@ void test("returns active editor snapshot with selected text", async () => {
   assert.equal(snapshot.ranges[0].selection.start.character, 0);
   assert.equal(snapshot.ranges[0].selection.end.line, 0);
   assert.equal(snapshot.ranges[0].selection.end.character, 5);
+});
+
+void test("returns active editor snapshot with numeric IDs (real Zed schema)", async () => {
+  // Zed's actual database uses INTEGER PRIMARY KEYs, not TEXT.
+  // node:sqlite returns them as JS numbers. The filter must accept both.
+  const { dir, dbPath, cleanup } = await createNumericFixture();
+  after(cleanup);
+
+  const db = openFixture(dbPath);
+  db.prepare("INSERT INTO workspaces VALUES (?, ?, ?)").run(1, JSON.stringify([dir]), Date.now());
+  db.prepare("INSERT INTO panes VALUES (?, ?, ?)").run(1, 1, 1);
+  db.prepare("INSERT INTO items VALUES (?, ?, ?, ?, ?)").run(1, 1, 1, "Editor", 1);
+  db.prepare("INSERT INTO editors VALUES (?, ?, ?, ?)").run(1, 1, join(dir, "src/main.ts"), "hello world\n");
+  db.prepare("INSERT INTO editor_selections VALUES (?, ?, ?, ?)").run(1, 1, 0, 5);
+  db.close();
+
+  const snapshot = resolveZedSelection({ dbPath, cwd: dir, now: 12345 });
+  assert.ok(snapshot);
+  assert.equal(snapshot.source, "zed");
+  assert.equal(snapshot.ranges[0].text, "hello");
+});
+
+void test("matches Windows workspace paths when running in WSL", async () => {
+  const { dbPath, cleanup } = await createFixture();
+  after(cleanup);
+
+  const db = openFixture(dbPath);
+  insertWorkspace(db, "w1", JSON.stringify(["C:\\Users\\czllo\\project"]), Date.now());
+  insertPane(db, "p1", "w1", 1);
+  insertItem(db, "i1", "w1", "p1", "Editor", 1);
+  insertEditor(db, "i1", "w1", "C:\\Users\\czllo\\project\\src\\main.ts", "windows content");
+  insertSelection(db, "i1", "w1", 0, 7);
+  db.close();
+
+  const snapshot = resolveZedSelection({
+    dbPath,
+    cwd: "/mnt/c/Users/czllo/project",
+    env: { WSL_DISTRO_NAME: "Ubuntu" },
+  });
+
+  assert.ok(snapshot);
+  assert.equal(snapshot.workspaceFolder, "/mnt/c/Users/czllo/project");
+  assert.equal(snapshot.filePath, "/mnt/c/Users/czllo/project/src/main.ts");
+  assert.equal(snapshot.ranges[0].text, "windows");
+});
+
+void test("matches WSL UNC workspace paths when running in WSL", async () => {
+  const { dbPath, cleanup } = await createFixture();
+  after(cleanup);
+
+  const db = openFixture(dbPath);
+  insertWorkspace(db, "w1", JSON.stringify(["\\\\wsl.localhost\\Ubuntu\\home\\julian\\project"]), Date.now());
+  insertPane(db, "p1", "w1", 1);
+  insertItem(db, "i1", "w1", "p1", "Editor", 1);
+  insertEditor(db, "i1", "w1", "\\\\wsl.localhost\\Ubuntu\\home\\julian\\project\\src\\main.ts", "unc content");
+  insertSelection(db, "i1", "w1", 0, 3);
+  db.close();
+
+  const snapshot = resolveZedSelection({
+    dbPath,
+    cwd: "/home/julian/project",
+    env: { WSL_DISTRO_NAME: "Ubuntu" },
+  });
+
+  assert.ok(snapshot);
+  assert.equal(snapshot.workspaceFolder, "/home/julian/project");
+  assert.equal(snapshot.filePath, "/home/julian/project/src/main.ts");
+  assert.equal(snapshot.ranges[0].text, "unc");
 });
 
 void test("returns snapshot with ranges [] when selection is empty caret", async () => {

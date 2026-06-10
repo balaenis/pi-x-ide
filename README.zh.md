@@ -171,6 +171,9 @@ Pi 直接读取 Zed 的本地 SQLite 状态数据库，获取当前活跃编辑�
 - **Linux：** `~/.local/share/zed/db/0-stable/db.sqlite`
 - **macOS：** `~/Library/Application Support/Zed/db/0-stable/db.sqlite`
 - **Windows：** `%LOCALAPPDATA%\\Zed\\db\\0-stable\\db.sqlite`
+- **WSL + Windows 版 Zed：** `/mnt/c/Users/<user>/AppData/Local/Zed/db/0-stable/db.sqlite`
+
+当 Pi 运行在 WSL 中，而 Zed 是 Windows 应用时，pi-x-ide 会将 `C:\\Users\\<user>\\project` 这类 Windows 路径规范化为 `/mnt/c/Users/<user>/project`，并将匹配当前发行版的 WSL UNC 路径（例如 `\\\\wsl.localhost\\Ubuntu\\home\\<user>\\project`）规范化为 `/home/<user>/project`。
 
 ### 功能对比
 

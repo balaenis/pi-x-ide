@@ -171,6 +171,9 @@ Default database paths:
 - **Linux:** `~/.local/share/zed/db/0-stable/db.sqlite`
 - **macOS:** `~/Library/Application Support/Zed/db/0-stable/db.sqlite`
 - **Windows:** `%LOCALAPPDATA%\\Zed\\db\\0-stable\\db.sqlite`
+- **WSL with Windows Zed:** `/mnt/c/Users/<user>/AppData/Local/Zed/db/0-stable/db.sqlite`
+
+When Pi runs in WSL and Zed runs as a Windows app, pi-x-ide normalizes Windows paths such as `C:\\Users\\<user>\\project` to `/mnt/c/Users/<user>/project`, and matching WSL UNC paths such as `\\\\wsl.localhost\\Ubuntu\\home\\<user>\\project` to `/home/<user>/project`.
 
 ### Feature Parity
 
