@@ -71,11 +71,19 @@ The Pi TUI should display:
 - Footer: `IDE: vscode ✓`
 - A widget below the input box showing: IDE name, workspace, current file, selection range, and `pending/sent` status
 
+When Pi starts from a supported VS Code-family integrated terminal, it also tries to auto-install or update the Marketplace extension `balaenis.pi-x-ide` asynchronously. This does not block Pi startup. To disable only this install attempt, set:
+
+```bash
+PI_X_IDE_AUTO_INSTALL=0
+```
+
 If VS Code was started after Pi, run the following in Pi:
 
 ```
 /ide auto
 ```
+
+If auto-install succeeds but no connection appears, reload the IDE window and run `/ide auto` again. You can also run `/ide install` to choose a supported `code`, `cursor`, or `windsurf` CLI manually.
 
 ## Feature Verification
 
@@ -108,14 +116,15 @@ After submission, the TUI displays `sent`.
 
 ## `/ide` Command Reference
 
-| Command       | Behavior                                                      |
-| ------------- | ------------------------------------------------------------- |
-| `/ide`        | Open the TUI selector to list available IDE connections       |
-| `/ide status` | Show current connection, workspace, and most recent selection |
-| `/ide list`   | List candidate connections from the lock directory            |
-| `/ide auto`   | Re-attempt automatic matching by `cwd` and connect            |
-| `/ide off`    | Disconnect and disable automatic context attachment           |
-| `/ide attach` | Manually insert the latest selection range into the input box |
+| Command        | Behavior                                                          |
+| -------------- | ----------------------------------------------------------------- |
+| `/ide`         | Open the TUI selector to list available IDE connections           |
+| `/ide status`  | Show current connection, workspace, and most recent selection     |
+| `/ide list`    | List candidate connections from the lock directory                |
+| `/ide auto`    | Re-attempt automatic matching by `cwd` and connect                |
+| `/ide off`     | Disconnect and disable automatic context attachment               |
+| `/ide attach`  | Manually insert the latest selection range into the input box     |
+| `/ide install` | Install or update `balaenis.pi-x-ide` through a supported IDE CLI |
 
 ## Lock File Protocol
 

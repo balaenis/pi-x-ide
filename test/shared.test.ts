@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { access, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -105,4 +105,7 @@ void test("discovers and sorts matching lock files", async () => {
   const candidates = await discoverIdeCandidates({ cwd: "/repo/src/app", lockDir: dir, checkPid: false });
   assert.equal(candidates.length, 2);
   assert.equal(candidates[0].lock.port, 40001);
+
+  // Invalid lockfile was removed during scanning
+  await assert.rejects(() => access(join(dir, "bad.lock")));
 });

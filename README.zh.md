@@ -71,11 +71,19 @@ Pi TUI 应显示：
 - Footer：`IDE: vscode ✓`
 - 输入框下方 widget：IDE 名称、workspace、当前文件、选区范围、`pending/sent` 状态
 
+当 Pi 从支持的 VS Code 体系集成终端中启动时，它也会异步尝试自动安装或更新 Marketplace 扩展 `balaenis.pi-x-ide`，不会阻塞 Pi 启动。如需只关闭这个安装尝试，设置：
+
+```bash
+PI_X_IDE_AUTO_INSTALL=0
+```
+
 如果 VS Code 后启动，在 Pi 里执行：
 
 ```text
 /ide auto
 ```
+
+如果自动安装成功但没有出现连接，请 reload IDE 窗口后再次运行 `/ide auto`。你也可以运行 `/ide install`，手动选择支持的 `code`、`cursor` 或 `windsurf` CLI。
 
 ## 功能验证
 
@@ -108,14 +116,15 @@ Pi 输入框应插入：
 
 ## `/ide` 命令参考
 
-| 命令          | 行为                                    |
-| ------------- | --------------------------------------- |
-| `/ide`        | 打开 TUI 选择器，列出可用 IDE 连接      |
-| `/ide status` | 显示当前连接、workspace、最近 selection |
-| `/ide list`   | 列出 lock 目录中的候选连接              |
-| `/ide auto`   | 重新按 cwd 自动匹配并连接               |
-| `/ide off`    | 断开并关闭自动上下文附加                |
-| `/ide attach` | 手动把最新 selection range 插入输入框   |
+| 命令           | 行为                                              |
+| -------------- | ------------------------------------------------- |
+| `/ide`         | 打开 TUI 选择器，列出可用 IDE 连接                |
+| `/ide status`  | 显示当前连接、workspace、最近 selection           |
+| `/ide list`    | 列出 lock 目录中的候选连接                        |
+| `/ide auto`    | 重新按 cwd 自动匹配并连接                         |
+| `/ide off`     | 断开并关闭自动上下文附加                          |
+| `/ide attach`  | 手动把最新 selection range 插入输入框             |
+| `/ide install` | 通过支持的 IDE CLI 安装或更新 `balaenis.pi-x-ide` |
 
 ## Lock file 协议
 

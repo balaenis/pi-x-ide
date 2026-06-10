@@ -17,6 +17,8 @@ export interface PiIdeRuntime {
   attachState: AttachState;
   turnSelection?: EditorSelectionSnapshot;
   reconnectTimer?: NodeJS.Timeout;
+  installingIdeIds: Set<string>;
+  sessionGeneration: number;
 }
 
 export function createRuntime(): PiIdeRuntime {
@@ -25,5 +27,7 @@ export function createRuntime(): PiIdeRuntime {
     candidates: [],
     connectionStatus: "idle",
     attachState: "idle",
+    installingIdeIds: new Set<string>(),
+    sessionGeneration: 0,
   };
 }

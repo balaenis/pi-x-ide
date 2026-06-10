@@ -11,6 +11,7 @@ export interface IdeCommandActions {
   connectAuto: (ctx: ExtensionCommandContext) => Promise<void>;
   connectCandidate: (candidate: LockFileCandidate, ctx: ExtensionCommandContext) => Promise<void>;
   disconnect: (ctx: ExtensionCommandContext, disabled?: boolean) => void;
+  installExtension: (ctx: ExtensionCommandContext) => Promise<void>;
 }
 
 export function registerIdeCommand(pi: ExtensionAPI, runtime: PiIdeRuntime, actions: IdeCommandActions): void {
@@ -23,6 +24,7 @@ export function registerIdeCommand(pi: ExtensionAPI, runtime: PiIdeRuntime, acti
         { value: "auto", label: "auto", description: "Auto-connect to the most recent IDE" },
         { value: "off", label: "off", description: "Disable IDE integration" },
         { value: "attach", label: "attach", description: "Attach latest IDE selection to the prompt" },
+        { value: "install", label: "install", description: "Install or update the IDE extension" },
       ];
       const filtered = subcommands.filter((s) => s.value.startsWith(argumentPrefix));
       return filtered.length > 0 ? filtered : null;
@@ -50,8 +52,11 @@ export function registerIdeCommand(pi: ExtensionAPI, runtime: PiIdeRuntime, acti
         case "attach":
           attachLatest(runtime, ctx);
           return;
+        case "install":
+          await actions.installExtension(ctx);
+          return;
         default:
-          ctx.ui.notify("Usage: /ide [status|list|auto|off|attach]", "warning");
+          ctx.ui.notify("Usage: /ide [status|list|auto|off|attach|install]", "warning");
       }
     },
   });

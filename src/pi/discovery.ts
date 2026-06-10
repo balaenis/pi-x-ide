@@ -1,4 +1,4 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readdir, readFile, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { LOCK_FILE_EXTENSION, type IdeLockFile, type LockFileCandidate } from "../shared/protocol";
 import { relationshipMatchLength, resolveLockDir } from "../shared/paths";
@@ -69,10 +69,19 @@ export async function discoverIdeCandidates(options: DiscoverOptions): Promise<L
       continue;
     }
 
-    if (now - mtimeMs > maxAgeMs) continue;
+    if (now - mtimeMs > maxAgeMs) {
+      await rm(path, { force: true }).catch(() => undefined);
+      continue;
+    }
     const lock = parseLockFileContent(content);
-    if (!lock) continue;
-    if (checkPid && typeof lock.pid === "number" && !isProcessAlive(lock.pid)) continue;
+    if (!lock) {
+      await rm(path, { force: true }).catch(() => undefined);
+      continue;
+    }
+    if (checkPid && typeof lock.pid === "number" && !isProcessAlive(lock.pid)) {
+      await rm(path, { force: true }).catch(() => undefined);
+      continue;
+    }
 
     const match = bestWorkspaceMatch(lock, options.cwd);
     const { matchLength, workspaceFolder } = match ?? {
