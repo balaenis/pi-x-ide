@@ -75,9 +75,12 @@ export async function discoverIdeCandidates(options: DiscoverOptions): Promise<L
     if (checkPid && typeof lock.pid === "number" && !isProcessAlive(lock.pid)) continue;
 
     const match = bestWorkspaceMatch(lock, options.cwd);
-    if (!match) continue;
+    const { matchLength, workspaceFolder } = match ?? {
+      matchLength: 0,
+      workspaceFolder: lock.workspaceFolders[0] ?? "",
+    };
 
-    candidates.push({ path, lock, mtimeMs, ...match });
+    candidates.push({ path, lock, mtimeMs, matchLength, workspaceFolder });
   }
 
   return sortCandidates(candidates);
