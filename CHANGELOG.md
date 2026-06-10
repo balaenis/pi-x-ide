@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/balaenis/pi-x-ide/compare/v1.1.0...v1.2.0) (2026-06-10)
+
+
+### Features
+
+* **vscode:** add editor toolbar button to open Pi terminal ([6289dbd](https://github.com/balaenis/pi-x-ide/commit/6289dbdab4ba8414231cc38c883724f7a56efcb5))
+
+
+### Bug Fixes
+
+* **pi:** restrict auto-connect to direct workspace matches ([6899dda](https://github.com/balaenis/pi-x-ide/commit/6899dda792571e2a51402f235d45c7ff3667eeb2))
+
 ## [1.1.0](https://github.com/balaenis/pi-x-ide/compare/v1.0.5...v1.1.0) (2026-06-10)
 
 
