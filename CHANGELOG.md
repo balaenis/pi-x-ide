@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/balaenis/pi-x-ide/compare/v1.0.3...v1.0.4) (2026-06-10)
+
+
+### Bug Fixes
+
+* build vsix error ([fab6668](https://github.com/balaenis/pi-x-ide/commit/fab66685ce416fa170a939d74564ca75d480ae50))
+
 ## [1.0.3](https://github.com/balaenis/pi-x-ide/compare/v1.0.2...v1.0.3) (2026-06-10)
 
 
