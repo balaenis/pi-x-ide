@@ -31,8 +31,24 @@
       {
         "command": "pi-x-ide.attachSelection",
         "title": "Pi x IDE: Attach Selection to Pi"
+      },
+      {
+        "command": "pi-x-ide.openPiTerminal",
+        "title": "Open Pi in Terminal",
+        "icon": {
+          "light": "assets/icons/icon-light.png",
+          "dark": "assets/icons/icon-dark.png"
+        }
       }
     ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "pi-x-ide.openPiTerminal",
+          "group": "navigation"
+        }
+      ]
+    },
     "keybindings": [
       {
         "command": "pi-x-ide.attachSelection",

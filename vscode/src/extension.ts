@@ -12,6 +12,8 @@ import {
 import { IdeWebSocketServer } from "./server";
 import { getActiveSelectionSnapshot, getConfiguredRangeFormat } from "./selection";
 
+const PI_TERMINAL_NAME = "pi";
+
 let server: IdeWebSocketServer | undefined;
 let lockFilePath: string | undefined;
 let lockFile = undefined as ReturnType<typeof createLockFile> | undefined;
@@ -50,6 +52,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       scheduleSelectionBroadcast();
     }),
     vscode.commands.registerCommand("pi-x-ide.attachSelection", () => attachSelection()),
+    vscode.commands.registerCommand("pi-x-ide.openPiTerminal", () => openPiTerminal(context)),
     { dispose: () => void cleanup() },
   );
 
@@ -154,4 +157,27 @@ function updateStatus(state: "ready" | "file" | "selection" | "no-file"): void {
   status.text = `${icon} Pi x IDE ${suffix}`;
   status.tooltip = `Pi x IDE WebSocket server on protocol v${PROTOCOL_VERSION}. Click to attach the active selection.`;
   status.show();
+}
+
+function openPiTerminal(context: vscode.ExtensionContext): void {
+  const existing = vscode.window.terminals.find((t) => t.name === PI_TERMINAL_NAME);
+  if (existing) {
+    existing.show();
+    return;
+  }
+
+  const terminal = vscode.window.createTerminal({
+    name: PI_TERMINAL_NAME,
+    iconPath: {
+      light: vscode.Uri.file(context.asAbsolutePath("assets/icons/icon-light.png")),
+      dark: vscode.Uri.file(context.asAbsolutePath("assets/icons/icon-dark.png")),
+    },
+    location: {
+      viewColumn: vscode.ViewColumn.Beside,
+      preserveFocus: false,
+    },
+  });
+
+  terminal.show();
+  terminal.sendText("pi");
 }

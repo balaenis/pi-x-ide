@@ -11,6 +11,14 @@ const assets = [
     source: join(repoRoot, "assets/icons/icon-mark-128.png"),
     destination: join(extensionDir, "assets/icons/icon-mark-128.png"),
   },
+  {
+    source: join(repoRoot, "assets/icons/icon-128-black.png"),
+    destination: join(extensionDir, "assets/icons/icon-light.png"),
+  },
+  {
+    source: join(repoRoot, "assets/icons/icon-128.png"),
+    destination: join(extensionDir, "assets/icons/icon-dark.png"),
+  },
 ];
 
 function filesMatch(source, destination) {
