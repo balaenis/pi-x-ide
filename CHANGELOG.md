@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/balaenis/pi-x-ide/compare/v1.0.0...v1.0.1) (2026-06-10)
+
+
+### Bug Fixes
+
+* test release pipeline ([2d887b8](https://github.com/balaenis/pi-x-ide/commit/2d887b8a27da44c116e4e6a42c69727c469c873d))
+
 ## 1.0.0 (2026-06-09)
 
 
