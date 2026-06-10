@@ -10,7 +10,8 @@
     "pi-package",
     "pi",
     "ide",
-    "vscode"
+    "vscode",
+    "zed"
   ],
   "license": "Apache-2.0",
   "repository": {
@@ -22,6 +23,9 @@
   },
   "homepage": "https://github.com/balaenis/pi-x-ide#readme",
   "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=26"
+  },
   "type": "commonjs",
   "main": "./dist/src/pi/index.js",
   "scripts": {
@@ -46,7 +50,7 @@
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "^0.79.0",
     "@eslint/js": "^10.0.1",
-    "@types/node": "^22.10.0",
+    "@types/node": "^25.9.2",
     "@types/ws": "^8.5.13",
     "@vscode/vsce": "^3.2.2",
     "esbuild": "^0.27.0",

@@ -1,8 +1,17 @@
 # Instructions
 
-## Dev Tools `mise`
+## Dev Tools
 
 Prefer using `mise` as the development environment management tool.
+
+```bash
+mise run setup
+mise run build
+mise run lint
+mise run typecheck
+mise run test
+# ...More
+```
 
 ## Dependency packages
 

@@ -6,6 +6,7 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const extensionDir = dirname(scriptDir);
 const repoRoot = dirname(extensionDir);
 
+/** @type {Array<{ source: string; destination: string }>} */
 const assets = [
   {
     source: join(repoRoot, "assets/icons/icon-mark-128.png"),
@@ -21,6 +22,10 @@ const assets = [
   },
 ];
 
+/**
+ * @param {string} source
+ * @param {string} destination
+ */
 function filesMatch(source, destination) {
   if (!existsSync(destination)) {
     return false;

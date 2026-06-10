@@ -2,11 +2,11 @@
 
 Pi extension package for IDE selection context integration.
 
-VS Code 中打开或选中的文件和文本范围，自动推送到 Pi TUI，并作为对话上下文提交给 LLM。
+自动将 VS Code 体系 IDE 和 Zed 中当前打开或选中的文件与文本范围附加到 Pi TUI，并作为对话上下文提交给 LLM。
 
 ## 环境依赖
 
-- Node.js ≥ 20
+- Node.js ≥ 26
 - pnpm ≥ 11（`packageManager` 声明为 `pnpm@11.5.2`）
 - VS Code ≥ 1.90（仅 VS Code 扩展需要）
 - Pi CLI（`@earendil-works/pi-coding-agent ≥ 0.79`）
@@ -145,3 +145,39 @@ Pi 通过 `ctx.cwd` 与 lock file 中的 `workspaceFolders` 做最长路径匹�
 | 键                   | 类型                  | 默认值    | 说明                         |
 | -------------------- | --------------------- | --------- | ---------------------------- |
 | `piXIde.rangeFormat` | `"comma"` \| `"dash"` | `"comma"` | 手动快捷键生成的文件引用格式 |
+
+## Zed 编辑器支持
+
+当 Pi 在 Zed 终端中运行时（`ZED_TERM=true` 或 `TERM_PROGRAM=zed`），Pi 会自动检测并连接 Zed，无需安装任何 Zed 扩展。
+
+### 工作原理
+
+Pi 直接读取 Zed 的本地 SQLite 状态数据库，获取当前活跃编辑器文件、选中文本范围和缓冲区内容。数据库每秒轮询一次，变化会实时反映在 Pi TUI widget 中。
+
+### 运行要求
+
+- Zed 在同一台机器上运行
+- Pi 从 Zed 集成终端启动
+- Node.js ≥ 26（需要 `node:sqlite`）
+
+### 配置
+
+| 环境变量          | 默认值       | 说明                       |
+| ----------------- | ------------ | -------------------------- |
+| `PI_X_IDE_ZED_DB` | （自动检测） | 覆盖 Zed SQLite 数据库路径 |
+
+默认数据库路径：
+
+- **Linux：** `~/.local/share/zed/db/0-stable/db.sqlite`
+- **macOS：** `~/Library/Application Support/Zed/db/0-stable/db.sqlite`
+- **Windows：** `%LOCALAPPDATA%\\Zed\\db\\0-stable\\db.sqlite`
+
+### 功能对比
+
+| 功能                              | VS Code     | Zed                         |
+| --------------------------------- | ----------- | --------------------------- |
+| 实时文件追踪                      | ✅ 实时推送 | ✅ 1 秒轮询                 |
+| 实时选区追踪                      | ✅ 实时推送 | ✅ 1 秒轮询                 |
+| `Ctrl+Alt+K` / `Cmd+Alt+K` 快捷键 | ✅          | 手动输入 `@<relative-path>` |
+| LLM 上下文注入                    | ✅          | ✅                          |
+| `/ide auto`                       | ✅          | ✅                          |

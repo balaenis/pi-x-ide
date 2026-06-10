@@ -13,7 +13,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["*.config.*", ".*rc.*", "*.mjs", "vscode/*.mjs"],
+          allowDefaultProject: ["*.config.*", ".*rc.*", "*.mjs", "vscode/*.mjs", "vscode/scripts/*.mjs"],
           /* vscode/esbuild.mjs is not under a tsconfig root, so we whitelist it explicitly */
         },
         tsconfigRootDir: import.meta.dirname,
@@ -22,6 +22,17 @@ export default tseslint.config(
     rules: {
       // Allow unused vars prefixed with underscore
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+    },
+  },
+
+  // ---- Node.js JavaScript utility scripts ----
+  {
+    files: ["*.mjs", "vscode/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        process: "readonly",
+      },
     },
   },
 

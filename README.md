@@ -2,11 +2,11 @@
 
 Pi extension package for IDE selection context integration.
 
-Automatically pushes the currently opened or selected file and text range in VS Code to the Pi TUI, submitting them as conversation context to the LLM.
+Automatically attaches the currently opened or selected file and text range from VS Code-family IDEs and Zed to the Pi TUI, submitting them as conversation context to the LLM.
 
 ## Prerequisites
 
-- Node.js ≥ 20
+- Node.js ≥ 26
 - pnpm ≥ 11 (declared as `pnpm@11.5.2` in `packageManager`)
 - VS Code ≥ 1.90 (VS Code extension only)
 - Pi CLI (`@earendil-works/pi-coding-agent ≥ 0.79`)
@@ -145,3 +145,39 @@ See [RELEASE.md](RELEASE.md) for the full release guide.
 | Key                  | Type                  | Default   | Description                                   |
 | -------------------- | --------------------- | --------- | --------------------------------------------- |
 | `piXIde.rangeFormat` | `"comma"` \| `"dash"` | `"comma"` | File reference format for the manual shortcut |
+
+## Zed Editor Support
+
+Pi detects Zed automatically when running inside a Zed terminal (`ZED_TERM=true` or `TERM_PROGRAM=zed`). No Zed extension is required.
+
+### How It Works
+
+Pi reads Zed's local SQLite state database to discover the active editor file, selected text ranges, and buffer contents. The database is polled once per second, and changes are reflected in the Pi TUI widget.
+
+### Requirements
+
+- Zed running on the same machine
+- Pi launched from Zed's integrated terminal
+- Node.js ≥ 26 (required for `node:sqlite`)
+
+### Configuration
+
+| Environment Variable | Default       | Description                          |
+| -------------------- | ------------- | ------------------------------------ |
+| `PI_X_IDE_ZED_DB`    | (auto-detect) | Override path to Zed SQLite database |
+
+Default database paths:
+
+- **Linux:** `~/.local/share/zed/db/0-stable/db.sqlite`
+- **macOS:** `~/Library/Application Support/Zed/db/0-stable/db.sqlite`
+- **Windows:** `%LOCALAPPDATA%\\Zed\\db\\0-stable\\db.sqlite`
+
+### Feature Parity
+
+| Feature                             | VS Code           | Zed                             |
+| ----------------------------------- | ----------------- | ------------------------------- |
+| Live file tracking                  | ✅ Real-time push | ✅ 1s polling                   |
+| Live selection tracking             | ✅ Real-time push | ✅ 1s polling                   |
+| `Ctrl+Alt+K` / `Cmd+Alt+K` shortcut | ✅                | Use `@<relative-path>` manually |
+| LLM context injection               | ✅                | ✅                              |
+| `/ide auto`                         | ✅                | ✅                              |

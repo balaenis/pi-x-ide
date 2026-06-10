@@ -17,6 +17,7 @@ import { registerIdeCommand } from "./commands";
 import { clearLatestSelection, registerContextHandlers, setLatestSelection } from "./context";
 import { createRuntime, type PiIdeRuntime } from "./state";
 import { clearIdeUi, updateIdeUi } from "./ui";
+import { startZedPolling, stopZedPolling } from "./zed";
 
 const RECONNECT_DELAY_MS = 2_000;
 const INSTALL_RECONNECT_RETRY_MS = 1_500;
@@ -28,7 +29,7 @@ export default function (pi: ExtensionAPI): void {
   registerContextHandlers(pi, runtime);
   registerIdeCommand(pi, runtime, {
     refreshCandidates: (ctx) => refreshCandidates(runtime, ctx),
-    connectAuto: (ctx) => connectAuto(runtime, ctx),
+    connectAuto: (ctx) => connectAutoWithZedFallback(runtime, ctx),
     connectCandidate: (candidate, ctx) => connectCandidate(runtime, candidate, ctx),
     disconnect: (ctx, disabled) => disconnect(runtime, ctx, disabled),
     installExtension: (ctx) => installExtension(runtime, ctx),
@@ -39,18 +40,20 @@ export default function (pi: ExtensionAPI): void {
     const generation = runtime.sessionGeneration;
     runtime.ctx = ctx;
     runtime.cwd = ctx.cwd;
+    stopZedPolling(runtime);
     if (!runtime.enabled) {
       runtime.connectionStatus = "disabled";
       updateIdeUi(runtime, ctx);
       return;
     }
     void maybeAutoInstallAndReconnect(runtime, ctx, generation);
-    await connectAuto(runtime, ctx);
+    await connectAutoWithZedFallback(runtime, ctx, generation);
   });
 
   pi.on("session_shutdown", (_event, ctx) => {
     runtime.sessionGeneration += 1;
     runtime.ctx = ctx;
+    stopZedPolling(runtime);
     if (runtime.reconnectTimer) clearTimeout(runtime.reconnectTimer);
     runtime.reconnectTimer = undefined;
     runtime.connection?.disconnect();
@@ -228,6 +231,17 @@ async function refreshCandidates(
   return runtime.candidates;
 }
 
+async function connectAutoWithZedFallback(
+  runtime: PiIdeRuntime,
+  ctx: ExtensionContext | ExtensionCommandContext,
+  generation = runtime.sessionGeneration,
+): Promise<void> {
+  await connectAuto(runtime, ctx);
+  if (runtime.connectionStatus !== "connected") {
+    startZedPolling(runtime, ctx, { generation });
+  }
+}
+
 async function connectAuto(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionCommandContext): Promise<void> {
   runtime.enabled = true;
   const candidates = await refreshCandidates(runtime, ctx);
@@ -258,6 +272,7 @@ async function connectCandidate(
   runtime.ctx = ctx;
   runtime.cwd = ctx.cwd;
   runtime.enabled = true;
+  stopZedPolling(runtime);
   if (runtime.reconnectTimer) clearTimeout(runtime.reconnectTimer);
   runtime.reconnectTimer = undefined;
 
@@ -346,6 +361,7 @@ function isCurrentConnection(runtime: PiIdeRuntime, connection: IdeConnection | 
 
 function disconnect(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionCommandContext, disabled = false): void {
   runtime.ctx = ctx;
+  stopZedPolling(runtime);
   if (runtime.reconnectTimer) clearTimeout(runtime.reconnectTimer);
   runtime.reconnectTimer = undefined;
   const connection = runtime.connection;
@@ -370,7 +386,7 @@ function scheduleReconnect(runtime: PiIdeRuntime): void {
     runtime.reconnectTimer = undefined;
     const ctx = runtime.ctx;
     if (!ctx || !runtime.enabled) return;
-    connectAuto(runtime, ctx).catch((error: unknown) => {
+    connectAutoWithZedFallback(runtime, ctx).catch((error: unknown) => {
       runtime.connectionStatus = "error";
       runtime.connectionMessage = error instanceof Error ? error.message : String(error);
       updateIdeUi(runtime);

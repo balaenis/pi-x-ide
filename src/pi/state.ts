@@ -17,6 +17,8 @@ export interface PiIdeRuntime {
   attachState: AttachState;
   turnSelection?: EditorSelectionSnapshot;
   reconnectTimer?: NodeJS.Timeout;
+  zedPollTimer?: NodeJS.Timeout;
+  zedPollSelectionKey?: string;
   installingIdeIds: Set<string>;
   sessionGeneration: number;
 }

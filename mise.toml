@@ -1,5 +1,5 @@
 [tools]
-node = "22"
+node = "26"
 pnpm = "11.5.2"
 
 [tasks.setup]
