@@ -25,11 +25,11 @@ run = 'pnpm publish --access public --no-git-checks --tag "${NPM_TAG:-latest}"'
 
 [tasks."vscode:compile"]
 description = "Build the VS Code extension for local debugging"
-run = "pnpm --filter pi-x-ide-vscode compile"
+run = "pnpm --filter './vscode' compile"
 
 [tasks."vscode:package"]
 description = "Build the production VS Code VSIX package"
-run = "pnpm --filter pi-x-ide-vscode package"
+run = "pnpm --filter './vscode' package"
 
 [tasks.vsix]
 description = "Alias for vscode:package"

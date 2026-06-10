@@ -43,7 +43,7 @@ pnpm build
 
 ```bash
 pnpm package:vscode
-code --install-extension pi-x-ide-vscode-0.1.0.vsix
+code --install-extension './vscode'-0.1.0.vsix
 ```
 
 这样安装的扩展在所有 VS Code 窗口中运行，不依赖 F5 Extension Host。

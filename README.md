@@ -43,7 +43,7 @@ Common commands:
 
 ```bash
 pnpm package:vscode
-code --install-extension pi-x-ide-vscode-0.1.0.vsix
+code --install-extension './vscode'-0.1.0.vsix
 ```
 
 The extension installed this way runs in all VS Code windows, independent of the F5 Extension Host.
