@@ -25,16 +25,16 @@
   "type": "commonjs",
   "main": "./dist/src/pi/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json && pnpm --filter pi-x-ide-vscode compile",
-    "typecheck": "tsc -p tsconfig.json --noEmit && pnpm --filter pi-x-ide-vscode typecheck",
+    "build": "tsc -p tsconfig.json && pnpm --filter './vscode' compile",
+    "typecheck": "tsc -p tsconfig.json --noEmit && pnpm --filter './vscode' typecheck",
     "test": "pnpm build && node --test dist/test/*.test.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "compile:vscode": "pnpm --filter pi-x-ide-vscode compile",
-    "sync:vscode-assets": "pnpm --filter pi-x-ide-vscode sync:assets",
-    "package:vscode": "pnpm --filter pi-x-ide-vscode package",
+    "compile:vscode": "pnpm --filter './vscode' compile",
+    "sync:vscode-assets": "pnpm --filter './vscode' sync:assets",
+    "package:vscode": "pnpm --filter './vscode' package",
     "vsix": "pnpm package:vscode"
   },
   "dependencies": {
