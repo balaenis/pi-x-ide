@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.5](https://github.com/balaenis/pi-x-ide/compare/v1.0.4...v1.0.5) (2026-06-10)
+
+
+### Bug Fixes
+
+* build vsix error display name is taken ([477a044](https://github.com/balaenis/pi-x-ide/commit/477a0447b7c4fbfa0f582c47c649ea0e5c5983bd))
+
 ## [1.0.4](https://github.com/balaenis/pi-x-ide/compare/v1.0.3...v1.0.4) (2026-06-10)
 
 
