@@ -47,6 +47,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor(() => scheduleSelectionBroadcast()),
     vscode.window.onDidChangeTextEditorSelection(() => scheduleSelectionBroadcast()),
+    vscode.window.tabGroups.onDidChangeTabs(() => scheduleSelectionBroadcast()),
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
       refreshLock().catch(handleRefreshLockError);
       scheduleSelectionBroadcast();
