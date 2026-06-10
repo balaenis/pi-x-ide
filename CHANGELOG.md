@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0](https://github.com/balaenis/pi-x-ide/compare/v1.2.0...v1.3.0) (2026-06-10)
+
+
+### Features
+
+* **vscode:** cache selection snapshot when terminal tab is active ([785f834](https://github.com/balaenis/pi-x-ide/commit/785f834a5092ec77944e7659ca0efa2c6a94f74b))
+* **zed:** add Zed editor integration with SQLite polling ([90da726](https://github.com/balaenis/pi-x-ide/commit/90da726a4d997446f3d05d0b3fb9a439572bec9f))
+* **zed:** support WSL+Windows path normalization for cross-OS Zed DB access ([963e975](https://github.com/balaenis/pi-x-ide/commit/963e975eb3e4824b8e46015ae324bfcc8c33f6c0))
+
+
+### Performance Improvements
+
+* **zed:** skip DB snapshot when WAL unchanged, checkpoint into snapshot ([76a6dab](https://github.com/balaenis/pi-x-ide/commit/76a6dab7e6af78a534d9f7401901b1df813dd039))
+
 ## [1.2.0](https://github.com/balaenis/pi-x-ide/compare/v1.1.0...v1.2.0) (2026-06-10)
 
 
