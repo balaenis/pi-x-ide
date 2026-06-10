@@ -57,6 +57,7 @@
     "typescript-eslint": "^8.60.1"
   },
   "pi": {
+    "image": "https://fastly.jsdelivr.net/gh/balaenis/pi-x-ide@main/assets/icons/pi-x-ide.png",
     "extensions": [
       "./src/pi/index.ts"
     ]
