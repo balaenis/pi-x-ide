@@ -20,6 +20,10 @@ export function isPathInsideOrEqual(parent: string, child: string): boolean {
   return rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
 }
 
+export function hasDirectWorkspaceMatch(workspaceFolders: readonly string[], cwd: string): boolean {
+  return workspaceFolders.some((workspaceFolder) => isPathInsideOrEqual(workspaceFolder, cwd));
+}
+
 export function relationshipMatchLength(workspaceFolder: string, cwd: string): number {
   const workspace = normalizePath(workspaceFolder);
   const active = normalizePath(cwd);

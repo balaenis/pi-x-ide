@@ -2,6 +2,7 @@ import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@e
   "resolution-mode": "import",
 };
 import { formatRangeMention } from "../shared/format";
+import { hasDirectWorkspaceMatch } from "../shared/paths";
 import type { AtMentionedParams, LockFileCandidate } from "../shared/protocol";
 import { discoverIdeCandidates } from "./discovery";
 import { IdeConnection, type IdeConnectionCallbacks } from "./connection";
@@ -230,16 +231,23 @@ async function refreshCandidates(
 async function connectAuto(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionCommandContext): Promise<void> {
   runtime.enabled = true;
   const candidates = await refreshCandidates(runtime, ctx);
-  const candidate = candidates[0];
+  const candidate = candidates.find((candidate) => isAutoConnectCandidate(candidate, ctx.cwd));
   if (!candidate) {
     runtime.connectionStatus = "disconnected";
-    runtime.connectionMessage = "No matching IDE lock files found.";
+    runtime.connectionMessage =
+      candidates.length > 0
+        ? "No IDE lock file matches the current workspace. Use /ide to connect manually."
+        : "No matching IDE lock files found.";
     runtime.currentCandidate = undefined;
     runtime.connectedServer = undefined;
     updateIdeUi(runtime, ctx);
     return;
   }
   await connectCandidate(runtime, candidate, ctx);
+}
+
+function isAutoConnectCandidate(candidate: LockFileCandidate, cwd: string): boolean {
+  return hasDirectWorkspaceMatch(candidate.lock.workspaceFolders, cwd);
 }
 
 async function connectCandidate(

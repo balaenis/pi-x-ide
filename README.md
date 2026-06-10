@@ -121,7 +121,7 @@ After submission, the TUI displays `sent`.
 | `/ide`         | Open the TUI selector to list available IDE connections           |
 | `/ide status`  | Show current connection, workspace, and most recent selection     |
 | `/ide list`    | List candidate connections from the lock directory                |
-| `/ide auto`    | Re-attempt automatic matching by `cwd` and connect                |
+| `/ide auto`    | Re-attempt automatic matching by `cwd` and connect when matched   |
 | `/ide off`     | Disconnect and disable automatic context attachment               |
 | `/ide attach`  | Manually insert the latest selection range into the input box     |
 | `/ide install` | Install or update `balaenis.pi-x-ide` through a supported IDE CLI |
@@ -130,7 +130,7 @@ After submission, the TUI displays `sent`.
 
 After the IDE WebSocket server starts, connection information is written to `~/.pi/pi-x-ide/`.
 
-Pi uses `ctx.cwd` to find the longest path match against `workspaceFolders` in the lock files, selecting the best-matching and most recent IDE connection.
+Pi uses `ctx.cwd` to find the longest path match against `workspaceFolders` in the lock files, selecting the best-matching and most recent IDE connection. Pi auto-connects only when the current `cwd` is inside or equal to one of the IDE `workspaceFolders`; if `cwd` is only a parent directory such as `~/`, run `/ide` to choose a connection manually.
 
 See [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md) for protocol details.
 

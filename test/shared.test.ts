@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { formatEditorContext, formatRangeMention, parseRangeMention } from "../src/shared/format";
-import { relationshipMatchLength } from "../src/shared/paths";
+import { hasDirectWorkspaceMatch, relationshipMatchLength } from "../src/shared/paths";
 import type { EditorSelectionSnapshot, IdeLockFile } from "../src/shared/protocol";
 import { parseLockFileContent, isSelectionClearedParams } from "../src/shared/schema";
 import { discoverIdeCandidates } from "../src/pi/discovery";
@@ -82,6 +82,13 @@ void test("validates lock file content", () => {
 void test("matches workspace relationship", () => {
   assert.ok(relationshipMatchLength("/repo/src", "/repo/src/app") > relationshipMatchLength("/repo", "/repo/src/app"));
   assert.equal(relationshipMatchLength("/other", "/repo"), 0);
+});
+
+void test("matches direct workspace paths for auto-connect", () => {
+  assert.equal(hasDirectWorkspaceMatch(["/repo"], "/repo"), true);
+  assert.equal(hasDirectWorkspaceMatch(["/repo"], "/repo/src/app"), true);
+  assert.equal(hasDirectWorkspaceMatch(["/repo/src/app"], "/repo"), false);
+  assert.ok(relationshipMatchLength("/repo/src/app", "/repo") > 0);
 });
 
 void test("discovers and sorts matching lock files", async () => {

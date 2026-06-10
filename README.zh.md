@@ -121,7 +121,7 @@ Pi 输入框应插入：
 | `/ide`         | 打开 TUI 选择器，列出可用 IDE 连接                |
 | `/ide status`  | 显示当前连接、workspace、最近 selection           |
 | `/ide list`    | 列出 lock 目录中的候选连接                        |
-| `/ide auto`    | 重新按 cwd 自动匹配并连接                         |
+| `/ide auto`    | 重新按 cwd 自动匹配，匹配成功时连接               |
 | `/ide off`     | 断开并关闭自动上下文附加                          |
 | `/ide attach`  | 手动把最新 selection range 插入输入框             |
 | `/ide install` | 通过支持的 IDE CLI 安装或更新 `balaenis.pi-x-ide` |
@@ -130,7 +130,7 @@ Pi 输入框应插入：
 
 IDE WebSocket server 启动后将连接信息写入 `~/.pi/pi-x-ide/`.
 
-Pi 通过 `ctx.cwd` 与 lock file 中的 `workspaceFolders` 做最长路径匹配，选中最匹配且最新的 IDE 连接。
+Pi 通过 `ctx.cwd` 与 lock file 中的 `workspaceFolders` 做最长路径匹配，选中最匹配且最新的 IDE 连接。只有当前 `cwd` 位于某个 IDE `workspaceFolders` 内或与其相等时，Pi 才会自动连接；如果 `cwd` 只是父级目录（例如 `~/`），请运行 `/ide` 手动选择连接。
 
 协议详情见 [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md)。
 
