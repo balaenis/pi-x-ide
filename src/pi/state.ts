@@ -19,6 +19,7 @@ export interface PiIdeRuntime {
   reconnectTimer?: NodeJS.Timeout;
   zedPollTimer?: NodeJS.Timeout;
   zedPollSelectionKey?: string;
+  zedPollWalMtimeMs?: number;
   installingIdeIds: Set<string>;
   sessionGeneration: number;
 }

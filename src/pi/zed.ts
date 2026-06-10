@@ -134,10 +134,24 @@ function openZedDatabaseSnapshot(dbPath: string): ZedDatabaseHandle | undefined 
     snapshotDir = mkdtempSync(join(tmpdir(), "pi-x-ide-zed-db-"));
     const cleanupDir = snapshotDir;
     const snapshotPath = join(cleanupDir, "db.sqlite");
+
+    // Copy the main DB file plus any WAL/SHM sidecars.
     copyFileSync(dbPath, snapshotPath);
-    // Do not copy WAL/SHM sidecars: on WSL/Windows mounts the copied WAL
-    // can trigger checkpoint/recovery inside the temp snapshot, causing a
-    // disk I/O error even when the main DB file alone opens fine.
+    for (const suffix of ["-wal", "-shm"]) {
+      const sidecarPath = `${dbPath}${suffix}`;
+      if (isFile(sidecarPath)) copyFileSync(sidecarPath, `${snapshotPath}${suffix}`);
+    }
+
+    // Merge WAL changes into the main database file so we can open
+    // read-only afterwards without hitting a disk I/O error on
+    // cross-filesystem mounts (WSL / Windows).
+    try {
+      const dbRW = new DatabaseSync(snapshotPath);
+      dbRW.exec("PRAGMA wal_checkpoint(TRUNCATE)");
+      dbRW.close();
+    } catch {
+      // Checkpoint may fail—continue with the stale main DB.
+    }
 
     return {
       db: new DatabaseSync(snapshotPath, { readOnly: true }),
@@ -404,6 +418,7 @@ export function stopZedPolling(runtime: PiIdeRuntime): void {
     runtime.zedPollTimer = undefined;
   }
   runtime.zedPollSelectionKey = undefined;
+  runtime.zedPollWalMtimeMs = undefined;
 }
 
 export function startZedPolling(
@@ -446,6 +461,26 @@ export function startZedPolling(
         // connection is an IdeConnection — if WebSocket took over, stop
         if (runtime.connectedServer?.ide !== "zed") return;
       }
+
+      // Check whether the WAL sidecar has changed since the last poll.
+      // On WSL the DB snapshot is expensive (~10 MB copy + checkpoint),
+      // so skip the work when nothing changed in the editor.
+      const walPath = `${dbPath}-wal`;
+      let walMtimeMs: number | undefined;
+      try {
+        walMtimeMs = statSync(walPath).mtimeMs;
+      } catch {
+        // WAL absent — always poll (Zed may be in a different journal mode).
+      }
+      if (
+        walMtimeMs !== undefined &&
+        runtime.zedPollWalMtimeMs !== undefined &&
+        walMtimeMs === runtime.zedPollWalMtimeMs
+      ) {
+        schedule();
+        return;
+      }
+      runtime.zedPollWalMtimeMs = walMtimeMs;
 
       let snapshot: EditorSelectionSnapshot | undefined;
       try {
