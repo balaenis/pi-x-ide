@@ -25,7 +25,8 @@ jobs:
         id: release-please
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: node
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
           skip-github-pull-request: false
 
   dispatch-publish:
