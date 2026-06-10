@@ -1,6 +1,6 @@
 {
   "name": "pi-x-ide",
-  "displayName": "Pi x IDE",
+  "displayName": "Pi x IDE for VS Code",
   "description": "Send the active VS Code file and selection to Pi.",
   "icon": "assets/icons/icon-mark-128.png",
   "version": "1.0.3",
