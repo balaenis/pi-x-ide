@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/balaenis/pi-x-ide/compare/v1.0.5...v1.1.0) (2026-06-10)
+
+
+### Features
+
+* **pi:** auto-install IDE extension and add /ide install command ([cbaeb11](https://github.com/balaenis/pi-x-ide/commit/cbaeb11dcd897790f68941b84b297505b370dac6)), closes [#6](https://github.com/balaenis/pi-x-ide/issues/6)
+
 ## [1.0.5](https://github.com/balaenis/pi-x-ide/compare/v1.0.4...v1.0.5) (2026-06-10)
 
 
