@@ -292,8 +292,8 @@ end
 local function schedule_publish(delay)
   delay = delay or (state.config and state.config.debounce_ms or defaults.debounce_ms)
   if state.timer then
-    state.timer:stop()
-    state.timer:close()
+    pcall(state.timer.stop, state.timer)
+    pcall(state.timer.close, state.timer)
   end
   state.timer = vim.defer_fn(publish_snapshot, delay)
 end
@@ -337,8 +337,8 @@ end
 
 function M.stop()
   if state.timer then
-    state.timer:stop()
-    state.timer:close()
+    pcall(state.timer.stop, state.timer)
+    pcall(state.timer.close, state.timer)
     state.timer = nil
   end
   if state.job_id then
