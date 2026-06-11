@@ -13,8 +13,15 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["*.config.*", ".*rc.*", "*.mjs", "vscode/*.mjs", "vscode/scripts/*.mjs"],
-          /* vscode/esbuild.mjs is not under a tsconfig root, so we whitelist it explicitly */
+          allowDefaultProject: [
+            "*.config.*",
+            ".*rc.*",
+            "*.mjs",
+            "scripts/*.cjs",
+            "vscode/*.mjs",
+            "vscode/scripts/*.mjs",
+          ],
+          /* Node utility scripts are not under a tsconfig root, so we whitelist them explicitly */
         },
         tsconfigRootDir: import.meta.dirname,
       },
@@ -27,12 +34,24 @@ export default tseslint.config(
 
   // ---- Node.js JavaScript utility scripts ----
   {
-    files: ["*.mjs", "vscode/**/*.mjs"],
+    files: ["*.mjs", "scripts/*.cjs", "vscode/**/*.mjs"],
     languageOptions: {
       globals: {
+        __dirname: "readonly",
         console: "readonly",
+        module: "readonly",
         process: "readonly",
+        require: "readonly",
       },
+    },
+    rules: {
+      "@typescript-eslint/no-implied-eval": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
     },
   },
 

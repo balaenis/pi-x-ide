@@ -21,6 +21,6 @@ mise run test
 
 When you add new features or make changes that require users to be aware of certain important details, please update the relevant sections in the README and make corresponding changes to the Chinese version of the README as well.
 
-## Update `schemas/config.json`
+## Update config schema
 
-When the project adds new configuration options or environment variables that should be configurable through `~/.pi/config.json`, update `schemas/config.json` in the same change.
+When the project adds new configuration options or environment variables that should be configurable through `~/.pi/config.json`, update the registry in `src/shared/config-options.ts` and regenerate `schemas/config.json` with `pnpm generate:config-schema` in the same change.

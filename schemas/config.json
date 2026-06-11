@@ -10,7 +10,11 @@
       "type": "object",
       "description": "Pi-side environment variables. Real environment variables override these values.",
       "additionalProperties": {
-        "type": ["string", "number", "boolean"]
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
       },
       "properties": {
         "PI_X_IDE_LOCK_DIR": {
@@ -18,7 +22,11 @@
           "description": "Directory containing Pi x IDE lock files. Defaults to ~/.pi/pi-x-ide/lock."
         },
         "PI_X_IDE_AUTO_INSTALL": {
-          "type": ["string", "number", "boolean"],
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
           "description": "Controls VS Code-family extension auto-install. Values 0, false, and off disable it."
         },
         "PI_X_IDE_ZED_DB": {
@@ -34,7 +42,10 @@
           "description": "VS Code-family cwd marker and IDE path hint."
         },
         "VSCODE_PID": {
-          "type": ["string", "number"],
+          "type": [
+            "string",
+            "number"
+          ],
           "description": "VS Code-family process marker."
         },
         "VSCODE_IPC_HOOK_CLI": {
@@ -46,7 +57,10 @@
           "description": "VS Code-family Git IPC marker and IDE path hint."
         },
         "ZED_TERM": {
-          "type": ["string", "boolean"],
+          "type": [
+            "string",
+            "boolean"
+          ],
           "description": "Zed terminal marker. Pi x IDE detects Zed when this is true."
         },
         "WSL_DISTRO_NAME": {
@@ -84,7 +98,11 @@
       },
       "patternProperties": {
         "^(CURSOR|WINDSURF|CODEIUM).*": {
-          "type": ["string", "number", "boolean"],
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
           "description": "IDE-specific marker used to detect Cursor or Windsurf terminals."
         }
       }

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
+import { isConfigEnvValue } from "./config-options";
 
 export const PI_CONFIG_FILE = "config.json";
 
@@ -24,7 +25,7 @@ export function readPiConfigEnv(configPath: string = resolvePiConfigPath()): Nod
     Object.entries(parsed.env)
       .filter((entry): entry is [string, string | number | boolean] => {
         const [key, value] = entry;
-        return key.length > 0 && (typeof value === "string" || typeof value === "number" || typeof value === "boolean");
+        return key.length > 0 && isConfigEnvValue(value);
       })
       .map(([key, value]) => [key, String(value)]),
   );
