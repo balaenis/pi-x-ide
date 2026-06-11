@@ -3,31 +3,36 @@ import { spawn } from "node:child_process";
 import * as esbuild from "esbuild";
 
 const production = process.argv.includes("--production");
-const outfile = "nvim/bin/pi-x-ide-nvim-sidecar.cjs";
+const cjsOutfile = "nvim/bin/pi-x-ide-nvim-sidecar.cjs";
 const outdir = "nvim/bin";
+/** TypeScript entry point (used for both CJS bundle and direct binary compilation). */
+const entryPoint = "src/nvim/sidecar.ts";
 
 /** Platform targets for bun build --compile */
 const TARGETS = ["bun-linux-x64", "bun-linux-arm64", "bun-darwin-x64", "bun-darwin-arm64", "bun-windows-x64"];
 
 await mkdir(outdir, { recursive: true });
 
-// ── CJS bundle (always) ──────────────────────────────────────────
+// ── CJS bundle (Node.js fallback) ────────────────────────────────
 
 await esbuild.build({
-  entryPoints: ["src/nvim/sidecar.ts"],
+  entryPoints: [entryPoint],
   bundle: true,
   platform: "node",
   format: "cjs",
   target: "node26",
-  outfile,
+  outfile: cjsOutfile,
   sourcemap: !production,
   minify: production,
   sourcesContent: false,
 });
 
-await chmod(outfile, 0o755).catch(() => undefined);
+await chmod(cjsOutfile, 0o755).catch(() => undefined);
 
-// ── Standalone binaries (bun build --compile) ────────────────────
+// ── Standalone binaries (bun build --compile from TS source) ─────
+// NOTE: compiling the esbuild CJS bundle with bun produces broken
+// binaries (TCP accepts but HTTP/WS never responds). Compile from
+// TypeScript source directly instead.
 
 const compileAll = process.argv.includes("--target=all");
 const targetsToBuild = compileAll ? TARGETS : [currentBunTarget()].filter(Boolean);
@@ -40,7 +45,7 @@ if (targetsToBuild.length === 0) {
     console.warn("  ⚠  bun not found on PATH — skipping binary compilation.");
   } else {
     for (const target of targetsToBuild) {
-      await compileBinary({ entry: outfile, target });
+      await compileBinary({ entry: entryPoint, target });
     }
   }
 }
@@ -49,7 +54,8 @@ if (targetsToBuild.length === 0) {
 
 /**
  * Compile a single platform binary with `bun build --compile`.
- * Uses the already-bundled CJS file as the entry point.
+ * Uses the TypeScript source as entry point (NOT the esbuild CJS
+ * bundle, which produces broken binaries when compiled with bun).
  */
 async function compileBinary({ entry, target }) {
   const ext = target.includes("windows") ? ".exe" : "";
