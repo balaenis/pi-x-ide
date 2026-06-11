@@ -91,10 +91,20 @@ async function maybeAutoInstallAndReconnect(
 
     notifyInstall(ctx, `Pi x IDE extension installed for ${candidate.label}. Trying to connect...`, "info");
     const connected = await retryConnectAfterInstall(runtime, ctx, generation);
-    if (!connected && isInstallSessionActive(runtime, generation)) {
+    if (!isInstallSessionActive(runtime, generation)) return;
+
+    if (connected && runtime.connectionStatus === "connected") {
+      notifyInstall(ctx, `Pi x IDE extension installed for ${candidate.label}. Connected!`, "info");
+    } else if (!connected) {
       notifyInstall(
         ctx,
         `Pi x IDE extension installed for ${candidate.label}. If Pi does not connect automatically, reload the IDE window and run /ide auto.`,
+        "warning",
+      );
+    } else {
+      notifyInstall(
+        ctx,
+        `Pi x IDE extension installed for ${candidate.label}. Connection attempt completed. Run /ide auto to retry if needed.`,
         "warning",
       );
     }
