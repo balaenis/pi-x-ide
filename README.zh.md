@@ -50,7 +50,9 @@ PI_X_IDE_AUTO_INSTALL=0
 
 #### Neovim
 
-Neovim 支持由一个 Lua 插件和一个内置的 Node.js sidecar 组成。只要当前目录匹配 Neovim workspace，Pi 可以从任意终端启动，不要求在 Neovim 内部运行。
+Neovim 支持由一个 Lua 插件和一个 sidecar 进程组成。已内置 Linux (x64/arm64)、
+macOS (x64/arm64) 和 Windows (x64) 的独立二进制文件。若没有匹配的二进制，
+插件会降级到内置的 Node.js sidecar — 此时需要 PATH 中有 Node.js。
 
 **lazy.nvim：**
 
@@ -151,11 +153,13 @@ require("pi_x_ide").setup({
   range_format = "comma", -- 或 "dash"
   debounce_ms = 150,
   -- sidecar_cmd = { "node", "/absolute/path/to/pi-x-ide-nvim-sidecar.cjs" },
+  -- （默认使用平台二进制文件；找不到时降级到 node + cjs）
   -- workspace_folders = { "/path/to/project" },
 })
 ```
 
-如果 sidecar 无法启动，请运行 `:PiXIdeStatus`，确认 Neovim 的 `PATH` 中可以找到 Node.js，或将 `sidecar_cmd` 设置为绝对 Node 命令。
+如果 sidecar 无法启动，请运行 `:PiXIdeStatus`，或设置 `sidecar_cmd` 为自定义
+命令。插件优先使用平台二进制文件，找不到匹配项时降级到 Node.js。
 
 **命令：**
 

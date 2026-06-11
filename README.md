@@ -46,11 +46,12 @@ See [Configuration Reference](#pi-side-environment-variables) for all available 
 
 No extension installation is needed. Pi automatically detects Zed when running inside a Zed terminal (`ZED_TERM=true` or `TERM_PROGRAM=zed`). Pi reads Zed's local state database to discover the active editor file and selection.
 
-Requires Node.js ≥ 26 and Zed running on the same machine.
-
 #### Neovim
 
-Neovim support uses a Lua plugin plus a bundled Node.js sidecar. Pi can run from any terminal matching the Neovim workspace — it does not need to run inside Neovim.
+Neovim support uses a Lua plugin plus a sidecar process. A standalone binary is
+included for Linux (x64/arm64), macOS (x64/arm64), and Windows (x64). If no
+binary matches your platform the plugin falls back to the bundled Node.js
+sidecar — Node.js is then required on PATH.
 
 **lazy.nvim:**
 
@@ -151,11 +152,14 @@ require("pi_x_ide").setup({
   range_format = "comma", -- or "dash"
   debounce_ms = 150,
   -- sidecar_cmd = { "node", "/absolute/path/to/pi-x-ide-nvim-sidecar.cjs" },
+  -- (defaults to the platform binary; falls back to node + cjs if no binary found)
   -- workspace_folders = { "/path/to/project" },
 })
 ```
 
-If the sidecar does not start, run `:PiXIdeStatus`, confirm Node.js is available on Neovim's `PATH`, or set `sidecar_cmd` to an absolute Node command.
+If the sidecar does not start, run `:PiXIdeStatus`, or set `sidecar_cmd` to a
+custom command. The plugin prefers the platform binary but falls back to Node.js
+when no binary matches.
 
 **Commands:**
 

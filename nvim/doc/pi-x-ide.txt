@@ -37,9 +37,11 @@ add the `nvim` subdirectory to your runtime path before setup:
   lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
 <
 
-The plugin starts a bundled Node.js sidecar. The sidecar writes a lock file to
-`~/.pi/pi-x-ide/`, and Pi connects through the same `/ide` flow used by VS Code.
-Pi may run in any terminal whose current directory matches the Neovim workspace.
+The plugin starts a sidecar process that communicates Pi's IDE context. A
+standalone binary is included for Linux (x64/arm64), macOS (x64/arm64), and
+Windows (x64). If no binary matches your platform the plugin falls back to
+`node <plugin-root>/bin/pi-x-ide-nvim-sidecar.cjs`, which requires Node.js
+on PATH.
 
 ===============================================================================
 COMMANDS                                               *pi-x-ide-commands*
@@ -66,7 +68,8 @@ Pass options to `require("pi_x_ide").setup({ ... })`.
     Start the sidecar during setup.
 
 `sidecar_cmd` (string[]|nil)
-    Command used to start the sidecar. Defaults to:
+    Command used to start the sidecar. Defaults to the platform binary
+    (`pi-x-ide-nvim-sidecar-{platform}`) or falls back to:
     `node <plugin-root>/bin/pi-x-ide-nvim-sidecar.cjs`.
 
 `debounce_ms` (number, default 150)
@@ -86,8 +89,9 @@ Pass options to `require("pi_x_ide").setup({ ... })`.
 TROUBLESHOOTING                                 *pi-x-ide-troubleshooting*
 
 No `nvim-*.lock` file appears under `~/.pi/pi-x-ide/`:
-    Run `:PiXIdeStatus`, confirm Node.js is on PATH, or set `sidecar_cmd` to an
-    absolute Node command.
+    Run `:PiXIdeStatus`, confirm the sidecar binary exists for your platform
+    (check `nvim/bin/`), or ensure Node.js is on PATH as a fallback. Use
+    `sidecar_cmd` to set an explicit command if needed.
 
 Pi shows no IDE connection:
     Start Pi in the same project directory and run `/ide auto`. If the project

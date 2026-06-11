@@ -37,6 +37,7 @@
   "main": "./dist/src/pi/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/build-nvim-sidecar.mjs --production && pnpm --filter './vscode' compile",
+    "build:sidecar:all": "tsc -p tsconfig.json && node scripts/build-nvim-sidecar.mjs --production --target=all",
     "typecheck": "tsc -p tsconfig.json --noEmit && pnpm --filter './vscode' typecheck",
     "generate:config-schema": "node scripts/generate-config-schema.cjs",
     "check:config-schema": "node scripts/generate-config-schema.cjs --check",

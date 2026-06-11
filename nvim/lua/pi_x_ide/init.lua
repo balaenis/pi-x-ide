@@ -30,8 +30,41 @@ local function plugin_root()
   return vim.fn.fnamemodify(source, ":p:h:h:h")
 end
 
+local function platform_target()
+  local uname = vim.loop.os_uname()
+  local sys = uname.sysname:lower()
+  local mach = uname.machine:lower()
+
+  local arch
+  if mach == "x86_64" or mach == "amd64" then
+    arch = "x64"
+  elseif mach == "aarch64" or mach == "arm64" then
+    arch = "arm64"
+  end
+  if not arch then
+    return nil
+  end
+
+  if sys == "linux" then
+    return "linux-" .. arch
+  elseif sys == "darwin" then
+    return "darwin-" .. arch
+  elseif sys:find("windows") then
+    return "windows-" .. arch .. ".exe"
+  end
+  return nil
+end
+
 local function default_sidecar_cmd()
-  return { "node", plugin_root() .. "/bin/pi-x-ide-nvim-sidecar.cjs" }
+  local bin_dir = plugin_root() .. "/bin/"
+  local target = platform_target()
+  if target then
+    local binary = bin_dir .. "pi-x-ide-nvim-sidecar-" .. target
+    if vim.loop.fs_stat(binary) then
+      return { binary }
+    end
+  end
+  return { "node", bin_dir .. "pi-x-ide-nvim-sidecar.cjs" }
 end
 
 local function encode(value)
