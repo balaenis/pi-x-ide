@@ -69,4 +69,5 @@ run = "bun run build && bun run build:sidecar:all"
 
 [tasks.publish]
 description = "Publish the pi extension package to npm"
+depends = ["build:full"]
 run = 'bun publish --access public --tag "${NPM_TAG:-latest}"'
