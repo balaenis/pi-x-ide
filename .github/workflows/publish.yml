@@ -35,6 +35,4 @@ jobs:
       - name: Publish to npm
         env:
           TAG: ${{ github.event.client_payload.tag || github.event.inputs.tag || 'latest' }}
-        run: |
-          echo "Publishing with tag: $TAG"
-          NPM_TAG="$TAG" mise run publish
+        run: NPM_TAG="$TAG" mise run publish
