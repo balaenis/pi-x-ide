@@ -98,13 +98,13 @@ async function maybeAutoInstallAndReconnect(
     } else if (!connected) {
       notifyInstall(
         ctx,
-        `Pi x IDE extension installed for ${candidate.label}. If Pi does not connect automatically, reload the IDE window and run /ide auto.`,
+        `Pi x IDE extension installed for ${candidate.label}. If Pi does not connect automatically, reload the IDE window and run /ide.`,
         "warning",
       );
     } else {
       notifyInstall(
         ctx,
-        `Pi x IDE extension installed for ${candidate.label}. Connection attempt completed. Run /ide auto to retry if needed.`,
+        `Pi x IDE extension installed for ${candidate.label}. Connection attempt completed. Run /ide to retry if needed.`,
         "warning",
       );
     }
