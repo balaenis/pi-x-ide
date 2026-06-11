@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.0](https://github.com/balaenis/pi-x-ide/compare/v1.4.3...v1.5.0) (2026-06-11)
+
+
+### Features
+
+* **nvim:** auto-download sidecar binary from GitHub Releases ([85f8e0a](https://github.com/balaenis/pi-x-ide/commit/85f8e0a395cb12f436bf972628d0306e78ee0bf5))
+* **nvim:** compile sidecar to standalone binary via bun ([c7b0763](https://github.com/balaenis/pi-x-ide/commit/c7b07632a5d5a683c48f7517334bc4033cb8d556))
+
 ## [1.4.3](https://github.com/balaenis/pi-x-ide/compare/v1.4.2...v1.4.3) (2026-06-11)
 
 
