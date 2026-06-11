@@ -6,6 +6,7 @@ import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
 import type { EditorSelectionSnapshot, SelectionRange } from "../shared/protocol";
+import { resolvePiConfigEnv, isProcessEnvOrPiConfigOverlay } from "../shared/config";
 import { snapshotKey } from "../shared/format";
 import { isPathInsideOrEqual } from "../shared/paths";
 import { setLatestSelection, clearLatestSelection } from "./context";
@@ -18,12 +19,14 @@ export const ZED_POLL_INTERVAL_MS = 1000;
 // ── Terminal detection ──────────────────────────────────────────
 
 export function isZedTerminal(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.ZED_TERM === "true" || env.TERM_PROGRAM?.toLowerCase() === "zed";
+  const configuredEnv = resolvePiConfigEnv(env);
+  return configuredEnv.ZED_TERM === "true" || configuredEnv.TERM_PROGRAM?.toLowerCase() === "zed";
 }
 
 export function isWsl(env: NodeJS.ProcessEnv = process.env): boolean {
-  if (env.WSL_DISTRO_NAME || env.WSL_INTEROP) return true;
-  if (env !== process.env) return false;
+  const configuredEnv = resolvePiConfigEnv(env);
+  if (configuredEnv.WSL_DISTRO_NAME || configuredEnv.WSL_INTEROP) return true;
+  if (!isProcessEnvOrPiConfigOverlay(configuredEnv)) return false;
   try {
     return /microsoft|wsl/i.test(readFileSync("/proc/version", "utf8"));
   } catch {
@@ -32,7 +35,8 @@ export function isWsl(env: NodeJS.ProcessEnv = process.env): boolean {
 }
 
 export function normalizeZedPathForHost(input: string, env: NodeJS.ProcessEnv = process.env): string {
-  if (!input || !isWsl(env)) return input;
+  const configuredEnv = resolvePiConfigEnv(env);
+  if (!input || !isWsl(configuredEnv)) return input;
 
   const driveMatch = input.match(/^([a-zA-Z]):[\\/](.*)$/);
   if (driveMatch) {
@@ -45,7 +49,7 @@ export function normalizeZedPathForHost(input: string, env: NodeJS.ProcessEnv = 
   if (uncMatch) {
     const distro = uncMatch[1];
     const rest = uncMatch[2].replaceAll("\\", "/");
-    const currentDistro = env.WSL_DISTRO_NAME;
+    const currentDistro = configuredEnv.WSL_DISTRO_NAME;
     if (!currentDistro || distro.toLowerCase() === currentDistro.toLowerCase()) {
       return `/${rest}`;
     }
@@ -57,9 +61,10 @@ export function normalizeZedPathForHost(input: string, env: NodeJS.ProcessEnv = 
 // ── DB path resolution ─────────────────────────────────────────
 
 export function resolveZedDbPath(env: NodeJS.ProcessEnv = process.env, home: string = homedir()): string | undefined {
-  const override = env[PI_X_IDE_ZED_DB_ENV]?.trim();
+  const configuredEnv = resolvePiConfigEnv(env);
+  const override = configuredEnv[PI_X_IDE_ZED_DB_ENV]?.trim();
   if (override) {
-    const normalizedOverride = normalizeZedPathForHost(override, env);
+    const normalizedOverride = normalizeZedPathForHost(override, configuredEnv);
     return isFile(normalizedOverride) ? normalizedOverride : undefined;
   }
 
@@ -67,8 +72,8 @@ export function resolveZedDbPath(env: NodeJS.ProcessEnv = process.env, home: str
     resolve(home, ".local", "share", "zed", "db", "0-stable", "db.sqlite"), // Linux
     resolve(home, "Library", "Application Support", "Zed", "db", "0-stable", "db.sqlite"), // macOS
     resolve(home, "AppData", "Local", "Zed", "db", "0-stable", "db.sqlite"), // Windows
-    ...zedDbCandidatesFromWindowsEnv(env),
-    ...zedDbCandidatesFromWslMount(env),
+    ...zedDbCandidatesFromWindowsEnv(configuredEnv),
+    ...zedDbCandidatesFromWslMount(configuredEnv),
   ];
 
   return candidates.find(isFile);
@@ -114,10 +119,11 @@ interface ZedDatabaseHandle {
 }
 
 function openZedDatabase(dbPath: string, env: NodeJS.ProcessEnv = process.env): ZedDatabaseHandle | undefined {
+  const configuredEnv = resolvePiConfigEnv(env);
   // Direct open on live WAL-mode databases can succeed at construction time
   // but fail on the first query on WSL/Windows mounts. Always snapshot
   // under WSL to avoid "disk I/O error" during SQL execution.
-  if (isWsl(env)) return openZedDatabaseSnapshot(dbPath);
+  if (isWsl(configuredEnv)) return openZedDatabaseSnapshot(dbPath);
 
   try {
     return { db: new DatabaseSync(dbPath, { readOnly: true }), cleanup: () => undefined };
@@ -274,7 +280,8 @@ export interface ResolveZedSelectionOptions {
 }
 
 export function resolveZedSelection(options: ResolveZedSelectionOptions): EditorSelectionSnapshot | undefined {
-  const { dbPath, cwd, readFile = (path) => readFileSync(path, "utf8"), env = process.env } = options;
+  const { dbPath, cwd, readFile = (path) => readFileSync(path, "utf8"), env: inputEnv = process.env } = options;
+  const env = resolvePiConfigEnv(inputEnv);
   const dbHandle = openZedDatabase(dbPath, env);
   if (!dbHandle) return undefined;
 
@@ -431,7 +438,7 @@ export function startZedPolling(
     env?: NodeJS.ProcessEnv;
   },
 ): boolean {
-  const env = options?.env ?? process.env;
+  const env = resolvePiConfigEnv(options?.env ?? process.env);
   if (!isZedTerminal(env)) return false;
 
   const dbPath = options?.dbPath ?? resolveZedDbPath(env);

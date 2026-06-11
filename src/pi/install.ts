@@ -3,6 +3,7 @@ import { access } from "node:fs/promises";
 import { delimiter, isAbsolute, join } from "node:path";
 import { promisify } from "node:util";
 import packageJson from "../../package.json";
+import { resolvePiConfigEnv } from "../shared/config";
 import type { PiIdeRuntime } from "./state";
 
 const execFileAsync = promisify(execFile);
@@ -61,7 +62,8 @@ export const SUPPORTED_IDE_CLI_PROFILES: IdeCliProfile[] = [
 ];
 
 export function isAutoInstallEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  const value = env[PI_X_IDE_AUTO_INSTALL_ENV];
+  const configuredEnv = resolvePiConfigEnv(env);
+  const value = configuredEnv[PI_X_IDE_AUTO_INSTALL_ENV];
   if (value === undefined) return true;
   return !["0", "false", "off"].includes(value.trim().toLowerCase());
 }
@@ -96,10 +98,11 @@ export function compareExtensionVersions(installed: string | undefined, target: 
 }
 
 export function inferCurrentIdeFromEnv(env: NodeJS.ProcessEnv = process.env): SupportedIdeId | undefined {
+  const configuredEnv = resolvePiConfigEnv(env);
   const matches = new Set<SupportedIdeId>();
-  const hasWindsurfMarker = hasWindsurfEnvMarker(env);
-  const hasCursorMarker = hasCursorEnvMarker(env);
-  const hasVscodeMarker = hasVscodeEnvMarker(env);
+  const hasWindsurfMarker = hasWindsurfEnvMarker(configuredEnv);
+  const hasCursorMarker = hasCursorEnvMarker(configuredEnv);
+  const hasVscodeMarker = hasVscodeEnvMarker(configuredEnv);
 
   if (hasWindsurfMarker) matches.add("windsurf");
   if (hasCursorMarker) matches.add("cursor");
@@ -146,10 +149,11 @@ export async function findExecutable(
   command: string,
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<string | undefined> {
-  const pathEnv = env.PATH ?? env.Path ?? env.path;
+  const configuredEnv = resolvePiConfigEnv(env);
+  const pathEnv = configuredEnv.PATH ?? configuredEnv.Path ?? configuredEnv.path;
   if (!pathEnv) return undefined;
 
-  const extensions = process.platform === "win32" ? parsePathExt(env) : [""];
+  const extensions = process.platform === "win32" ? parsePathExt(configuredEnv) : [""];
   const candidates = isAbsolute(command)
     ? [command]
     : pathEnv
@@ -184,7 +188,7 @@ export async function runCli(
 export async function discoverInstallCandidates(
   options: DiscoverInstallCandidatesOptions = {},
 ): Promise<IdeInstallCandidate[]> {
-  const env = options.env ?? process.env;
+  const env = resolvePiConfigEnv(options.env ?? process.env);
   const currentIde = inferCurrentIdeFromEnv(env);
   const includeLowConfidence = options.includeLowConfidence ?? false;
   const timeoutMs = options.timeoutMs ?? 15_000;
@@ -228,7 +232,8 @@ export function selectAutoInstallCandidate(
   candidates: IdeInstallCandidate[],
   env: NodeJS.ProcessEnv = process.env,
 ): IdeInstallCandidate | undefined {
-  const currentIde = inferCurrentIdeFromEnv(env);
+  const configuredEnv = resolvePiConfigEnv(env);
+  const currentIde = inferCurrentIdeFromEnv(configuredEnv);
   const highConfidence = candidates.filter(
     (candidate) => candidate.confidence === "current-terminal" && (!currentIde || candidate.id === currentIde),
   );

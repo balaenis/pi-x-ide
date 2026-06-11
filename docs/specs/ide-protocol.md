@@ -4,7 +4,7 @@ Pi x IDE connects Pi to an IDE through a local WebSocket discovered by lock file
 
 ## Lock files
 
-Directory: `~/.pi/pi-x-ide` by default. Override for tests with `PI_X_IDE_LOCK_DIR`.
+Directory: `~/.pi/pi-x-ide/lock` by default. Override with `PI_X_IDE_LOCK_DIR` as an environment variable or in `~/.pi/config.json` under `env`.
 
 Example file: `vscode-12345-48123.lock`
 

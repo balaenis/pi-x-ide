@@ -8,6 +8,7 @@ import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
 import { createRuntime } from "../src/pi/state";
+import { resolvePiConfigEnv } from "../src/shared/config";
 import type { LockFileCandidate } from "../src/shared/protocol";
 import {
   isZedTerminal,
@@ -85,6 +86,19 @@ void test("resolveZedDbPath respects env override", async () => {
 
   const result = resolveZedDbPath({ [PI_X_IDE_ZED_DB_ENV]: pkgPath }, "/home/test");
   assert.equal(result, pkgPath);
+});
+
+void test("resolveZedDbPath respects pi config env override", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pi-x-ide-zed-config-"));
+  const configDir = join(root, ".pi");
+  const configPath = join(configDir, "config.json");
+  const dbPath = join(root, "db.sqlite");
+  await mkdir(configDir, { recursive: true });
+  await writeFile(dbPath, "{}");
+  await writeFile(configPath, JSON.stringify({ env: { [PI_X_IDE_ZED_DB_ENV]: dbPath } }));
+  after(() => rm(root, { recursive: true, force: true }).catch(() => undefined));
+
+  assert.equal(resolveZedDbPath(resolvePiConfigEnv({}, { configPath }), "/home/test"), dbPath);
 });
 
 void test("resolveZedDbPath ignores missing env override", () => {
