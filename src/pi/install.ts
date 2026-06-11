@@ -177,6 +177,14 @@ export async function runCli(
   args: string[],
   timeoutMs = 15_000,
 ): Promise<{ stdout: string; stderr: string }> {
+  if (process.platform === "win32" && isCmdOrBatFile(cliPath)) {
+    const { stdout, stderr } = await execFileAsync(resolveCmdExe(), ["/d", "/c", cliPath, ...args], {
+      timeout: timeoutMs,
+      windowsHide: true,
+      maxBuffer: 1024 * 1024,
+    });
+    return { stdout: String(stdout), stderr: String(stderr) };
+  }
   const { stdout, stderr } = await execFileAsync(cliPath, args, {
     timeout: timeoutMs,
     windowsHide: true,
@@ -304,12 +312,27 @@ function parsePathExt(env: NodeJS.ProcessEnv): string[] {
     .split(";")
     .map((extension) => extension.trim())
     .filter(Boolean);
-  return values.length > 0 ? ["", ...values] : [""];
+  // On Windows, skip extensionless search to avoid matching
+  // non-executable shell scripts (e.g., VS Code ships both
+  // `code` (sh) and `code.cmd` — only `.cmd` is executable).
+  if (process.platform !== "win32") {
+    return values.length > 0 ? ["", ...values] : [""];
+  }
+  return values;
 }
 
 function withExtension(command: string, extension: string): string {
   if (!extension) return command;
   return command.toLowerCase().endsWith(extension.toLowerCase()) ? command : `${command}${extension}`;
+}
+
+function isCmdOrBatFile(cliPath: string): boolean {
+  const lowerPath = cliPath.toLowerCase();
+  return lowerPath.endsWith(".cmd") || lowerPath.endsWith(".bat");
+}
+
+function resolveCmdExe(): string {
+  return process.env.ComSpec ?? "cmd.exe";
 }
 
 function getExecOutput(error: unknown, key: "stdout" | "stderr"): string {
