@@ -109,7 +109,7 @@ local function prefetch_binary()
 
   local tool
   if vim.fn.executable("curl") == 1 then
-    tool = { "curl", "-fsSL", "-o", dest, url }
+    tool = { "curl", "-fsSL", "--retry", "3", "--retry-delay", "5", "-C", "-", "-o", dest, url }
   elseif vim.fn.executable("wget") == 1 then
     tool = { "wget", "-q", "-O", dest, url }
   else
@@ -131,11 +131,24 @@ local function prefetch_binary()
     on_exit = function(_, code)
       vim.schedule(function()
         if code == 0 and vim.loop.fs_stat(dest) then
-          local chmod_ok = vim.loop.fs_chmod(dest, 493) -- 0755
-          if not chmod_ok then
-            vim.fn.system({ "chmod", "+x", dest })
+          -- Verify ELF header to detect truncated downloads
+          local fd, open_err = vim.loop.fs_open(dest, "r", 438)
+          local valid = false
+          if fd then
+            local magic = vim.loop.fs_read(fd, 4, 0)
+            vim.loop.fs_close(fd)
+            valid = magic == "\x7fELF"
           end
-          notify("Sidecar binary ready (restart Neovim to use it)", vim.log.levels.INFO)
+          if valid then
+            local chmod_ok = vim.loop.fs_chmod(dest, 493) -- 0755
+            if not chmod_ok then
+              vim.fn.system({ "chmod", "+x", dest })
+            end
+            notify("Sidecar binary ready (restart Neovim to use it)", vim.log.levels.INFO)
+          else
+            os.remove(dest)
+            notify("Sidecar binary download was corrupt (truncated) — deleted; will retry next restart", vim.log.levels.WARN)
+          end
         else
           local detail = table.concat(stderr_lines, " ")
           notify("Sidecar binary download failed (exit=" .. tostring(code) .. ")" .. (detail ~= "" and " — " .. detail or "") .. " — will keep using Node.js fallback", vim.log.levels.WARN)
