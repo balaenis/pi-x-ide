@@ -46,8 +46,6 @@ PI_X_IDE_AUTO_INSTALL=0
 
 无需安装任何扩展。Pi 在 Zed 终端中运行时（`ZED_TERM=true` 或 `TERM_PROGRAM=zed`）会自动检测并连接。Pi 通过读取 Zed 本地状态数据库获取活跃编辑器和选区信息。
 
-需要 Node.js ≥ 26，Zed 在同一台机器上运行。
-
 #### Neovim
 
 Neovim 支持由一个 Lua 插件和一个 sidecar 进程组成。已内置 Linux (x64/arm64)、
