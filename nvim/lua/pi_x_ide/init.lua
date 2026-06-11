@@ -80,6 +80,12 @@ end
 local function default_sidecar_cmd()
   local binary = resolve_sidecar_binary()
   if binary then
+    -- Ensure binary is executable (belt-and-suspenders: the download
+    -- handler should have set this, but chmod can silently fail).
+    local stat = vim.loop.fs_stat(binary)
+    if stat and bit.band(stat.mode, 64) == 0 then -- missing owner x bit
+      vim.loop.fs_chmod(binary, stat.mode + 73) -- add u+x,g+x,o+x
+    end
     return { binary }
   end
   return { "node", plugin_root() .. "/bin/pi-x-ide-nvim-sidecar.cjs" }
@@ -125,7 +131,10 @@ local function prefetch_binary()
     on_exit = function(_, code)
       vim.schedule(function()
         if code == 0 and vim.loop.fs_stat(dest) then
-          vim.fn.system({ "chmod", "+x", dest })
+          local chmod_ok = vim.loop.fs_chmod(dest, 493) -- 0755
+          if not chmod_ok then
+            vim.fn.system({ "chmod", "+x", dest })
+          end
           notify("Sidecar binary ready (restart Neovim to use it)", vim.log.levels.INFO)
         else
           local detail = table.concat(stderr_lines, " ")
