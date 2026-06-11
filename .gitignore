@@ -6,3 +6,4 @@ vscode/assets/icons/
 *.vsix
 .DS_Store
 .pi
+.worktrees
