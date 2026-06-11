@@ -61,4 +61,4 @@ run = "bun run vsix"
 [tasks.publish]
 description = "Build and publish the pi extension package to npm"
 depends = ["build"]
-run = 'bun publish --access public --no-git-checks --tag "${NPM_TAG:-latest}"'
+run = 'bun publish --access public --tag "${NPM_TAG:-latest}"'
