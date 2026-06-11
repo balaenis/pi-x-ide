@@ -55,16 +55,76 @@ local function platform_target()
   return nil
 end
 
-local function default_sidecar_cmd()
-  local bin_dir = plugin_root() .. "/bin/"
+local function resolve_sidecar_binary()
   local target = platform_target()
-  if target then
-    local binary = bin_dir .. "pi-x-ide-nvim-sidecar-" .. target
-    if vim.loop.fs_stat(binary) then
-      return { binary }
-    end
+  if not target then
+    return nil
   end
-  return { "node", bin_dir .. "pi-x-ide-nvim-sidecar.cjs" }
+  local name = "pi-x-ide-nvim-sidecar-" .. target
+
+  -- 1. Bundled with the plugin (npm / manual install)
+  local bundled = plugin_root() .. "/bin/" .. name
+  if vim.loop.fs_stat(bundled) then
+    return bundled
+  end
+
+  -- 2. Previously downloaded to cache
+  local cached = vim.fn.stdpath("cache") .. "/pi-x-ide/" .. name
+  if vim.loop.fs_stat(cached) then
+    return cached
+  end
+
+  return nil
+end
+
+local function default_sidecar_cmd()
+  local binary = resolve_sidecar_binary()
+  if binary then
+    return { binary }
+  end
+  return { "node", plugin_root() .. "/bin/pi-x-ide-nvim-sidecar.cjs" }
+end
+
+local function prefetch_binary()
+  local target = platform_target()
+  if not target then
+    return
+  end
+
+  -- Already available (bundled or cached)
+  if resolve_sidecar_binary() then
+    return
+  end
+
+  local name = "pi-x-ide-nvim-sidecar-" .. target
+  local cache_dir = vim.fn.stdpath("cache") .. "/pi-x-ide"
+  local dest = cache_dir .. "/" .. name
+  local url = "https://github.com/balaenis/pi-x-ide/releases/latest/download/" .. name
+
+  local tool
+  if vim.fn.executable("curl") == 1 then
+    tool = { "curl", "-fsSL", "-o", dest, url }
+  elseif vim.fn.executable("wget") == 1 then
+    tool = { "wget", "-q", "-O", dest, url }
+  else
+    return
+  end
+
+  vim.fn.mkdir(cache_dir, "p")
+  notify("Downloading sidecar binary (one-time, ~91MB)  ...", vim.log.levels.INFO)
+
+  vim.fn.jobstart(tool, {
+    on_exit = function(_, code)
+      vim.schedule(function()
+        if code == 0 and vim.loop.fs_stat(dest) then
+          vim.fn.system({ "chmod", "+x", dest })
+          notify("Sidecar binary ready (restart Neovim to use it)", vim.log.levels.INFO)
+        else
+          notify("Sidecar binary download failed — will keep using Node.js fallback", vim.log.levels.WARN)
+        end
+      end)
+    end,
+  })
 end
 
 local function encode(value)
@@ -365,6 +425,7 @@ function M.start()
 
   send({ workspaceFolders = workspace_folders(), name = "Neovim" })
   schedule_publish(0)
+  prefetch_binary()
   return true
 end
 

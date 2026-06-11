@@ -48,10 +48,14 @@ No extension installation is needed. Pi automatically detects Zed when running i
 
 #### Neovim
 
-Neovim support uses a Lua plugin plus a sidecar process. A standalone binary is
-included for Linux (x64/arm64), macOS (x64/arm64), and Windows (x64). If no
-binary matches your platform the plugin falls back to the bundled Node.js
-sidecar — Node.js is then required on PATH.
+Neovim support uses a Lua plugin plus a sidecar process. On first start the
+plugin downloads a standalone binary for your platform (Linux / macOS / Windows,
+x64 or arm64) from GitHub Releases. If the download fails, or no binary matches
+your platform, the plugin falls back to the bundled Node.js sidecar — Node.js is
+then required on PATH.
+
+The binary is cached under `stdpath("cache")/pi-x-ide/` and reused on subsequent
+starts. Plugin updates trigger a one-time re-download.
 
 **lazy.nvim:**
 

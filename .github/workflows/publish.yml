@@ -35,6 +35,12 @@ jobs:
       - name: Install dependencies
         run: mise run setup
 
+      - name: Build project
+        run: mise run build
+
+      - name: Build all sidecar platform binaries
+        run: mise run build:sidecar:all
+
       - name: Publish to npm
         env:
           TAG: ${{ github.event.client_payload.tag || github.event.inputs.tag || 'latest' }}

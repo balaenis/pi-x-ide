@@ -98,3 +98,38 @@ jobs:
           VSIX_FILE=$(ls vscode/dist/*.vsix | head -1)
           echo "Publishing $VSIX_FILE to VS Code Marketplace..."
           npx @vscode/vsce publish --azure-credential --packagePath "$VSIX_FILE"
+
+  build-sidecar-binaries:
+    needs: process
+    runs-on: ubuntu-latest
+    if: needs.process.outputs.releases_created == 'true'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.process.outputs.tag_name }}
+
+      - uses: jdx/mise-action@v4
+        with:
+          install: true
+          cache: true
+          experimental: true
+
+      - name: Install dependencies
+        run: mise run setup
+
+      - name: Build TypeScript
+        run: mise run build
+
+      - name: Build all sidecar platform binaries
+        run: mise run build:sidecar:all
+
+      - name: Upload sidecar binaries to release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.process.outputs.tag_name }}
+          files: |
+            nvim/bin/pi-x-ide-nvim-sidecar-linux-x64
+            nvim/bin/pi-x-ide-nvim-sidecar-linux-arm64
+            nvim/bin/pi-x-ide-nvim-sidecar-darwin-x64
+            nvim/bin/pi-x-ide-nvim-sidecar-darwin-arm64
+            nvim/bin/pi-x-ide-nvim-sidecar-windows-x64.exe

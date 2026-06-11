@@ -48,9 +48,13 @@ PI_X_IDE_AUTO_INSTALL=0
 
 #### Neovim
 
-Neovim 支持由一个 Lua 插件和一个 sidecar 进程组成。已内置 Linux (x64/arm64)、
-macOS (x64/arm64) 和 Windows (x64) 的独立二进制文件。若没有匹配的二进制，
-插件会降级到内置的 Node.js sidecar — 此时需要 PATH 中有 Node.js。
+Neovim 支持由一个 Lua 插件和一个 sidecar 进程组成。首次启动时插件会自动从
+GitHub Releases 下载适合当前平台的独立二进制文件（Linux/macOS/Windows，
+x64 或 arm64）。下载失败或无匹配二进制时，插件降级到内置的 Node.js sidecar —
+此时需要 PATH 中有 Node.js。
+
+二进制文件缓存在 `stdpath("cache")/pi-x-ide/` 目录，后续启动直接复用。插件
+更新后会触发一次重新下载。
 
 **lazy.nvim：**
 

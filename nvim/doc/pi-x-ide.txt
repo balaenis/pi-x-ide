@@ -37,11 +37,14 @@ add the `nvim` subdirectory to your runtime path before setup:
   lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
 <
 
-The plugin starts a sidecar process that communicates Pi's IDE context. A
-standalone binary is included for Linux (x64/arm64), macOS (x64/arm64), and
-Windows (x64). If no binary matches your platform the plugin falls back to
-`node <plugin-root>/bin/pi-x-ide-nvim-sidecar.cjs`, which requires Node.js
-on PATH.
+The plugin starts a sidecar process that communicates Pi's IDE context.  On first
+start the plugin downloads a standalone binary for your platform (Linux / macOS /
+Windows, x64 or arm64).  If the download fails, or no binary matches your
+platform, the plugin falls back to `node <plugin-root>/bin/pi-x-ide-nvim-
+sidecar.cjs`, which requires Node.js on PATH.
+
+The binary is cached under `stdpath("cache")/pi-x-ide/` and reused on subsequent
+starts.  Plugin updates trigger a one-time re-download.
 
 ===============================================================================
 COMMANDS                                               *pi-x-ide-commands*
@@ -89,9 +92,10 @@ Pass options to `require("pi_x_ide").setup({ ... })`.
 TROUBLESHOOTING                                 *pi-x-ide-troubleshooting*
 
 No `nvim-*.lock` file appears under `~/.pi/pi-x-ide/`:
-    Run `:PiXIdeStatus`, confirm the sidecar binary exists for your platform
-    (check `nvim/bin/`), or ensure Node.js is on PATH as a fallback. Use
-    `sidecar_cmd` to set an explicit command if needed.
+    Run `:PiXIdeStatus`.  The binary is cached at `stdpath("cache")/pi-x-ide/`
+    or bundled at `<plugin>/nvim/bin/`.  If neither is found, the plugin
+    auto-downloads from GitHub Releases on first start (requires curl or wget).
+    Use `sidecar_cmd` to set an explicit Node.js command as a fallback.
 
 Pi shows no IDE connection:
     Start Pi in the same project directory and run `/ide auto`. If the project

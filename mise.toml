@@ -58,7 +58,15 @@ run = "bun run package:vscode"
 description = "Alias for vscode:package"
 run = "bun run vsix"
 
+[tasks."build:sidecar:all"]
+description = "Build nvim sidecar binaries for all platforms (requires bun)"
+run = "bun run build:sidecar:all"
+
+[tasks."build:full"]
+description = "Full build including all platform sidecar binaries"
+depends = ["setup"]
+run = "bun run build && bun run build:sidecar:all"
+
 [tasks.publish]
-description = "Build and publish the pi extension package to npm"
-depends = ["build"]
+description = "Publish the pi extension package to npm"
 run = 'bun publish --access public --tag "${NPM_TAG:-latest}"'
