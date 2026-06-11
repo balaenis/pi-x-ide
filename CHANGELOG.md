@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/balaenis/pi-x-ide/compare/v1.3.0...v1.4.0) (2026-06-11)
+
+
+### Features
+
+* **config:** support pi config env overrides ([1aa20c1](https://github.com/balaenis/pi-x-ide/commit/1aa20c1027ec2172c5ca86cdfb4c1fb362d616b1))
+
 ## [1.3.0](https://github.com/balaenis/pi-x-ide/compare/v1.2.0...v1.3.0) (2026-06-10)
 
 
