@@ -113,18 +113,30 @@ local function prefetch_binary()
   vim.fn.mkdir(cache_dir, "p")
   notify("Downloading sidecar binary (one-time, ~91MB)  ...", vim.log.levels.INFO)
 
-  vim.fn.jobstart(tool, {
+  local stderr_lines = {}
+  local job_id = vim.fn.jobstart(tool, {
+    on_stderr = function(_, data)
+      for _, line in ipairs(data or {}) do
+        if line ~= "" then
+          table.insert(stderr_lines, line)
+        end
+      end
+    end,
     on_exit = function(_, code)
       vim.schedule(function()
         if code == 0 and vim.loop.fs_stat(dest) then
           vim.fn.system({ "chmod", "+x", dest })
           notify("Sidecar binary ready (restart Neovim to use it)", vim.log.levels.INFO)
         else
-          notify("Sidecar binary download failed — will keep using Node.js fallback", vim.log.levels.WARN)
+          local detail = table.concat(stderr_lines, " ")
+          notify("Sidecar binary download failed (exit=" .. tostring(code) .. ")" .. (detail ~= "" and " — " .. detail or "") .. " — will keep using Node.js fallback", vim.log.levels.WARN)
         end
       end)
     end,
   })
+  if job_id <= 0 then
+    notify("Sidecar binary download failed to start — will keep using Node.js fallback", vim.log.levels.WARN)
+  end
 end
 
 local function encode(value)

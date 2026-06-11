@@ -1,6 +1,7 @@
 {
   "packages": {
     ".": {
+      "exclude-paths": ["nvim"],
       "extra-files": [
         {
           "type": "json",
