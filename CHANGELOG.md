@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.4.2](https://github.com/balaenis/pi-x-ide/compare/v1.4.1...v1.4.2) (2026-06-11)
+
+
+### Bug Fixes
+
+* **pi:** normalize Windows drive letter to uppercase for path matching ([cb4e8ad](https://github.com/balaenis/pi-x-ide/commit/cb4e8adef41d2d80cf2577c3e33879c5aaceb52b))
+* **pi:** skip extensionless search on Windows to avoid matching shell scripts ([bb47f76](https://github.com/balaenis/pi-x-ide/commit/bb47f761c7388f316c10d2a6eae53b839e486322))
+* **pi:** update install notification on connection success or failure ([46a8901](https://github.com/balaenis/pi-x-ide/commit/46a8901fb271c4c4c6931c02f4da33794224f638))
+* update notification messages to reference `/ide` instead of `/ide auto` ([cc27727](https://github.com/balaenis/pi-x-ide/commit/cc277274d1e0fda23e8fbf3e597de9924d2863f5))
+
 ## [1.4.1](https://github.com/balaenis/pi-x-ide/compare/v1.4.0...v1.4.1) (2026-06-11)
 
 
