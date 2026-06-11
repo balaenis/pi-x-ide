@@ -161,12 +161,6 @@ function updateStatus(state: "ready" | "file" | "selection" | "no-file"): void {
 }
 
 function openPiTerminal(context: vscode.ExtensionContext): void {
-  const existing = vscode.window.terminals.find((t) => t.name === PI_TERMINAL_NAME);
-  if (existing) {
-    existing.show();
-    return;
-  }
-
   const terminal = vscode.window.createTerminal({
     name: PI_TERMINAL_NAME,
     iconPath: {
