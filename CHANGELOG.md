@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/balaenis/pi-x-ide/compare/v1.5.0...v1.5.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* **nvim:** capture sidecar download stderr and handle job start failure ([eae98bf](https://github.com/balaenis/pi-x-ide/commit/eae98bfd7cd313f2e57b4c5665255df6ef30d25f))
+
 ## [1.5.0](https://github.com/balaenis/pi-x-ide/compare/v1.4.3...v1.5.0) (2026-06-11)
 
 
