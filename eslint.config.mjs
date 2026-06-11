@@ -1,9 +1,10 @@
 // @ts-check
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
+import { defineConfig } from "eslint/config";
 import prettierConfig from "eslint-config-prettier";
 
-export default tseslint.config(
+export default defineConfig(
   // Base recommended rules
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -17,11 +18,12 @@ export default tseslint.config(
             "*.config.*",
             ".*rc.*",
             "*.mjs",
+            "scripts/*.cjs",
             "scripts/*.mjs",
             "vscode/*.mjs",
             "vscode/scripts/*.mjs",
           ],
-          /* vscode/esbuild.mjs is not under a tsconfig root, so we whitelist it explicitly */
+          /* Node utility scripts are not under a tsconfig root, so we whitelist them explicitly */
         },
         tsconfigRootDir: import.meta.dirname,
       },
@@ -34,12 +36,24 @@ export default tseslint.config(
 
   // ---- Node.js JavaScript utility scripts ----
   {
-    files: ["*.mjs", "scripts/**/*.mjs", "vscode/**/*.mjs"],
+    files: ["*.mjs", "scripts/**/*.mjs", "scripts/*.cjs", "vscode/**/*.mjs"],
     languageOptions: {
       globals: {
+        __dirname: "readonly",
         console: "readonly",
+        module: "readonly",
         process: "readonly",
+        require: "readonly",
       },
+    },
+    rules: {
+      "@typescript-eslint/no-implied-eval": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
     },
   },
 

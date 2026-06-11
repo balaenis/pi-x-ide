@@ -52,7 +52,7 @@ The extension installed this way runs in all VS Code windows, independent of the
 ### Verify the Extension is Running
 
 ```bash
-ls -l ~/.pi/pi-x-ide
+ls -l ~/.pi/pi-x-ide/lock
 ```
 
 You should see a file like `vscode-12345-48123.lock`.
@@ -77,6 +77,18 @@ When Pi starts from a supported VS Code-family integrated terminal, it also trie
 ```bash
 PI_X_IDE_AUTO_INSTALL=0
 ```
+
+Pi-side environment variables can also be configured in `~/.pi/config.json`:
+
+```json
+{
+  "env": {
+    "PI_X_IDE_AUTO_INSTALL": "0"
+  }
+}
+```
+
+Real environment variables take precedence over values from `~/.pi/config.json`. See [schemas/config.json](schemas/config.json) for editor schema guidance.
 
 If VS Code was started after Pi, run the following in Pi:
 
@@ -129,7 +141,7 @@ After submission, the TUI displays `sent`.
 
 ## Lock File Protocol
 
-After the IDE WebSocket server starts, connection information is written to `~/.pi/pi-x-ide/`.
+After the IDE WebSocket server starts, connection information is written to `~/.pi/pi-x-ide/lock/` by default. Override the directory with `PI_X_IDE_LOCK_DIR` as an environment variable or in `~/.pi/config.json` under `env`.
 
 Pi uses `ctx.cwd` to find the longest path match against `workspaceFolders` in the lock files, selecting the best-matching and most recent IDE connection. Pi auto-connects only when the current `cwd` is inside or equal to one of the IDE `workspaceFolders`; if `cwd` is only a parent directory such as `~/`, run `/ide` to choose a connection manually.
 
@@ -166,6 +178,8 @@ Pi reads Zed's local SQLite state database to discover the active editor file, s
 | Environment Variable | Default       | Description                          |
 | -------------------- | ------------- | ------------------------------------ |
 | `PI_X_IDE_ZED_DB`    | (auto-detect) | Override path to Zed SQLite database |
+
+This Pi-side variable can also be set in `~/.pi/config.json` under `env`.
 
 Default database paths:
 

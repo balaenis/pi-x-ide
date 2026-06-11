@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
@@ -15,6 +18,7 @@ import {
 } from "../src/pi/install";
 import { registerIdeCommand } from "../src/pi/commands";
 import { createRuntime } from "../src/pi/state";
+import { resolvePiConfigEnv } from "../src/shared/config";
 
 void test("checks auto-install env gate", () => {
   assert.equal(isAutoInstallEnabled({}), true);
@@ -23,6 +27,17 @@ void test("checks auto-install env gate", () => {
   assert.equal(isAutoInstallEnabled({ PI_X_IDE_AUTO_INSTALL: "OFF" }), false);
   assert.equal(isAutoInstallEnabled({ PI_X_IDE_AUTO_INSTALL: "1" }), true);
   assert.equal(isAutoInstallEnabled({ PI_X_IDE_AUTO_INSTALL: "true" }), true);
+});
+
+void test("checks auto-install env gate from pi config", async () => {
+  const home = await mkdtemp(join(tmpdir(), "pi-x-ide-install-config-"));
+  const configDir = join(home, ".pi");
+  const configPath = join(configDir, "config.json");
+  await mkdir(configDir, { recursive: true });
+  await writeFile(configPath, JSON.stringify({ env: { PI_X_IDE_AUTO_INSTALL: "off" } }));
+
+  assert.equal(isAutoInstallEnabled(resolvePiConfigEnv({}, { configPath })), false);
+  assert.equal(isAutoInstallEnabled(resolvePiConfigEnv({ PI_X_IDE_AUTO_INSTALL: "true" }, { configPath })), true);
 });
 
 void test("parses installed extension versions", () => {

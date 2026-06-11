@@ -1,11 +1,12 @@
 import { homedir } from "node:os";
 import { isAbsolute, relative, resolve, sep } from "node:path";
+import { resolvePiConfigEnv } from "./config";
 import { LOCK_DIR_ENV } from "./protocol";
 
 export function resolveLockDir(env: NodeJS.ProcessEnv = process.env): string {
-  return env[LOCK_DIR_ENV] && env[LOCK_DIR_ENV].trim()
-    ? resolve(env[LOCK_DIR_ENV])
-    : resolve(homedir(), ".pi", "pi-x-ide");
+  const configuredEnv = resolvePiConfigEnv(env);
+  const override = configuredEnv[LOCK_DIR_ENV]?.trim();
+  return override ? resolve(override) : resolve(homedir(), ".pi", "pi-x-ide", "lock");
 }
 
 export function normalizePath(input: string): string {

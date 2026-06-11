@@ -1,0 +1,100 @@
+export type ConfigEnvValueType = "string" | "number" | "boolean";
+
+export interface ConfigEnvOption {
+  readonly type: readonly ConfigEnvValueType[];
+  readonly description: string;
+  readonly default?: string;
+}
+
+export interface ConfigEnvPatternOption extends ConfigEnvOption {
+  readonly pattern: string;
+}
+
+export const CONFIG_ENV_VALUE_TYPES = ["string", "number", "boolean"] as const satisfies readonly ConfigEnvValueType[];
+
+export function isConfigEnvValue(value: unknown): value is string | number | boolean {
+  return CONFIG_ENV_VALUE_TYPES.some((type) => typeof value === type);
+}
+
+export const CONFIG_ENV_OPTIONS = {
+  PI_X_IDE_LOCK_DIR: {
+    type: ["string"],
+    default: "~/.pi/pi-x-ide/lock",
+    description: "Directory containing Pi x IDE lock files. Defaults to ~/.pi/pi-x-ide/lock.",
+  },
+  PI_X_IDE_AUTO_INSTALL: {
+    type: ["string", "number", "boolean"],
+    default: "enabled",
+    description: "Controls VS Code-family extension auto-install. Values 0, false, and off disable it.",
+  },
+  PI_X_IDE_ZED_DB: {
+    type: ["string"],
+    description: "Override path to Zed's SQLite database.",
+  },
+  TERM_PROGRAM: {
+    type: ["string"],
+    description: "Terminal program marker used to detect VS Code, Cursor, Windsurf, or Zed.",
+  },
+  VSCODE_CWD: {
+    type: ["string"],
+    description: "VS Code-family cwd marker and IDE path hint.",
+  },
+  VSCODE_PID: {
+    type: ["string", "number"],
+    description: "VS Code-family process marker.",
+  },
+  VSCODE_IPC_HOOK_CLI: {
+    type: ["string"],
+    description: "VS Code-family IPC marker and IDE path hint.",
+  },
+  VSCODE_GIT_IPC_HANDLE: {
+    type: ["string"],
+    description: "VS Code-family Git IPC marker and IDE path hint.",
+  },
+  ZED_TERM: {
+    type: ["string", "boolean"],
+    description: "Zed terminal marker. Pi x IDE detects Zed when this is true.",
+  },
+  WSL_DISTRO_NAME: {
+    type: ["string"],
+    description: "WSL distribution name used for WSL path normalization and Zed database discovery.",
+  },
+  WSL_INTEROP: {
+    type: ["string"],
+    description: "WSL interop marker used for WSL path normalization and Zed database discovery.",
+  },
+  LOCALAPPDATA: {
+    type: ["string"],
+    description: "Windows local application data directory used to find Zed's database.",
+  },
+  USERPROFILE: {
+    type: ["string"],
+    description: "Windows user profile directory used to find Zed's database when LOCALAPPDATA is unavailable.",
+  },
+  PATH: {
+    type: ["string"],
+    description: "Executable search path used to find code, cursor, and windsurf CLIs.",
+  },
+  Path: {
+    type: ["string"],
+    description: "Windows-style executable search path used to find code, cursor, and windsurf CLIs.",
+  },
+  path: {
+    type: ["string"],
+    description: "Lowercase executable search path used to find code, cursor, and windsurf CLIs.",
+  },
+  PATHEXT: {
+    type: ["string"],
+    description: "Windows executable extensions used when searching for IDE CLIs.",
+  },
+} as const satisfies Record<string, ConfigEnvOption>;
+
+export const CONFIG_ENV_PATTERN_OPTIONS = [
+  {
+    pattern: "^(CURSOR|WINDSURF|CODEIUM).*",
+    type: ["string", "number", "boolean"],
+    description: "IDE-specific marker used to detect Cursor or Windsurf terminals.",
+  },
+] as const satisfies readonly ConfigEnvPatternOption[];
+
+export type ConfigEnvOptionName = keyof typeof CONFIG_ENV_OPTIONS;

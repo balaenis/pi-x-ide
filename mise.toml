@@ -18,6 +18,14 @@ run = "pnpm typecheck"
 description = "Build and run unit tests"
 run = "pnpm test"
 
+[tasks."generate:config-schema"]
+description = "Generate schemas/config.json from the config registry"
+run = "pnpm generate:config-schema"
+
+[tasks."check:config-schema"]
+description = "Check schemas/config.json is in sync with the config registry"
+run = "pnpm check:config-schema"
+
 [tasks.lint]
 description = "Lint the project"
 run = "pnpm lint"

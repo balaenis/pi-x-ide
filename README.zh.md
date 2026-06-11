@@ -52,7 +52,7 @@ code --install-extension './vscode'-0.1.0.vsix
 ### 验证扩展是否运行
 
 ```bash
-ls -l ~/.pi/pi-x-ide
+ls -l ~/.pi/pi-x-ide/lock
 ```
 
 应看到类似 `vscode-12345-48123.lock` 的文件。
@@ -77,6 +77,18 @@ Pi TUI 应显示：
 ```bash
 PI_X_IDE_AUTO_INSTALL=0
 ```
+
+Pi 侧环境变量也可以写入 `~/.pi/config.json`：
+
+```json
+{
+  "env": {
+    "PI_X_IDE_AUTO_INSTALL": "0"
+  }
+}
+```
+
+真实环境变量优先级高于 `~/.pi/config.json` 中的值。编辑器 schema 指导见 [schemas/config.json](schemas/config.json)。
 
 如果 VS Code 后启动，在 Pi 里执行：
 
@@ -129,7 +141,7 @@ Pi 输入框应插入：
 
 ## Lock file 协议
 
-IDE WebSocket server 启动后将连接信息写入 `~/.pi/pi-x-ide/`.
+IDE WebSocket server 启动后默认将连接信息写入 `~/.pi/pi-x-ide/lock/`。可通过真实环境变量 `PI_X_IDE_LOCK_DIR` 覆盖，也可在 `~/.pi/config.json` 的 `env` 中配置。
 
 Pi 通过 `ctx.cwd` 与 lock file 中的 `workspaceFolders` 做最长路径匹配，选中最匹配且最新的 IDE 连接。只有当前 `cwd` 位于某个 IDE `workspaceFolders` 内或与其相等时，Pi 才会自动连接；如果 `cwd` 只是父级目录（例如 `~/`），请运行 `/ide` 手动选择连接。
 
@@ -166,6 +178,8 @@ Pi 直接读取 Zed 的本地 SQLite 状态数据库，获取当前活跃编辑�
 | 环境变量          | 默认值       | 说明                       |
 | ----------------- | ------------ | -------------------------- |
 | `PI_X_IDE_ZED_DB` | （自动检测） | 覆盖 Zed SQLite 数据库路径 |
+
+这个 Pi 侧变量也可以配置在 `~/.pi/config.json` 的 `env` 中。
 
 默认数据库路径：
 

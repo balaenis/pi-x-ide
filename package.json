@@ -4,6 +4,7 @@
   "description": "Pi extension package for IDE selection context integration.",
   "files": [
     "dist",
+    "schemas",
     "src",
     "nvim/lua",
     "nvim/plugin",
@@ -37,7 +38,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/build-nvim-sidecar.mjs --production && pnpm --filter './vscode' compile",
     "typecheck": "tsc -p tsconfig.json --noEmit && pnpm --filter './vscode' typecheck",
-    "test": "pnpm build && node --test dist/test/*.test.js",
+    "generate:config-schema": "node scripts/generate-config-schema.cjs",
+    "check:config-schema": "node scripts/generate-config-schema.cjs --check",
+    "test": "pnpm check:config-schema && pnpm build && node --test dist/test/*.test.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
