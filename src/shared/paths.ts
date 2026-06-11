@@ -10,7 +10,14 @@ export function resolveLockDir(env: NodeJS.ProcessEnv = process.env): string {
 }
 
 export function normalizePath(input: string): string {
-  return resolve(input);
+  const resolved = resolve(input);
+  // Normalize drive letter to uppercase on Windows so that path comparison
+  // is case-insensitive (VS Code may write workspace paths with lowercase
+  // drive letters while process.cwd() uses uppercase).
+  if (process.platform === "win32" && resolved.length >= 2 && resolved[1] === ":") {
+    return resolved[0].toUpperCase() + resolved.slice(1);
+  }
+  return resolved;
 }
 
 export function isPathInsideOrEqual(parent: string, child: string): boolean {
