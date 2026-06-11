@@ -201,7 +201,9 @@ Neovim 支持由一个 Lua 插件和一个内置的 Node.js sidecar 组成。插
 ```lua
 {
   "balaenis/pi-x-ide",
-  rtp = "nvim",
+  init = function()
+    vim.opt.rtp:prepend(vim.fn.stdpath("data") .. "/lazy/pi-x-ide/nvim")
+  end,
   config = function()
     require("pi_x_ide").setup({
       keymap = "<C-A-k>",
@@ -209,6 +211,9 @@ Neovim 支持由一个 Lua 插件和一个内置的 Node.js sidecar 组成。插
   end,
 }
 ```
+
+> **注意：** `init` 块手动将 `nvim/` 子目录加入 runtime path。
+> 部分版本 lazy.nvim 的 `rtp` 选项存在 Lua 模块解析兼容性问题，此方式可绕过。
 
 ### 原生 package 示例
 

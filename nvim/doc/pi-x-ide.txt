@@ -15,14 +15,20 @@ With lazy.nvim:
 >
   {
     "balaenis/pi-x-ide",
-    rtp = "nvim",
+    init = function()
+      vim.opt.rtp:prepend(vim.fn.stdpath("data") .. "/lazy/pi-x-ide/nvim")
+    end,
     config = function()
       require("pi_x_ide").setup({
-        keymap = "<C-A-k>",
+        keymap = "<leader>pa",
       })
     end,
   }
 <
+
+Note: The `init` block manually adds the `nvim/` subdirectory to the runtime
+path. This avoids a Lua module resolution issue with lazy.nvim's `rtp` option
+on some versions.
 
 With native packages, clone the repository into a `pack/*/start` directory and
 add the `nvim` subdirectory to your runtime path before setup:
@@ -95,3 +101,12 @@ Selection is not attached:
     Use visual mode and invoke the configured keymap or `:PiXIdeAttach`. The
     plugin sends file context for normal cursor movement and selection context
     for active or recently completed visual selections.
+
+module 'pi_x_ide' not found with lazy.nvim:
+    Some lazy.nvim versions fail to update Lua's package.path when `rtp` is
+    used. Replace `rtp = "nvim"` with an `init` block that prepends the path:
+>
+      init = function()
+        vim.opt.rtp:prepend(vim.fn.stdpath("data") .. "/lazy/pi-x-ide/nvim")
+      end,
+<

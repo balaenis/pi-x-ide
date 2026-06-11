@@ -201,7 +201,9 @@ Pi can run in any terminal whose current directory matches the Neovim workspace;
 ```lua
 {
   "balaenis/pi-x-ide",
-  rtp = "nvim",
+  init = function()
+    vim.opt.rtp:prepend(vim.fn.stdpath("data") .. "/lazy/pi-x-ide/nvim")
+  end,
   config = function()
     require("pi_x_ide").setup({
       keymap = "<C-A-k>",
@@ -209,6 +211,9 @@ Pi can run in any terminal whose current directory matches the Neovim workspace;
   end,
 }
 ```
+
+> **Note:** The `init` block manually adds the `nvim/` subdirectory to the runtime path.
+> This avoids a Lua module resolution issue with lazy.nvim's `rtp` option on some versions.
 
 ### Native Package Example
 
