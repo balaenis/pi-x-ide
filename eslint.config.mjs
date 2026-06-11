@@ -13,7 +13,14 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["*.config.*", ".*rc.*", "*.mjs", "vscode/*.mjs", "vscode/scripts/*.mjs"],
+          allowDefaultProject: [
+            "*.config.*",
+            ".*rc.*",
+            "*.mjs",
+            "scripts/*.mjs",
+            "vscode/*.mjs",
+            "vscode/scripts/*.mjs",
+          ],
           /* vscode/esbuild.mjs is not under a tsconfig root, so we whitelist it explicitly */
         },
         tsconfigRootDir: import.meta.dirname,
@@ -27,7 +34,7 @@ export default tseslint.config(
 
   // ---- Node.js JavaScript utility scripts ----
   {
-    files: ["*.mjs", "vscode/**/*.mjs"],
+    files: ["*.mjs", "scripts/**/*.mjs", "vscode/**/*.mjs"],
     languageOptions: {
       globals: {
         console: "readonly",
@@ -73,6 +80,6 @@ export default tseslint.config(
 
   // ---- Global ignores ----
   {
-    ignores: ["dist/", "vscode/out/", "vscode/dist/", "node_modules/", ".pi/"],
+    ignores: ["dist/", "nvim/bin/", "vscode/out/", "vscode/dist/", "node_modules/", ".pi/"],
   },
 );

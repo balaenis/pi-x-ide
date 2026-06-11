@@ -6,7 +6,7 @@ import test from "node:test";
 import { formatEditorContext, formatRangeMention, parseRangeMention } from "../src/shared/format";
 import { hasDirectWorkspaceMatch, relationshipMatchLength } from "../src/shared/paths";
 import type { EditorSelectionSnapshot, IdeLockFile } from "../src/shared/protocol";
-import { parseLockFileContent, isSelectionClearedParams } from "../src/shared/schema";
+import { parseLockFileContent, isSelectionClearedParams, isEditorSelectionSnapshot } from "../src/shared/schema";
 import { discoverIdeCandidates } from "../src/pi/discovery";
 import { clearLatestSelection, setLatestSelection } from "../src/pi/context";
 import { createRuntime } from "../src/pi/state";
@@ -76,7 +76,18 @@ void test("validates lock file content", () => {
     updatedAt: new Date().toISOString(),
   };
   assert.deepEqual(parseLockFileContent(JSON.stringify(lock)), lock);
+  assert.deepEqual(parseLockFileContent(JSON.stringify({ ...lock, ide: "nvim", name: "Neovim" })), {
+    ...lock,
+    ide: "nvim",
+    name: "Neovim",
+  });
+  assert.equal(parseLockFileContent(JSON.stringify({ ...lock, ide: "helix" })), undefined);
   assert.equal(parseLockFileContent(JSON.stringify({ ...lock, port: 99999 })), undefined);
+});
+
+void test("validates nvim editor selection snapshots", () => {
+  assert.equal(isEditorSelectionSnapshot({ ...snapshot, source: "nvim" }), true);
+  assert.equal(isEditorSelectionSnapshot({ ...snapshot, source: "helix" }), false);
 });
 
 void test("matches workspace relationship", () => {

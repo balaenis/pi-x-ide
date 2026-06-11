@@ -1,0 +1,97 @@
+*pi-x-ide.txt* Neovim support for Pi x IDE
+
+===============================================================================
+CONTENTS                                                        *pi-x-ide*
+
+1. Setup            |pi-x-ide-setup|
+2. Commands         |pi-x-ide-commands|
+3. Options          |pi-x-ide-options|
+4. Troubleshooting  |pi-x-ide-troubleshooting|
+
+===============================================================================
+SETUP                                                     *pi-x-ide-setup*
+
+With lazy.nvim:
+>
+  {
+    "balaenis/pi-x-ide",
+    rtp = "nvim",
+    config = function()
+      require("pi_x_ide").setup({
+        keymap = "<C-A-k>",
+      })
+    end,
+  }
+<
+
+With native packages, clone the repository into a `pack/*/start` directory and
+add the `nvim` subdirectory to your runtime path before setup:
+>
+  set runtimepath+=/path/to/pi-x-ide/nvim
+  lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
+<
+
+The plugin starts a bundled Node.js sidecar. The sidecar writes a lock file to
+`~/.pi/pi-x-ide/`, and Pi connects through the same `/ide` flow used by VS Code.
+Pi may run in any terminal whose current directory matches the Neovim workspace.
+
+===============================================================================
+COMMANDS                                               *pi-x-ide-commands*
+
+:PiXIdeStart
+    Start the Neovim sidecar.
+
+:PiXIdeStop
+    Stop the Neovim sidecar and remove its lock file.
+
+:PiXIdeStatus
+    Show whether the sidecar is running.
+
+:PiXIdeAttach
+    Attach the current file or selection to connected Pi clients. In Pi this
+    inserts an `@relative/path#Lx,y` reference, matching the VS Code attach flow.
+
+===============================================================================
+OPTIONS                                                 *pi-x-ide-options*
+
+Pass options to `require("pi_x_ide").setup({ ... })`.
+
+`enabled` (boolean, default true)
+    Start the sidecar during setup.
+
+`sidecar_cmd` (string[]|nil)
+    Command used to start the sidecar. Defaults to:
+    `node <plugin-root>/bin/pi-x-ide-nvim-sidecar.cjs`.
+
+`debounce_ms` (number, default 150)
+    Delay for high-frequency cursor and text-change updates.
+
+`range_format` ("comma"|"dash", default "comma")
+    Format for manual attach references: `#L10,20` or `#L10-L20`.
+
+`keymap` (string|nil)
+    Optional normal/visual mode mapping for `:PiXIdeAttach` behavior.
+
+`workspace_folders` (string[]|nil)
+    Explicit workspace folder list. Defaults to current working directory plus
+    active LSP workspace folders when available.
+
+===============================================================================
+TROUBLESHOOTING                                 *pi-x-ide-troubleshooting*
+
+No `nvim-*.lock` file appears under `~/.pi/pi-x-ide/`:
+    Run `:PiXIdeStatus`, confirm Node.js is on PATH, or set `sidecar_cmd` to an
+    absolute Node command.
+
+Pi shows no IDE connection:
+    Start Pi in the same project directory and run `/ide auto`. If the project
+    layout is unusual, run `/ide` and choose the Neovim connection manually.
+
+The keymap does not work:
+    Choose a different `keymap` value in setup. The plugin does not install a
+    default keymap to avoid conflicts with existing Neovim configs.
+
+Selection is not attached:
+    Use visual mode and invoke the configured keymap or `:PiXIdeAttach`. The
+    plugin sends file context for normal cursor movement and selection context
+    for active or recently completed visual selections.

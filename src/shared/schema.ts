@@ -22,7 +22,7 @@ function isFiniteNumber(value: unknown): value is number {
 }
 
 function isIdeSource(value: unknown): value is IdeSource {
-  return value === "vscode" || value === "zed" || value === "unknown";
+  return value === "vscode" || value === "zed" || value === "nvim" || value === "unknown";
 }
 
 export function isIdeLockFile(value: unknown): value is IdeLockFile {

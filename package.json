@@ -4,14 +4,20 @@
   "description": "Pi extension package for IDE selection context integration.",
   "files": [
     "dist",
-    "src"
+    "src",
+    "nvim/lua",
+    "nvim/plugin",
+    "nvim/doc",
+    "nvim/bin"
   ],
   "keywords": [
     "pi-package",
     "pi",
     "ide",
     "vscode",
-    "zed"
+    "zed",
+    "neovim",
+    "nvim"
   ],
   "license": "Apache-2.0",
   "repository": {
@@ -29,7 +35,7 @@
   "type": "commonjs",
   "main": "./dist/src/pi/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json && pnpm --filter './vscode' compile",
+    "build": "tsc -p tsconfig.json && node scripts/build-nvim-sidecar.mjs --production && pnpm --filter './vscode' compile",
     "typecheck": "tsc -p tsconfig.json --noEmit && pnpm --filter './vscode' typecheck",
     "test": "pnpm build && node --test dist/test/*.test.js",
     "lint": "eslint .",

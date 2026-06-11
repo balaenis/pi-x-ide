@@ -2,13 +2,14 @@
 
 Pi extension package for IDE selection context integration.
 
-自动将 VS Code 体系 IDE 和 Zed 中当前打开或选中的文件与文本范围附加到 Pi TUI，并作为对话上下文提交给 LLM。
+自动将 VS Code 体系 IDE、Zed 和 Neovim 中当前打开或选中的文件与文本范围附加到 Pi TUI，并作为对话上下文提交给 LLM。
 
 ## 环境依赖
 
 - Node.js ≥ 26
 - pnpm ≥ 11（`packageManager` 声明为 `pnpm@11.5.2`）
 - VS Code ≥ 1.90（仅 VS Code 扩展需要）
+- Neovim ≥ 0.9（仅 Neovim 插件需要）
 - Pi CLI（`@earendil-works/pi-coding-agent ≥ 0.79`）
 
 ## 安装与构建
@@ -20,13 +21,13 @@ pnpm build
 
 常用命令：
 
-| 命令                  | 说明                                                                        |
-| --------------------- | --------------------------------------------------------------------------- |
-| `pnpm build`          | 编译 Pi 侧 TypeScript → `dist/` + VS Code 侧 esbuild bundle → `vscode/out/` |
-| `pnpm typecheck`      | 类型检查（不产出文件）                                                      |
-| `pnpm test`           | 编译 + 运行单元测试                                                         |
-| `pnpm package:vscode` | 打包 VS Code 扩展为 VSIX                                                    |
-| `pnpm vsix`           | `pnpm package:vscode` 的别名                                                |
+| 命令                  | 说明                                                                                            |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| `pnpm build`          | 编译 Pi 侧 TypeScript → `dist/` + Neovim sidecar → `nvim/bin/` + VS Code bundle → `vscode/out/` |
+| `pnpm typecheck`      | 类型检查（不产出文件）                                                                          |
+| `pnpm test`           | 编译 + 运行单元测试                                                                             |
+| `pnpm package:vscode` | 打包 VS Code 扩展为 VSIX                                                                        |
+| `pnpm vsix`           | `pnpm package:vscode` 的别名                                                                    |
 
 ## 本地测试 VS Code 扩展
 
@@ -175,12 +176,65 @@ Pi 直接读取 Zed 的本地 SQLite 状态数据库，获取当前活跃编辑�
 
 当 Pi 运行在 WSL 中，而 Zed 是 Windows 应用时，pi-x-ide 会将 `C:\\Users\\<user>\\project` 这类 Windows 路径规范化为 `/mnt/c/Users/<user>/project`，并将匹配当前发行版的 WSL UNC 路径（例如 `\\\\wsl.localhost\\Ubuntu\\home\\<user>\\project`）规范化为 `/home/<user>/project`。
 
+## Neovim 编辑器支持
+
+Neovim 支持由一个 Lua 插件和一个内置的 Node.js sidecar 组成。插件会启动 sidecar，sidecar 会将 `nvim-<pid>-<port>.lock` 写入 `~/.pi/pi-x-ide/`，Pi 通过与 VS Code 相同的 `/ide` 流程连接。
+
+只要当前目录匹配 Neovim workspace，Pi 可以从任意终端启动，不要求在 Neovim 内部运行。
+
+### lazy.nvim 示例
+
+```lua
+{
+  "balaenis/pi-x-ide",
+  rtp = "nvim",
+  config = function()
+    require("pi_x_ide").setup({
+      keymap = "<C-A-k>",
+    })
+  end,
+}
+```
+
+### 原生 package 示例
+
+将本仓库 clone 到 Neovim 的 `pack/*/start` 目录，然后加入 `nvim` runtime path 并调用 setup：
+
+```vim
+set runtimepath+=/path/to/pi-x-ide/nvim
+lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
+```
+
+### Neovim 命令
+
+| 命令            | 行为                                                 |
+| --------------- | ---------------------------------------------------- |
+| `:PiXIdeStart`  | 启动 Neovim sidecar 并写入 lock file                 |
+| `:PiXIdeStop`   | 停止 sidecar 并移除 lock file                        |
+| `:PiXIdeStatus` | 显示 sidecar 是否正在运行                            |
+| `:PiXIdeAttach` | 将当前文件或选区作为 `@relative/path#Lx,y` 附加到 Pi |
+
+### Neovim 配置
+
+```lua
+require("pi_x_ide").setup({
+  enabled = true,
+  keymap = "<C-A-k>",
+  range_format = "comma", -- 或 "dash"
+  debounce_ms = 150,
+  -- sidecar_cmd = { "node", "/absolute/path/to/pi-x-ide-nvim-sidecar.cjs" },
+  -- workspace_folders = { "/path/to/project" },
+})
+```
+
+如果 sidecar 无法启动，请运行 `:PiXIdeStatus`，确认 Neovim 的 `PATH` 中可以找到 Node.js，或将 `sidecar_cmd` 设置为绝对 Node 命令。
+
 ### 功能对比
 
-| 功能                              | VS Code     | Zed                         |
-| --------------------------------- | ----------- | --------------------------- |
-| 实时文件追踪                      | ✅ 实时推送 | ✅ 1 秒轮询                 |
-| 实时选区追踪                      | ✅ 实时推送 | ✅ 1 秒轮询                 |
-| `Ctrl+Alt+K` / `Cmd+Alt+K` 快捷键 | ✅          | 手动输入 `@<relative-path>` |
-| LLM 上下文注入                    | ✅          | ✅                          |
-| `/ide auto`                       | ✅          | ✅                          |
+| 功能                              | VS Code     | Zed                         | Neovim                   |
+| --------------------------------- | ----------- | --------------------------- | ------------------------ |
+| 实时文件追踪                      | ✅ 实时推送 | ✅ 1 秒轮询                 | ✅ 通过 sidecar 实时推送 |
+| 实时选区追踪                      | ✅ 实时推送 | ✅ 1 秒轮询                 | ✅ 通过 sidecar 实时推送 |
+| `Ctrl+Alt+K` / `Cmd+Alt+K` 快捷键 | ✅          | 手动输入 `@<relative-path>` | 用户自定义 keymap        |
+| LLM 上下文注入                    | ✅          | ✅                          | ✅                       |
+| `/ide auto`                       | ✅          | ✅                          | ✅                       |

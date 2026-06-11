@@ -8,6 +8,8 @@ Directory: `~/.pi/pi-x-ide` by default. Override for tests with `PI_X_IDE_LOCK_D
 
 Example file: `vscode-12345-48123.lock`
 
+Neovim uses the same protocol version and writes files named `nvim-<pid>-<port>.lock`.
+
 ```json
 {
   "version": 1,
@@ -103,11 +105,11 @@ Sent whenever the active editor or selection changes.
 }
 ```
 
-`line` and `character` are zero-based, matching VS Code/LSP.
+`source` is one of `vscode`, `zed`, `nvim`, or `unknown`. `line` and `character` are zero-based, matching VS Code/LSP. Neovim converts byte columns to UTF-16 character offsets before sending snapshots.
 
 ### `at_mentioned`
 
-Sent when the user invokes the VS Code attach-selection command.
+Sent when the user invokes an IDE attach-selection command, such as VS Code's command or Neovim's `:PiXIdeAttach`.
 
 ```json
 {

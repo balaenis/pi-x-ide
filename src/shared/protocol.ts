@@ -3,7 +3,7 @@ export const LOCK_DIR_ENV = "PI_X_IDE_LOCK_DIR";
 export const AUTH_HEADER = "x-pi-x-ide-authorization";
 export const LOCK_FILE_EXTENSION = ".lock";
 
-export type IdeSource = "vscode" | "zed" | "unknown";
+export type IdeSource = "vscode" | "zed" | "nvim" | "unknown";
 export type Transport = "ws";
 
 export interface IdeLockFile {

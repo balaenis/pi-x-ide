@@ -2,13 +2,14 @@
 
 Pi extension package for IDE selection context integration.
 
-Automatically attaches the currently opened or selected file and text range from VS Code-family IDEs and Zed to the Pi TUI, submitting them as conversation context to the LLM.
+Automatically attaches the currently opened or selected file and text range from VS Code-family IDEs, Zed, and Neovim to the Pi TUI, submitting them as conversation context to the LLM.
 
 ## Prerequisites
 
 - Node.js ≥ 26
 - pnpm ≥ 11 (declared as `pnpm@11.5.2` in `packageManager`)
 - VS Code ≥ 1.90 (VS Code extension only)
+- Neovim ≥ 0.9 (Neovim plugin only)
 - Pi CLI (`@earendil-works/pi-coding-agent ≥ 0.79`)
 
 ## Install & Build
@@ -20,13 +21,13 @@ pnpm build
 
 Common commands:
 
-| Command               | Description                                                                      |
-| --------------------- | -------------------------------------------------------------------------------- |
-| `pnpm build`          | Build Pi-side TypeScript → `dist/` + VS Code-side esbuild bundle → `vscode/out/` |
-| `pnpm typecheck`      | Type-check only (no output files)                                                |
-| `pnpm test`           | Build + run unit tests                                                           |
-| `pnpm package:vscode` | Package VS Code extension as VSIX                                                |
-| `pnpm vsix`           | Alias for `pnpm package:vscode`                                                  |
+| Command               | Description                                                                                        |
+| --------------------- | -------------------------------------------------------------------------------------------------- |
+| `pnpm build`          | Build Pi-side TypeScript → `dist/` + Neovim sidecar → `nvim/bin/` + VS Code bundle → `vscode/out/` |
+| `pnpm typecheck`      | Type-check only (no output files)                                                                  |
+| `pnpm test`           | Build + run unit tests                                                                             |
+| `pnpm package:vscode` | Package VS Code extension as VSIX                                                                  |
+| `pnpm vsix`           | Alias for `pnpm package:vscode`                                                                    |
 
 ## Testing the VS Code Extension Locally
 
@@ -175,12 +176,65 @@ Default database paths:
 
 When Pi runs in WSL and Zed runs as a Windows app, pi-x-ide normalizes Windows paths such as `C:\\Users\\<user>\\project` to `/mnt/c/Users/<user>/project`, and matching WSL UNC paths such as `\\\\wsl.localhost\\Ubuntu\\home\\<user>\\project` to `/home/<user>/project`.
 
+## Neovim Editor Support
+
+Neovim support is provided by a Lua plugin plus a bundled Node.js sidecar. The plugin starts the sidecar, the sidecar writes an `nvim-<pid>-<port>.lock` file to `~/.pi/pi-x-ide/`, and Pi connects through the same `/ide` flow used by VS Code.
+
+Pi can run in any terminal whose current directory matches the Neovim workspace; it does not have to run inside Neovim.
+
+### lazy.nvim Example
+
+```lua
+{
+  "balaenis/pi-x-ide",
+  rtp = "nvim",
+  config = function()
+    require("pi_x_ide").setup({
+      keymap = "<C-A-k>",
+    })
+  end,
+}
+```
+
+### Native Package Example
+
+Clone this repository into a Neovim `pack/*/start` directory, then add the `nvim` runtime path and call setup:
+
+```vim
+set runtimepath+=/path/to/pi-x-ide/nvim
+lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
+```
+
+### Neovim Commands
+
+| Command         | Behavior                                                            |
+| --------------- | ------------------------------------------------------------------- |
+| `:PiXIdeStart`  | Start the Neovim sidecar and write the lock file                    |
+| `:PiXIdeStop`   | Stop the sidecar and remove the lock file                           |
+| `:PiXIdeStatus` | Show whether the sidecar is running                                 |
+| `:PiXIdeAttach` | Attach the current file or selection to Pi as `@relative/path#Lx,y` |
+
+### Neovim Configuration
+
+```lua
+require("pi_x_ide").setup({
+  enabled = true,
+  keymap = "<C-A-k>",
+  range_format = "comma", -- or "dash"
+  debounce_ms = 150,
+  -- sidecar_cmd = { "node", "/absolute/path/to/pi-x-ide-nvim-sidecar.cjs" },
+  -- workspace_folders = { "/path/to/project" },
+})
+```
+
+If the sidecar does not start, run `:PiXIdeStatus`, confirm Node.js is available on Neovim's `PATH`, or set `sidecar_cmd` to an absolute Node command.
+
 ### Feature Parity
 
-| Feature                             | VS Code           | Zed                             |
-| ----------------------------------- | ----------------- | ------------------------------- |
-| Live file tracking                  | ✅ Real-time push | ✅ 1s polling                   |
-| Live selection tracking             | ✅ Real-time push | ✅ 1s polling                   |
-| `Ctrl+Alt+K` / `Cmd+Alt+K` shortcut | ✅                | Use `@<relative-path>` manually |
-| LLM context injection               | ✅                | ✅                              |
-| `/ide auto`                         | ✅                | ✅                              |
+| Feature                             | VS Code           | Zed                             | Neovim                        |
+| ----------------------------------- | ----------------- | ------------------------------- | ----------------------------- |
+| Live file tracking                  | ✅ Real-time push | ✅ 1s polling                   | ✅ Real-time push via sidecar |
+| Live selection tracking             | ✅ Real-time push | ✅ 1s polling                   | ✅ Real-time push via sidecar |
+| `Ctrl+Alt+K` / `Cmd+Alt+K` shortcut | ✅                | Use `@<relative-path>` manually | User-configured keymap        |
+| LLM context injection               | ✅                | ✅                              | ✅                            |
+| `/ide auto`                         | ✅                | ✅                              | ✅                            |
