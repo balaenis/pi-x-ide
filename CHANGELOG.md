@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3](https://github.com/balaenis/pi-x-ide/compare/v1.4.2...v1.4.3) (2026-06-11)
+
+
+### Bug Fixes
+
+* always create a fresh Pi terminal instead of reusing existing ([6ad4438](https://github.com/balaenis/pi-x-ide/commit/6ad4438acdd41ea6464c62a0f0ac2858b0c2f2d7))
+
 ## [1.4.2](https://github.com/balaenis/pi-x-ide/compare/v1.4.1...v1.4.2) (2026-06-11)
 
 
