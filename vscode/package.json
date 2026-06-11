@@ -77,7 +77,7 @@
     "compile": "node -e \"require('node:fs').rmSync('out',{recursive:true,force:true})\" && tsc -p tsconfig.json --noEmit && node esbuild.mjs",
     "compile:prod": "node -e \"require('node:fs').rmSync('out',{recursive:true,force:true})\" && tsc -p tsconfig.json --noEmit && node esbuild.mjs --production",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "package": "pnpm sync:assets && pnpm compile:prod && mkdir -p dist && vsce package --no-dependencies --out ./dist/${npm_package_name}-${npm_package_version}.vsix"
+    "package": "bun run sync:assets && bun run compile:prod && mkdir -p dist && vsce package --no-dependencies --out ./dist/${npm_package_name}-${npm_package_version}.vsix"
   },
   "dependencies": {
     "ws": "^8.18.0"

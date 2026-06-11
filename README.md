@@ -207,7 +207,7 @@ See [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md) for protocol detail
 ### Prerequisites
 
 - Node.js ≥ 26
-- pnpm ≥ 11 (`packageManager` declared as `pnpm@11.5.2`)
+- bun ≥ 1.3 (`packageManager` declared as `bun@1.3.14`)
 - VS Code ≥ 1.90 (VS Code extension only)
 - Neovim ≥ 0.9 (Neovim plugin only)
 
@@ -218,8 +218,8 @@ Clone the repository, then build:
 ```bash
 git clone https://github.com/balaenis/pi-x-ide.git
 cd pi-x-ide
-pnpm install
-pnpm build
+bun install
+bun run build
 ```
 
 To load the local build without installing globally:
@@ -230,13 +230,13 @@ pi -e ./src/pi/index.ts
 
 Common commands:
 
-| Command               | Description                                                                                        |
-| --------------------- | -------------------------------------------------------------------------------------------------- |
-| `pnpm build`          | Build Pi-side TypeScript → `dist/` + Neovim sidecar → `nvim/bin/` + VS Code bundle → `vscode/out/` |
-| `pnpm typecheck`      | Type-check only (no output files)                                                                  |
-| `pnpm test`           | Build + run unit tests                                                                             |
-| `pnpm package:vscode` | Package VS Code extension as VSIX                                                                  |
-| `pnpm vsix`           | Alias for `pnpm package:vscode`                                                                    |
+| Command                  | Description                                                                                        |
+| ------------------------ | -------------------------------------------------------------------------------------------------- |
+| `bun run build`          | Build Pi-side TypeScript → `dist/` + Neovim sidecar → `nvim/bin/` + VS Code bundle → `vscode/out/` |
+| `bun run typecheck`      | Type-check only (no output files)                                                                  |
+| `bun run test`           | Build + run unit tests                                                                             |
+| `bun run package:vscode` | Package VS Code extension as VSIX                                                                  |
+| `bun run vsix`           | Alias for `bun run package:vscode`                                                                 |
 
 ### Testing the VS Code Extension Locally
 
@@ -246,13 +246,13 @@ Common commands:
 2. Go to the **Run and Debug** panel (`Ctrl+Shift+D`).
 3. Select **Run Pi x IDE VS Code Extension**.
 4. Press **F5**:
-   - The `preLaunchTask` automatically runs `pnpm build`.
+   - The `preLaunchTask` automatically runs `bun run build`.
    - A new VS Code window titled `[Extension Development Host]` opens.
 
 #### Option 2: Package VSIX and Install
 
 ```bash
-pnpm package:vscode
+bun run package:vscode
 code --install-extension './vscode'-0.1.0.vsix
 ```
 

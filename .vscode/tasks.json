@@ -2,16 +2,16 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "pnpm: build",
+      "label": "bun: build",
       "type": "shell",
-      "command": "pnpm build",
+      "command": "bun run build",
       "group": "build",
       "problemMatcher": "$tsc"
     },
     {
-      "label": "pnpm: package:vscode",
+      "label": "bun: package:vscode",
       "type": "shell",
-      "command": "pnpm package:vscode",
+      "command": "bun run package:vscode",
       "group": "build",
       "problemMatcher": []
     }

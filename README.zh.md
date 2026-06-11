@@ -207,7 +207,7 @@ Pi 通过 `ctx.cwd` 与 lock file 中的 `workspaceFolders` 做最长路径匹�
 ### 环境依赖
 
 - Node.js ≥ 26
-- pnpm ≥ 11（`packageManager` 声明为 `pnpm@11.5.2`）
+- bun ≥ 1.3（`packageManager` 声明为 `bun@1.3.14`）
 - VS Code ≥ 1.90（仅 VS Code 扩展需要）
 - Neovim ≥ 0.9（仅 Neovim 插件需要）
 
@@ -218,8 +218,8 @@ Clone 仓库后构建：
 ```bash
 git clone https://github.com/balaenis/pi-x-ide.git
 cd pi-x-ide
-pnpm install
-pnpm build
+bun install
+bun run build
 ```
 
 加载本地构建（无需全局安装）：
@@ -230,13 +230,13 @@ pi -e ./src/pi/index.ts
 
 常用命令：
 
-| 命令                  | 说明                                                                                            |
-| --------------------- | ----------------------------------------------------------------------------------------------- |
-| `pnpm build`          | 编译 Pi 侧 TypeScript → `dist/` + Neovim sidecar → `nvim/bin/` + VS Code bundle → `vscode/out/` |
-| `pnpm typecheck`      | 类型检查（不产出文件）                                                                          |
-| `pnpm test`           | 编译 + 运行单元测试                                                                             |
-| `pnpm package:vscode` | 打包 VS Code 扩展为 VSIX                                                                        |
-| `pnpm vsix`           | `pnpm package:vscode` 的别名                                                                    |
+| 命令                     | 说明                                                                                            |
+| ------------------------ | ----------------------------------------------------------------------------------------------- |
+| `bun run build`          | 编译 Pi 侧 TypeScript → `dist/` + Neovim sidecar → `nvim/bin/` + VS Code bundle → `vscode/out/` |
+| `bun run typecheck`      | 类型检查（不产出文件）                                                                          |
+| `bun run test`           | 编译 + 运行单元测试                                                                             |
+| `bun run package:vscode` | 打包 VS Code 扩展为 VSIX                                                                        |
+| `bun run vsix`           | `bun run package:vscode` 的别名                                                                 |
 
 ### 本地测试 VS Code 扩展
 
@@ -246,13 +246,13 @@ pi -e ./src/pi/index.ts
 2. 进入 **Run and Debug** 面板（`Ctrl+Shift+D`）。
 3. 选择 **Run Pi x IDE VS Code Extension**。
 4. 按 **F5**：
-   - preLaunchTask 会自动执行 `pnpm build`。
+   - preLaunchTask 会自动执行 `bun run build`。
    - 打开一个标题包含 `[Extension Development Host]` 的新 VS Code 窗口。
 
 #### 方式二：打包 VSIX 后安装
 
 ```bash
-pnpm package:vscode
+bun run package:vscode
 code --install-extension './vscode'-0.1.0.vsix
 ```
 

@@ -30,11 +30,11 @@ Why:
    - Do you have the right `repository` field?
    - Do you have the right `author` field?
 
-2. Run `pnpm login` (or `npm login`) to authenticate with npm.
+2. Run `bun login` (or `npm login`) to authenticate with npm.
 
-3. Run `pnpm build` to build the package.
+3. Run `bun run build` to build the package.
 
-4. Run `pnpm publish --access public --no-git-checks` to publish the first version.
+4. Run `bun publish --access public --no-git-checks` to publish the first version.
 
 5. Go to your npm package settings on npmjs.com and add a trusted publisher for GitHub Actions with:
    - **Organization or user**: Your GitHub username/org

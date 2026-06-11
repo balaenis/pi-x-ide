@@ -23,4 +23,4 @@ When you add new features or make changes that require users to be aware of cert
 
 ## Update config schema
 
-When the project adds new configuration options or environment variables that should be configurable through `~/.pi/config.json`, update the registry in `src/shared/config-options.ts` and regenerate `schemas/config.json` with `pnpm generate:config-schema` in the same change.
+When the project adds new configuration options or environment variables that should be configurable through `~/.pi/config.json`, update the registry in `src/shared/config-options.ts` and regenerate `schemas/config.json` with `bun run generate:config-schema` in the same change.
