@@ -74,11 +74,8 @@ jobs:
             exit 1
           fi
 
-      - name: Install dependencies
-        run: mise run setup
-
       - name: Build VSIX
-        run: mise run vscode:package
+        run: mise run package:vsix
 
       - name: Upload VSIX to release
         uses: softprops/action-gh-release@v3
@@ -114,11 +111,8 @@ jobs:
           cache: true
           experimental: true
 
-      - name: Setup build environment
-        run: mise run setup
-
       - name: Build with all sidecar platform binaries
-        run: mise run build:all
+        run: mise run package:nvim-sidecar:all
 
       - name: Upload sidecar binaries to release
         uses: softprops/action-gh-release@v3

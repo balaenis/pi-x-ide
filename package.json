@@ -5,11 +5,7 @@
   "files": [
     "dist",
     "schemas",
-    "src",
-    "nvim/lua",
-    "nvim/plugin",
-    "nvim/doc",
-    "nvim/bin"
+    "src"
   ],
   "keywords": [
     "pi-package",
@@ -42,17 +38,19 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && bun run --filter './vscode' typecheck",
     "generate:config-schema": "bun run scripts/generate-config-schema.cjs",
     "check:config-schema": "bun run scripts/generate-config-schema.cjs --check",
-    "test": "bun run check:config-schema && bun run build && node --test dist/test/*.test.js",
+    "test": "bun run check:config-schema && bun run compile && node --test dist/test/*.test.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "compile:vscode": "bun run --filter './vscode' compile",
-    "sync:vscode-assets": "bun run --filter './vscode' sync:assets",
-    "package:vscode": "bun run --filter './vscode' package",
-    "vsix": "bun run package:vscode",
-    "build": "tsc -p tsconfig.json && bun run compile:vscode && bun run scripts/build-nvim-sidecar.mjs --production",
-    "build:all": "tsc -p tsconfig.json && bun run compile:vscode && bun run scripts/build-nvim-sidecar.mjs --production --target=all"
+    "compile": "tsc -p tsconfig.json",
+    "compile:vsix": "bun run --filter './vscode' compile",
+    "sync:vsix-assets": "bun run --filter './vscode' sync:assets",
+    "package:vsix": "bun run --filter './vscode' package",
+    "package:nvim-sidecar": "bun run scripts/build-nvim-sidecar.mjs --production",
+    "package:nvim-sidecar:all": "bun run scripts/build-nvim-sidecar.mjs --production --target=all",
+    "build": "bun run compile && bun run compile:vsix && bun run package:nvim-sidecar",
+    "build:all": "bun run compile && bun run compile:vsix && bun run package:nvim-sidecar:all"
   },
   "dependencies": {
     "ws": "^8.21.0"

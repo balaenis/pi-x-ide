@@ -28,11 +28,7 @@ jobs:
           cache: true
           experimental: true
 
-      - name: Install dependencies
-        run: mise run setup
-
       - name: Run Checks
         run: |
           mise run lint
-          mise run build
           mise run test

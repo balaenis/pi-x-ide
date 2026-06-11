@@ -6,20 +6,14 @@ bun = "1.3.14"
 description = "Install project dependencies"
 run = "bun install --frozen-lockfile"
 
-[tasks.build]
-description = "Build the pi extension package (TypeScript + VS Code extension)"
-run = "bun run build"
-
-[tasks."build:all"]
-description = "Full build including all platform sidecar binaries"
-run = "bun run build:all"
-
 [tasks.typecheck]
-description = "Type-check TypeScript and VS Code extension"
+description = "Type-check TypeScript and IDE extension"
+depends = ["setup"]
 run = "bun run typecheck"
 
 [tasks.test]
 description = "Build and run unit tests"
+depends = ["setup"]
 run = "bun run test"
 
 [tasks."generate:config-schema"]
@@ -32,6 +26,7 @@ run = "bun run check:config-schema"
 
 [tasks.lint]
 description = "Lint the project"
+depends = ["setup"]
 run = "bun run lint"
 
 [tasks."lint:fix"]
@@ -46,20 +41,37 @@ run = "bun run format"
 description = "Check formatting with prettier"
 run = "bun run format:check"
 
-
-[tasks."vscode:compile"]
+[tasks."compile:vsix"]
 description = "Build the VS Code extension for local debugging"
-run = "bun run compile:vscode"
+depends = ["setup"]
+run = "bun run compile:vsix"
 
-[tasks."vscode:package"]
+[tasks."package:vsix"]
 description = "Build the production VS Code VSIX package"
-run = "bun run package:vscode"
+depends = ["setup"]
+run = "bun run package:vsix"
 
-[tasks.vsix]
-description = "Alias for vscode:package"
-run = "bun run vsix"
+[tasks."package:nvim-sidecar"]
+description = "Build the nvim sidecar binary"
+depends = ["setup"]
+run = "bun run package:nvim-sidecar"
+
+[tasks."package:nvim-sidecar:all"]
+description = "Build all nvim sidecar binaries"
+depends = ["setup"]
+run = "bun run package:nvim-sidecar:all"
+
+[tasks.build]
+description = "Build the pi extension package (TypeScript + IDE extension)"
+depends = ["setup"]
+run = "bun run build"
+
+[tasks."build:all"]
+description = "Full build including all platform ide extension binaries"
+depends = ["setup"]
+run = "bun run build:all"
 
 [tasks.publish]
 description = "Publish the pi extension package to npm"
-depends = ["setup", "build:all"]
-run = 'bun publish --access public --tag "${NPM_TAG:-latest}"'
+depends = ["setup"]
+run = 'bun run compile && bun publish --access public --tag "${NPM_TAG:-latest}"'
