@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1](https://github.com/balaenis/pi-x-ide/compare/v1.4.0...v1.4.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* **docs:** replace lazy.nvim `rtp` with `init` block in install instructions ([1f186ff](https://github.com/balaenis/pi-x-ide/commit/1f186fffa6e050e495fcece71a8ddc185a4f217d))
+* **nvim:** safely stop timer with pcall to prevent errors ([22c422e](https://github.com/balaenis/pi-x-ide/commit/22c422e53057eb2ed7c1b2b343851d751a936632))
+
 ## [1.4.0](https://github.com/balaenis/pi-x-ide/compare/v1.3.0...v1.4.0) (2026-06-11)
 
 
