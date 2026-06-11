@@ -114,14 +114,11 @@ jobs:
           cache: true
           experimental: true
 
-      - name: Install dependencies
+      - name: Setup build environment
         run: mise run setup
 
-      - name: Build TypeScript
-        run: mise run build
-
-      - name: Build all sidecar platform binaries
-        run: mise run build:sidecar:all
+      - name: Build with all sidecar platform binaries
+        run: mise run build:all
 
       - name: Upload sidecar binaries to release
         uses: softprops/action-gh-release@v3

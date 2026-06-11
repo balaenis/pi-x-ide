@@ -39,11 +39,9 @@
   "type": "commonjs",
   "main": "./dist/src/pi/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/build-nvim-sidecar.mjs --production && bun run --filter './vscode' compile",
-    "build:sidecar:all": "tsc -p tsconfig.json && node scripts/build-nvim-sidecar.mjs --production --target=all",
     "typecheck": "tsc -p tsconfig.json --noEmit && bun run --filter './vscode' typecheck",
-    "generate:config-schema": "node scripts/generate-config-schema.cjs",
-    "check:config-schema": "node scripts/generate-config-schema.cjs --check",
+    "generate:config-schema": "bun run scripts/generate-config-schema.cjs",
+    "check:config-schema": "bun run scripts/generate-config-schema.cjs --check",
     "test": "bun run check:config-schema && bun run build && node --test dist/test/*.test.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -52,7 +50,9 @@
     "compile:vscode": "bun run --filter './vscode' compile",
     "sync:vscode-assets": "bun run --filter './vscode' sync:assets",
     "package:vscode": "bun run --filter './vscode' package",
-    "vsix": "bun run package:vscode"
+    "vsix": "bun run package:vscode",
+    "build": "tsc -p tsconfig.json && bun run compile:vscode && bun run scripts/build-nvim-sidecar.mjs --production",
+    "build:all": "tsc -p tsconfig.json && bun run compile:vscode && bun run scripts/build-nvim-sidecar.mjs --production --target=all"
   },
   "dependencies": {
     "ws": "^8.21.0"

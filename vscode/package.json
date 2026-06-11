@@ -17,7 +17,7 @@
   "homepage": "https://github.com/balaenis/pi-x-ide#readme",
   "type": "commonjs",
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.120.0"
   },
   "categories": [
     "Other"
@@ -73,19 +73,19 @@
     }
   },
   "scripts": {
-    "sync:assets": "node scripts/sync-shared-assets.mjs",
-    "compile": "node -e \"require('node:fs').rmSync('out',{recursive:true,force:true})\" && tsc -p tsconfig.json --noEmit && node esbuild.mjs",
-    "compile:prod": "node -e \"require('node:fs').rmSync('out',{recursive:true,force:true})\" && tsc -p tsconfig.json --noEmit && node esbuild.mjs --production",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "sync:assets": "bun run scripts/sync-shared-assets.mjs",
+    "compile": "bun -e \"require('node:fs').rmSync('out',{recursive:true,force:true})\" && bun run typecheck && bun run esbuild.mjs",
+    "compile:prod": "bun -e \"require('node:fs').rmSync('out',{recursive:true,force:true})\" && bun run typecheck && bun run esbuild.mjs --production",
     "package": "bun run sync:assets && bun run compile:prod && mkdir -p dist && vsce package --no-dependencies --out ./dist/${npm_package_name}-${npm_package_version}.vsix"
   },
   "dependencies": {
-    "ws": "^8.18.0"
+    "ws": "^8.21.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
-    "@types/vscode": "^1.90.0",
-    "@types/ws": "^8.5.13",
-    "typescript": "^5.7.2"
+    "@types/node": "^25.9.3",
+    "@types/vscode": "^1.120.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^6.0.3"
   }
 }

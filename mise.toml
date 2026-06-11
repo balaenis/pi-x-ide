@@ -10,6 +10,10 @@ run = "bun install --frozen-lockfile"
 description = "Build the pi extension package (TypeScript + VS Code extension)"
 run = "bun run build"
 
+[tasks."build:all"]
+description = "Full build including all platform sidecar binaries"
+run = "bun run build:all"
+
 [tasks.typecheck]
 description = "Type-check TypeScript and VS Code extension"
 run = "bun run typecheck"
@@ -42,13 +46,10 @@ run = "bun run format"
 description = "Check formatting with prettier"
 run = "bun run format:check"
 
+
 [tasks."vscode:compile"]
 description = "Build the VS Code extension for local debugging"
 run = "bun run compile:vscode"
-
-[tasks."sync:vscode-assets"]
-description = "Sync VS Code extension assets"
-run = "bun run sync:vscode-assets"
 
 [tasks."vscode:package"]
 description = "Build the production VS Code VSIX package"
@@ -58,16 +59,7 @@ run = "bun run package:vscode"
 description = "Alias for vscode:package"
 run = "bun run vsix"
 
-[tasks."build:sidecar:all"]
-description = "Build nvim sidecar binaries for all platforms (requires bun)"
-run = "bun run build:sidecar:all"
-
-[tasks."build:full"]
-description = "Full build including all platform sidecar binaries"
-depends = ["setup"]
-run = "bun run build && bun run build:sidecar:all"
-
 [tasks.publish]
 description = "Publish the pi extension package to npm"
-depends = ["build:full"]
+depends = ["setup", "build:all"]
 run = 'bun publish --access public --tag "${NPM_TAG:-latest}"'
