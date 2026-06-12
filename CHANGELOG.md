@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.0](https://github.com/balaenis/pi-x-ide/compare/v1.7.0...v1.8.0) (2026-06-12)
+
+
+### Features
+
+* **attach:** make TUI attach shortcut configurable via PI_X_IDE_ATTACH_SHORTCUT ([20a7e9c](https://github.com/balaenis/pi-x-ide/commit/20a7e9c80644d4a46cdc4459c7394faa7f3e21e5))
+* **ide:** register Ctrl+Alt+K shortcut in Pi TUI for /ide attach ([9803840](https://github.com/balaenis/pi-x-ide/commit/9803840f73bc965dae3e0e0a53f7fccae173e2d7))
+
 ## [1.7.0](https://github.com/balaenis/pi-x-ide/compare/v1.6.0...v1.7.0) (2026-06-12)
 
 
