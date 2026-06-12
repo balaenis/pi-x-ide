@@ -6,7 +6,7 @@ import test from "node:test";
 import { readPiConfigEnv, resolvePiConfigEnv } from "../src/shared/config";
 import { formatEditorContext, formatRangeMention, parseRangeMention } from "../src/shared/format";
 import { hasDirectWorkspaceMatch, relationshipMatchLength, resolveLockDir } from "../src/shared/paths";
-import { LOCK_DIR_ENV, type EditorSelectionSnapshot, type IdeLockFile } from "../src/shared/protocol";
+import { type EditorSelectionSnapshot, type IdeLockFile } from "../src/shared/protocol";
 import { parseLockFileContent, isSelectionClearedParams, isEditorSelectionSnapshot } from "../src/shared/schema";
 import { discoverIdeCandidates } from "../src/pi/discovery";
 import { clearLatestSelection, setLatestSelection } from "../src/pi/context";
@@ -63,36 +63,31 @@ void test("clears stale editor selection state", () => {
   assert.equal(runtime.attachState, "idle");
 });
 
-void test("resolves default lock directory under lock subdirectory", () => {
-  assert.equal(resolveLockDir({}), resolve(homedir(), ".pi", "pi-x-ide", "lock"));
+void test("resolves default lock directory under .pi subdirectory", () => {
+  assert.equal(resolveLockDir(), resolve(homedir(), ".pi", "pi-x-ide", "lock"));
 });
 
 void test("loads environment overrides from pi config", async () => {
   const home = await mkdtemp(join(tmpdir(), "pi-x-ide-config-"));
   const configDir = join(home, ".pi");
   const configPath = join(configDir, "config.json");
-  const lockDir = join(home, "custom-lock");
   await mkdir(configDir, { recursive: true });
   await writeFile(
     configPath,
     JSON.stringify({
       env: {
-        [LOCK_DIR_ENV]: lockDir,
-        PI_X_IDE_AUTO_INSTALL: false,
+        PI_X_IDE_AUTO_INSTALL: "0",
         IGNORED_NULL: null,
       },
     }),
   );
 
   const configEnv = readPiConfigEnv(configPath);
-  assert.equal(configEnv[LOCK_DIR_ENV], lockDir);
-  assert.equal(configEnv.PI_X_IDE_AUTO_INSTALL, "false");
+  assert.equal(configEnv.PI_X_IDE_AUTO_INSTALL, "0");
   assert.equal(configEnv.IGNORED_NULL, undefined);
 
-  const mergedEnv = resolvePiConfigEnv({ [LOCK_DIR_ENV]: "/env-lock" }, { configPath });
-  assert.equal(mergedEnv[LOCK_DIR_ENV], "/env-lock");
-  assert.equal(mergedEnv.PI_X_IDE_AUTO_INSTALL, "false");
-  assert.equal(resolveLockDir(resolvePiConfigEnv({}, { configPath })), resolve(lockDir));
+  const mergedEnv = resolvePiConfigEnv({ PI_X_IDE_AUTO_INSTALL: "1" }, { configPath });
+  assert.equal(mergedEnv.PI_X_IDE_AUTO_INSTALL, "1");
 });
 
 void test("validates lock file content", () => {

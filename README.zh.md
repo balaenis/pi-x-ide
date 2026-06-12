@@ -176,11 +176,10 @@ require("pi_x_ide").setup({
 
 Pi 侧变量可设为真实环境变量或写入 `~/.pi/config.json` 的 `env` 中。真实环境变量优先级更高。
 
-| 变量                    | 默认值                | 说明                           |
-| ----------------------- | --------------------- | ------------------------------ |
-| `PI_X_IDE_AUTO_INSTALL` | `1`                   | Pi 启动时自动安装 VS Code 扩展 |
-| `PI_X_IDE_LOCK_DIR`     | `~/.pi/pi-x-ide/lock` | IDE 连接 lock file 存放目录    |
-| `PI_X_IDE_ZED_DB`       | （自动检测）          | 覆盖 Zed SQLite 数据库路径     |
+| 变量                    | 默认值       | 说明                           |
+| ----------------------- | ------------ | ------------------------------ |
+| `PI_X_IDE_AUTO_INSTALL` | `1`          | Pi 启动时自动安装 VS Code 扩展 |
+| `PI_X_IDE_ZED_DB`       | （自动检测） | 覆盖 Zed SQLite 数据库路径     |
 
 编辑器 schema 指导见 [schemas/config.json](schemas/config.json)。
 
@@ -196,7 +195,7 @@ Pi 侧变量可设为真实环境变量或写入 `~/.pi/config.json` 的 `env` �
 
 ### Lock File 协议
 
-IDE WebSocket server 启动后默认将连接信息写入 `~/.pi/pi-x-ide/lock/`。可通过 `PI_X_IDE_LOCK_DIR` 覆盖。
+IDE WebSocket server 启动后默认将连接信息写入 `~/.pi/pi-x-ide/lock/`。
 
 Pi 通过 `ctx.cwd` 与 lock file 中的 `workspaceFolders` 做最长路径匹配，选中最匹配且最新的 IDE 连接。只有当前 `cwd` 位于某个 IDE `workspaceFolders` 内或与其相等时，Pi 才会自动连接；如果 `cwd` 只是父级目录（例如 `~/`），请运行 `/ide` 手动选择连接。
 

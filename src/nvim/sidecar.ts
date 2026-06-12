@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createInterface } from "node:readline";
-import { LOCK_DIR_ENV, type EditorSelectionSnapshot, type IdeLockFile } from "../shared/protocol";
+import { type EditorSelectionSnapshot, type IdeLockFile } from "../shared/protocol";
 import { formatRangeMention } from "../shared/format";
 import { IdeWebSocketServer } from "../shared/ide-server";
 import {
@@ -37,9 +37,6 @@ interface RuntimeState {
 }
 
 export async function startNvimSidecar(options: NvimSidecarOptions = {}): Promise<NvimSidecarHandle> {
-  const previousLockDir = process.env[LOCK_DIR_ENV];
-  if (options.lockDir) process.env[LOCK_DIR_ENV] = options.lockDir;
-
   const state: RuntimeState = {
     workspaceFolders: normalizeWorkspaceFolders(options.workspaceFolders),
     stopped: false,
@@ -53,7 +50,7 @@ export async function startNvimSidecar(options: NvimSidecarOptions = {}): Promis
   );
 
   const port = await server.start();
-  state.lockFilePath = createIdeLockFilePath("nvim", port);
+  state.lockFilePath = createIdeLockFilePath("nvim", port, undefined, options.lockDir);
   state.lockFile = createIdeLockFile({
     ide: "nvim",
     name: options.name ?? "Neovim",
@@ -71,10 +68,6 @@ export async function startNvimSidecar(options: NvimSidecarOptions = {}): Promis
     state.stopped = true;
     await removeIdeLockFile(state.lockFilePath);
     await server.stop();
-    if (options.lockDir) {
-      if (previousLockDir === undefined) delete process.env[LOCK_DIR_ENV];
-      else process.env[LOCK_DIR_ENV] = previousLockDir;
-    }
   };
 
   const stdin = options.stdin ?? process.stdin;

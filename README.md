@@ -178,11 +178,10 @@ when no binary matches.
 
 Pi-side variables can be set as real environment variables or in `~/.pi/config.json` under `env`. Real environment variables take precedence.
 
-| Variable                | Default               | Description                                  |
-| ----------------------- | --------------------- | -------------------------------------------- |
-| `PI_X_IDE_AUTO_INSTALL` | `1`                   | Auto-install VS Code extension on Pi startup |
-| `PI_X_IDE_LOCK_DIR`     | `~/.pi/pi-x-ide/lock` | Directory for IDE connection lock files      |
-| `PI_X_IDE_ZED_DB`       | (auto-detect)         | Override path to Zed SQLite database         |
+| Variable                | Default       | Description                                  |
+| ----------------------- | ------------- | -------------------------------------------- |
+| `PI_X_IDE_AUTO_INSTALL` | `1`           | Auto-install VS Code extension on Pi startup |
+| `PI_X_IDE_ZED_DB`       | (auto-detect) | Override path to Zed SQLite database         |
 
 See [schemas/config.json](schemas/config.json) for editor schema guidance.
 
@@ -198,7 +197,7 @@ See [schemas/config.json](schemas/config.json) for editor schema guidance.
 
 ### Lock File Protocol
 
-After the IDE WebSocket server starts, connection information is written to `~/.pi/pi-x-ide/lock/` by default. Override the directory with `PI_X_IDE_LOCK_DIR`.
+After the IDE WebSocket server starts, connection information is written to `~/.pi/pi-x-ide/lock/`.
 
 Pi uses `ctx.cwd` to find the longest path match against `workspaceFolders` in the lock files, selecting the best-matching and most recent IDE connection. Pi auto-connects only when the current `cwd` is inside or equal to one of the IDE `workspaceFolders`; if `cwd` is only a parent directory such as `~/`, run `/ide` to choose a connection manually.
 

@@ -76,7 +76,6 @@ function buildSchema(envOptions, envPatternOptions, valueTypes) {
     examples: [
       {
         env: {
-          PI_X_IDE_LOCK_DIR: "/home/user/.pi/pi-x-ide/lock",
           PI_X_IDE_AUTO_INSTALL: "0",
           PI_X_IDE_ZED_DB: "/home/user/.local/share/zed/db/0-stable/db.sqlite",
         },

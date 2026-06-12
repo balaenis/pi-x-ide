@@ -17,11 +17,6 @@ export function isConfigEnvValue(value: unknown): value is string | number | boo
 }
 
 export const CONFIG_ENV_OPTIONS = {
-  PI_X_IDE_LOCK_DIR: {
-    type: ["string"],
-    default: "~/.pi/pi-x-ide/lock",
-    description: "Directory containing Pi x IDE lock files. Defaults to ~/.pi/pi-x-ide/lock.",
-  },
   PI_X_IDE_AUTO_INSTALL: {
     type: ["string", "number", "boolean"],
     default: "enabled",

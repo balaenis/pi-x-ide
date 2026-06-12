@@ -1,5 +1,4 @@
 export const PROTOCOL_VERSION = 1;
-export const LOCK_DIR_ENV = "PI_X_IDE_LOCK_DIR";
 export const AUTH_HEADER = "x-pi-x-ide-authorization";
 export const LOCK_FILE_EXTENSION = ".lock";
 

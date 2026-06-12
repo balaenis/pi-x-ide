@@ -17,10 +17,6 @@
         ]
       },
       "properties": {
-        "PI_X_IDE_LOCK_DIR": {
-          "type": "string",
-          "description": "Directory containing Pi x IDE lock files. Defaults to ~/.pi/pi-x-ide/lock."
-        },
         "PI_X_IDE_AUTO_INSTALL": {
           "type": [
             "string",
@@ -111,7 +107,6 @@
   "examples": [
     {
       "env": {
-        "PI_X_IDE_LOCK_DIR": "/home/user/.pi/pi-x-ide/lock",
         "PI_X_IDE_AUTO_INSTALL": "0",
         "PI_X_IDE_ZED_DB": "/home/user/.local/share/zed/db/0-stable/db.sqlite"
       }

@@ -8,8 +8,8 @@ export function createAuthToken(): string {
   return randomBytes(32).toString("hex");
 }
 
-export function createIdeLockFilePath(source: IdeSource, port: number, pid = process.pid): string {
-  return join(resolveLockDir(), `${source}-${pid}-${port}${LOCK_FILE_EXTENSION}`);
+export function createIdeLockFilePath(source: IdeSource, port: number, pid = process.pid, lockDir?: string): string {
+  return join(lockDir ?? resolveLockDir(), `${source}-${pid}-${port}${LOCK_FILE_EXTENSION}`);
 }
 
 export interface CreateIdeLockFileOptions {
@@ -39,8 +39,8 @@ export function createIdeLockFile(options: CreateIdeLockFileOptions): IdeLockFil
   };
 }
 
-export async function writeIdeLockFile(path: string, lock: IdeLockFile): Promise<void> {
-  const dir = resolveLockDir();
+export async function writeIdeLockFile(path: string, lock: IdeLockFile, lockDir?: string): Promise<void> {
+  const dir = lockDir ?? resolveLockDir();
   await mkdir(dir, { recursive: true, mode: 0o700 });
   await chmod(dir, 0o700).catch(() => undefined);
 
