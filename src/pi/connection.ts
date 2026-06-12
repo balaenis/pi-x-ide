@@ -12,6 +12,15 @@ import {
 import { isAtMentionedParams, isSelectionChangedParams, isSelectionClearedParams } from "../shared/schema";
 import { decodeRawData } from "../shared/ws";
 
+export const IDE_CONNECT_TIMEOUT_MS = 5_000;
+
+export class IdeConnectionTimeoutError extends Error {
+  constructor(readonly candidate: LockFileCandidate) {
+    super(`Timed out connecting to ${candidate.lock.name} at ${candidate.lock.host}:${candidate.lock.port}`);
+    this.name = "IdeConnectionTimeoutError";
+  }
+}
+
 export interface IdeConnectionCallbacks {
   onConnected?: (server: { name: string; version?: string; ide?: string }) => void;
   onDisconnected?: (reason: string) => void;
@@ -36,10 +45,11 @@ export class IdeConnection {
     return this.socket?.readyState === WebSocket.OPEN;
   }
 
-  async connect(): Promise<void> {
+  async connect(timeoutMs = IDE_CONNECT_TIMEOUT_MS): Promise<void> {
     this.closedByUser = false;
     const { lock } = this.candidate;
     const socket = new WebSocket(`ws://${lock.host}:${lock.port}`, {
+      handshakeTimeout: timeoutMs + 1_000,
       headers: {
         [AUTH_HEADER]: lock.authToken,
       },
@@ -48,12 +58,21 @@ export class IdeConnection {
 
     socket.on("message", (raw) => this.handleMessage(decodeRawData(raw)));
     socket.on("close", (_code, reason) => {
-      if (this.socket === socket) this.socket = undefined;
+      if (this.socket !== socket) return;
+      this.socket = undefined;
       this.callbacks.onDisconnected?.(reason.toString("utf8") || (this.closedByUser ? "closed" : "disconnected"));
     });
-    socket.on("error", (error) => this.callbacks.onError?.(error));
+    socket.on("error", (error) => {
+      if (this.socket === socket) this.callbacks.onError?.(error);
+    });
 
     await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        cleanup();
+        if (this.socket === socket) this.socket = undefined;
+        socket.terminate();
+        reject(new IdeConnectionTimeoutError(this.candidate));
+      }, timeoutMs);
       const onOpen = () => {
         cleanup();
         this.sendInitialize();
@@ -61,9 +80,11 @@ export class IdeConnection {
       };
       const onError = (error: Error) => {
         cleanup();
+        if (this.socket === socket) this.socket = undefined;
         reject(error);
       };
       const cleanup = () => {
+        clearTimeout(timeout);
         socket.off("open", onOpen);
         socket.off("error", onError);
       };

@@ -17,6 +17,8 @@ export interface PiIdeRuntime {
   attachState: AttachState;
   turnSelection?: EditorSelectionSnapshot;
   reconnectTimer?: NodeJS.Timeout;
+  reconnectAttempts: number;
+  reconnectCandidateKey?: string;
   zedPollTimer?: NodeJS.Timeout;
   zedPollSelectionKey?: string;
   zedPollWalMtimeMs?: number;
@@ -30,6 +32,7 @@ export function createRuntime(): PiIdeRuntime {
     candidates: [],
     connectionStatus: "idle",
     attachState: "idle",
+    reconnectAttempts: 0,
     installingIdeIds: new Set<string>(),
     sessionGeneration: 0,
   };

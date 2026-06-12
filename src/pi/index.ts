@@ -5,7 +5,7 @@ import { formatRangeMention } from "../shared/format";
 import { hasDirectWorkspaceMatch } from "../shared/paths";
 import type { AtMentionedParams, LockFileCandidate } from "../shared/protocol";
 import { discoverIdeCandidates } from "./discovery";
-import { IdeConnection, type IdeConnectionCallbacks } from "./connection";
+import { IdeConnection, IdeConnectionTimeoutError, type IdeConnectionCallbacks } from "./connection";
 import {
   discoverInstallCandidates,
   installIdeExtension,
@@ -15,6 +15,7 @@ import {
 } from "./install";
 import { registerIdeCommand } from "./commands";
 import { clearLatestSelection, registerContextHandlers, setLatestSelection } from "./context";
+import { formatReconnectLimitMessage, recordReconnectAttempt, resetReconnectState } from "./reconnect";
 import { createRuntime, type PiIdeRuntime } from "./state";
 import { clearIdeUi, updateIdeUi } from "./ui";
 import { startZedPolling, stopZedPolling } from "./zed";
@@ -22,6 +23,14 @@ import { startZedPolling, stopZedPolling } from "./zed";
 const RECONNECT_DELAY_MS = 2_000;
 const INSTALL_RECONNECT_RETRY_MS = 1_500;
 const INSTALL_RECONNECT_TIMEOUT_MS = 15_000;
+
+interface ConnectOptions {
+  resetReconnectState?: boolean;
+}
+
+function formatConnectTimeoutMessage(error: IdeConnectionTimeoutError): string {
+  return `${error.message}.`;
+}
 
 export default function (pi: ExtensionAPI): void {
   const runtime = createRuntime();
@@ -245,18 +254,24 @@ async function connectAutoWithZedFallback(
   runtime: PiIdeRuntime,
   ctx: ExtensionContext | ExtensionCommandContext,
   generation = runtime.sessionGeneration,
+  options: ConnectOptions = {},
 ): Promise<void> {
-  await connectAuto(runtime, ctx);
+  await connectAuto(runtime, ctx, options);
   if (runtime.connectionStatus !== "connected") {
     startZedPolling(runtime, ctx, { generation });
   }
 }
 
-async function connectAuto(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionCommandContext): Promise<void> {
+async function connectAuto(
+  runtime: PiIdeRuntime,
+  ctx: ExtensionContext | ExtensionCommandContext,
+  options: ConnectOptions = {},
+): Promise<void> {
   runtime.enabled = true;
   const candidates = await refreshCandidates(runtime, ctx);
   const candidate = candidates.find((candidate) => isAutoConnectCandidate(candidate, ctx.cwd));
   if (!candidate) {
+    if (options.resetReconnectState !== false) resetReconnectState(runtime);
     runtime.connectionStatus = "disconnected";
     runtime.connectionMessage =
       candidates.length > 0
@@ -267,7 +282,7 @@ async function connectAuto(runtime: PiIdeRuntime, ctx: ExtensionContext | Extens
     updateIdeUi(runtime, ctx);
     return;
   }
-  await connectCandidate(runtime, candidate, ctx);
+  await connectCandidate(runtime, candidate, ctx, options);
 }
 
 function isAutoConnectCandidate(candidate: LockFileCandidate, cwd: string): boolean {
@@ -278,7 +293,9 @@ async function connectCandidate(
   runtime: PiIdeRuntime,
   candidate: LockFileCandidate,
   ctx: ExtensionContext | ExtensionCommandContext,
+  options: ConnectOptions = {},
 ): Promise<void> {
+  if (options.resetReconnectState !== false) resetReconnectState(runtime);
   runtime.ctx = ctx;
   runtime.cwd = ctx.cwd;
   runtime.enabled = true;
@@ -310,15 +327,17 @@ async function connectCandidate(
     if (runtime.connection === connection && runtime.connectionStatus === "connecting") {
       runtime.connectionStatus = "connected";
       runtime.connectionMessage = undefined;
+      resetReconnectState(runtime);
       updateIdeUi(runtime, ctx);
     }
   } catch (error) {
     if (runtime.connection === connection) {
       runtime.connection = undefined;
       runtime.connectionStatus = "error";
-      runtime.connectionMessage = error instanceof Error ? error.message : String(error);
+      runtime.connectionMessage =
+        error instanceof IdeConnectionTimeoutError ? formatConnectTimeoutMessage(error) : errorMessage(error);
       updateIdeUi(runtime, ctx);
-      scheduleReconnect(runtime);
+      if (!(error instanceof IdeConnectionTimeoutError)) scheduleReconnect(runtime);
     }
   }
 }
@@ -333,6 +352,7 @@ function createConnectionCallbacks(
       runtime.connectedServer = server;
       runtime.connectionStatus = "connected";
       runtime.connectionMessage = undefined;
+      resetReconnectState(runtime);
       updateIdeUi(runtime);
     },
     onDisconnected: (reason) => {
@@ -377,6 +397,7 @@ function disconnect(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionComm
   const connection = runtime.connection;
   runtime.connection = undefined;
   connection?.disconnect();
+  resetReconnectState(runtime);
   runtime.enabled = !disabled;
   runtime.connectedServer = undefined;
   runtime.connectionStatus = disabled ? "disabled" : "disconnected";
@@ -392,15 +413,24 @@ function disconnect(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionComm
 
 function scheduleReconnect(runtime: PiIdeRuntime): void {
   if (runtime.reconnectTimer || !runtime.enabled) return;
+  const attempt = recordReconnectAttempt(runtime, runtime.currentCandidate);
+  if (attempt === undefined) {
+    runtime.connectionStatus = "error";
+    runtime.connectionMessage = formatReconnectLimitMessage(runtime.currentCandidate);
+    updateIdeUi(runtime);
+    return;
+  }
   runtime.reconnectTimer = setTimeout(() => {
     runtime.reconnectTimer = undefined;
     const ctx = runtime.ctx;
     if (!ctx || !runtime.enabled) return;
-    connectAutoWithZedFallback(runtime, ctx).catch((error: unknown) => {
-      runtime.connectionStatus = "error";
-      runtime.connectionMessage = error instanceof Error ? error.message : String(error);
-      updateIdeUi(runtime);
-    });
+    connectAutoWithZedFallback(runtime, ctx, runtime.sessionGeneration, { resetReconnectState: false }).catch(
+      (error: unknown) => {
+        runtime.connectionStatus = "error";
+        runtime.connectionMessage = error instanceof Error ? error.message : String(error);
+        updateIdeUi(runtime);
+      },
+    );
   }, RECONNECT_DELAY_MS);
 }
 
