@@ -102,7 +102,7 @@ Open a file in your IDE and select some text. The widget should update in real t
 IDE: vscode ✓ src/foo.ts#L10,20 pending
 ```
 
-Press `Ctrl+Alt+K` (Linux/Windows) or `Cmd+Alt+K` (macOS) — the Pi input box should insert `@src/foo.ts#L10,20`.
+Attach the selection from either side: press `Ctrl+Alt+K` (Linux/Windows) or `Cmd+Alt+K` (macOS) in a VS Code-family IDE, or focus the Pi TUI and press `Ctrl+Alt+K` / run `/ide attach`. The Pi input box should insert `@src/foo.ts#L10,20`.
 
 Type a chat prompt in Pi and submit it. The selected text is injected as LLM context (does not persist in session history). After submission, the widget shows `sent`.
 
@@ -123,6 +123,8 @@ Type a chat prompt in Pi and submit it. The selected text is injected as LLM con
 | `/ide off`     | Disconnect and disable automatic context attachment               |
 | `/ide attach`  | Manually insert the latest selection range into the input box     |
 | `/ide install` | Install or update `balaenis.pi-x-ide` through a supported IDE CLI |
+
+Pi also registers `Ctrl+Alt+K` in the TUI as a shortcut for `/ide attach`. Repeated presses append the latest selected range to the current input, so you can select multiple ranges in the editor and attach them one by one. On macOS, this is a terminal shortcut (`Ctrl+Option+K`); `Cmd` shortcuts are handled by the terminal/OS and are not available to Pi's TUI.
 
 ### Configuration Reference
 
@@ -188,13 +190,14 @@ See [schemas/config.json](schemas/config.json) for editor schema guidance.
 
 ### Feature Parity
 
-| Feature                             | VS Code           | Zed                             | Neovim                        |
-| ----------------------------------- | ----------------- | ------------------------------- | ----------------------------- |
-| Live file tracking                  | ✅ Real-time push | ✅ 1s polling                   | ✅ Real-time push via sidecar |
-| Live selection tracking             | ✅ Real-time push | ✅ 1s polling                   | ✅ Real-time push via sidecar |
-| `Ctrl+Alt+K` / `Cmd+Alt+K` shortcut | ✅                | Use `@<relative-path>` manually | User-configured keymap        |
-| LLM context injection               | ✅                | ✅                              | ✅                            |
-| `/ide auto`                         | ✅                | ✅                              | ✅                            |
+| Feature                                      | VS Code           | Zed                                                | Neovim                        |
+| -------------------------------------------- | ----------------- | -------------------------------------------------- | ----------------------------- |
+| Live file tracking                           | ✅ Real-time push | ✅ 1s polling                                      | ✅ Real-time push via sidecar |
+| Live selection tracking                      | ✅ Real-time push | ✅ 1s polling                                      | ✅ Real-time push via sidecar |
+| IDE-side `Ctrl+Alt+K` / `Cmd+Alt+K` shortcut | ✅                | Use Pi TUI shortcut or `@<relative-path>` manually | User-configured keymap        |
+| Pi TUI `Ctrl+Alt+K` attach shortcut          | ✅                | ✅                                                 | ✅                            |
+| LLM context injection                        | ✅                | ✅                                                 | ✅                            |
+| `/ide auto`                                  | ✅                | ✅                                                 | ✅                            |
 
 ### Lock File Protocol
 

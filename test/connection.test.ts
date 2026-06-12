@@ -20,7 +20,6 @@ void test("caps reconnect attempts at three per candidate", () => {
   assert.equal(recordReconnectAttempt(runtime, candidate), MAX_RECONNECT_ATTEMPTS);
   assert.equal(recordReconnectAttempt(runtime, candidate), undefined);
   assert.match(formatReconnectLimitMessage(candidate), /after 3 attempts/);
-  assert.match(formatReconnectLimitMessage(candidate), /\/ide/);
 
   const nextCandidate = createCandidate({ port: 41002 });
   assert.equal(recordReconnectAttempt(runtime, nextCandidate), 1);

@@ -101,7 +101,7 @@ Pi 自动加载 `pi-x-ide` 并连接 IDE。TUI 底部应显示 `IDE: vscode ✓`
 IDE: vscode ✓ src/foo.ts#L10,20 pending
 ```
 
-按 `Ctrl+Alt+K`（Linux/Windows）或 `Cmd+Alt+K`（macOS），Pi 输入框应插入 `@src/foo.ts#L10,20`。
+可以从任一侧附加选区：在 VS Code 系列 IDE 中按 `Ctrl+Alt+K`（Linux/Windows）或 `Cmd+Alt+K`（macOS），或聚焦 Pi TUI 后按 `Ctrl+Alt+K` / 运行 `/ide attach`。Pi 输入框应插入 `@src/foo.ts#L10,20`。
 
 在 Pi 中输入对话提示并提交，选中文本会作为 LLM 上下文注入（不写入 session 历史）。提交后 widget 显示 `sent`。
 
@@ -122,6 +122,8 @@ IDE: vscode ✓ src/foo.ts#L10,20 pending
 | `/ide off`     | 断开并关闭自动上下文附加                          |
 | `/ide attach`  | 手动把最新 selection range 插入输入框             |
 | `/ide install` | 通过支持的 IDE CLI 安装或更新 `balaenis.pi-x-ide` |
+
+Pi 也会在 TUI 中注册 `Ctrl+Alt+K`，作为 `/ide attach` 的快捷键。重复按下会把最新选中的范围追加到当前输入框，因此可以在编辑器中多次选择不同文本并逐个附加。macOS 上这是终端快捷键（`Ctrl+Option+K`）；`Cmd` 快捷键通常由终端或系统处理，Pi TUI 无法接收。
 
 ### 配置参考
 
@@ -186,13 +188,14 @@ Pi 侧变量可设为真实环境变量或写入 `~/.pi/config.json` 的 `env` �
 
 ### 功能对比
 
-| 功能                              | VS Code     | Zed                         | Neovim                   |
-| --------------------------------- | ----------- | --------------------------- | ------------------------ |
-| 实时文件追踪                      | ✅ 实时推送 | ✅ 1 秒轮询                 | ✅ 通过 sidecar 实时推送 |
-| 实时选区追踪                      | ✅ 实时推送 | ✅ 1 秒轮询                 | ✅ 通过 sidecar 实时推送 |
-| `Ctrl+Alt+K` / `Cmd+Alt+K` 快捷键 | ✅          | 手动输入 `@<relative-path>` | 用户自定义 keymap        |
-| LLM 上下文注入                    | ✅          | ✅                          | ✅                       |
-| `/ide auto`                       | ✅          | ✅                          | ✅                       |
+| 功能                                     | VS Code     | Zed                                             | Neovim                   |
+| ---------------------------------------- | ----------- | ----------------------------------------------- | ------------------------ |
+| 实时文件追踪                             | ✅ 实时推送 | ✅ 1 秒轮询                                     | ✅ 通过 sidecar 实时推送 |
+| 实时选区追踪                             | ✅ 实时推送 | ✅ 1 秒轮询                                     | ✅ 通过 sidecar 实时推送 |
+| IDE 侧 `Ctrl+Alt+K` / `Cmd+Alt+K` 快捷键 | ✅          | 使用 Pi TUI 快捷键或手动输入 `@<relative-path>` | 用户自定义 keymap        |
+| Pi TUI `Ctrl+Alt+K` attach 快捷键        | ✅          | ✅                                              | ✅                       |
+| LLM 上下文注入                           | ✅          | ✅                                              | ✅                       |
+| `/ide auto`                              | ✅          | ✅                                              | ✅                       |
 
 ### Lock File 协议
 

@@ -86,10 +86,14 @@ void test("/ide install completion and handler are wired", async () => {
   };
 
   let registered: RegisteredCommand | undefined;
+  let shortcut: string | undefined;
   let installCalled = false;
   const pi = {
     registerCommand: (_name: string, command: RegisteredCommand) => {
       registered = command;
+    },
+    registerShortcut: (key: string) => {
+      shortcut = key;
     },
   } as unknown as ExtensionAPI;
 
@@ -105,6 +109,7 @@ void test("/ide install completion and handler are wired", async () => {
   });
 
   assert.ok(registered);
+  assert.equal(shortcut, "ctrl+alt+k");
   assert.ok(registered.getArgumentCompletions("")?.some((completion) => completion.value === "install"));
 
   await registered.handler("install", createCommandContext());

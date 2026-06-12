@@ -1,4 +1,4 @@
-import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent" with {
+import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
 import { formatRangeMention } from "../shared/format";
@@ -15,6 +15,14 @@ export interface IdeCommandActions {
 }
 
 export function registerIdeCommand(pi: ExtensionAPI, runtime: PiIdeRuntime, actions: IdeCommandActions): void {
+  pi.registerShortcut("ctrl+alt+k", {
+    description: "Attach latest IDE selection to the prompt",
+    handler: (ctx) => {
+      runtime.ctx = ctx;
+      attachLatest(runtime, ctx);
+    },
+  });
+
   pi.registerCommand("ide", {
     description: "Manage IDE connection and editor selection context",
     getArgumentCompletions: (argumentPrefix: string) => {
@@ -114,7 +122,7 @@ async function listCandidates(actions: IdeCommandActions, ctx: ExtensionCommandC
   );
 }
 
-function attachLatest(runtime: PiIdeRuntime, ctx: ExtensionCommandContext): void {
+function attachLatest(runtime: PiIdeRuntime, ctx: ExtensionContext): void {
   if (!runtime.latestSelection) {
     ctx.ui.notify("No IDE selection is available.", "warning");
     return;
