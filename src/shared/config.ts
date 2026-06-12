@@ -8,7 +8,7 @@ export const PI_CONFIG_FILE = "config.json";
 const processEnvOverlays = new WeakSet<NodeJS.ProcessEnv>();
 
 export function resolvePiConfigPath(home: string = homedir()): string {
-  return resolve(home, ".pi", PI_CONFIG_FILE);
+  return resolve(home, ".pi", "pi-x-ide", PI_CONFIG_FILE);
 }
 
 export function readPiConfigEnv(configPath: string = resolvePiConfigPath()): NodeJS.ProcessEnv {

@@ -57,7 +57,7 @@ function buildSchema(envOptions, envPatternOptions, valueTypes) {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     $id: "https://github.com/balaenis/pi-x-ide/schemas/config.json",
     title: "Pi config.json",
-    description: "Schema for Pi-side configuration read from ~/.pi/config.json.",
+    description: "Schema for Pi-side configuration read from ~/.pi/pi-x-ide/config.json.",
     type: "object",
     additionalProperties: true,
     properties: {
