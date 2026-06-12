@@ -124,7 +124,7 @@ Type a chat prompt in Pi and submit it. The selected text is injected as LLM con
 | `/ide attach`  | Manually insert the latest selection range into the input box     |
 | `/ide install` | Install or update `balaenis.pi-x-ide` through a supported IDE CLI |
 
-Pi also registers `Ctrl+Alt+K` in the TUI as a shortcut for `/ide attach`. Repeated presses append the latest selected range to the current input, so you can select multiple ranges in the editor and attach them one by one. On macOS, this is a terminal shortcut (`Ctrl+Option+K`); `Cmd` shortcuts are handled by the terminal/OS and are not available to Pi's TUI.
+Pi also registers `Ctrl+Alt+K` in the TUI as a shortcut for `/ide attach` by default. Repeated presses append the latest selected range to the current input, so you can select multiple ranges in the editor and attach them one by one. On macOS, this is a terminal shortcut (`Ctrl+Option+K`); `Cmd` shortcuts are handled by the terminal/OS and are not available to Pi's TUI. Set `PI_X_IDE_ATTACH_SHORTCUT` to another pi key id to customize it, or to `off`/`none`/`false`/`0` to disable it.
 
 ### Configuration Reference
 
@@ -180,11 +180,12 @@ when no binary matches.
 
 Pi-side variables can be set as real environment variables or in `~/.pi/config.json` under `env`. Real environment variables take precedence.
 
-| Variable                        | Default       | Description                                         |
-| ------------------------------- | ------------- | --------------------------------------------------- |
-| `PI_X_IDE_AUTO_INSTALL`         | `1`           | Auto-install VS Code extension on Pi startup        |
-| `PI_X_IDE_ZED_DB`               | (auto-detect) | Override path to Zed SQLite database                |
-| `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`        | Zed SQLite polling interval, clamped to 100-2000 ms |
+| Variable                        | Default       | Description                                                                         |
+| ------------------------------- | ------------- | ----------------------------------------------------------------------------------- |
+| `PI_X_IDE_AUTO_INSTALL`         | `1`           | Auto-install VS Code extension on Pi startup                                        |
+| `PI_X_IDE_ATTACH_SHORTCUT`      | `ctrl+alt+k`  | Pi TUI shortcut for `/ide attach`; set to `off`, `none`, `false`, or `0` to disable |
+| `PI_X_IDE_ZED_DB`               | (auto-detect) | Override path to Zed SQLite database                                                |
+| `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`        | Zed SQLite polling interval, clamped to 100-2000 ms                                 |
 
 See [schemas/config.json](schemas/config.json) for editor schema guidance.
 

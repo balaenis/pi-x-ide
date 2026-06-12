@@ -123,7 +123,7 @@ IDE: vscode ✓ src/foo.ts#L10,20 pending
 | `/ide attach`  | 手动把最新 selection range 插入输入框             |
 | `/ide install` | 通过支持的 IDE CLI 安装或更新 `balaenis.pi-x-ide` |
 
-Pi 也会在 TUI 中注册 `Ctrl+Alt+K`，作为 `/ide attach` 的快捷键。重复按下会把最新选中的范围追加到当前输入框，因此可以在编辑器中多次选择不同文本并逐个附加。macOS 上这是终端快捷键（`Ctrl+Option+K`）；`Cmd` 快捷键通常由终端或系统处理，Pi TUI 无法接收。
+Pi 默认也会在 TUI 中注册 `Ctrl+Alt+K`，作为 `/ide attach` 的快捷键。重复按下会把最新选中的范围追加到当前输入框，因此可以在编辑器中多次选择不同文本并逐个附加。macOS 上这是终端快捷键（`Ctrl+Option+K`）；`Cmd` 快捷键通常由终端或系统处理，Pi TUI 无法接收。设置 `PI_X_IDE_ATTACH_SHORTCUT` 可改成其他 pi key id；设为 `off`/`none`/`false`/`0` 可禁用。
 
 ### 配置参考
 
@@ -178,11 +178,12 @@ require("pi_x_ide").setup({
 
 Pi 侧变量可设为真实环境变量或写入 `~/.pi/config.json` 的 `env` 中。真实环境变量优先级更高。
 
-| 变量                            | 默认值       | 说明                                             |
-| ------------------------------- | ------------ | ------------------------------------------------ |
-| `PI_X_IDE_AUTO_INSTALL`         | `1`          | Pi 启动时自动安装 VS Code 扩展                   |
-| `PI_X_IDE_ZED_DB`               | （自动检测） | 覆盖 Zed SQLite 数据库路径                       |
-| `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`       | Zed SQLite 轮询间隔，会被限制在 100-2000 ms 范围 |
+| 变量                            | 默认值       | 说明                                                                      |
+| ------------------------------- | ------------ | ------------------------------------------------------------------------- |
+| `PI_X_IDE_AUTO_INSTALL`         | `1`          | Pi 启动时自动安装 VS Code 扩展                                            |
+| `PI_X_IDE_ATTACH_SHORTCUT`      | `ctrl+alt+k` | Pi TUI 的 `/ide attach` 快捷键；设为 `off`、`none`、`false` 或 `0` 可禁用 |
+| `PI_X_IDE_ZED_DB`               | （自动检测） | 覆盖 Zed SQLite 数据库路径                                                |
+| `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`       | Zed SQLite 轮询间隔，会被限制在 100-2000 ms 范围                          |
 
 编辑器 schema 指导见 [schemas/config.json](schemas/config.json)。
 

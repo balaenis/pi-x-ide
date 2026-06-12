@@ -16,7 +16,12 @@ import {
   selectAutoInstallCandidate,
   type IdeInstallCandidate,
 } from "../src/pi/install";
-import { registerIdeCommand } from "../src/pi/commands";
+import {
+  DEFAULT_ATTACH_SHORTCUT,
+  PI_X_IDE_ATTACH_SHORTCUT_ENV,
+  registerIdeCommand,
+  resolveAttachShortcut,
+} from "../src/pi/commands";
 import { createRuntime } from "../src/pi/state";
 import { resolvePiConfigEnv } from "../src/shared/config";
 
@@ -79,6 +84,13 @@ void test("builds forced Marketplace install args", () => {
   assert.deepEqual(buildInstallArgs(), ["--force", "--install-extension", PI_X_IDE_EXTENSION_ID]);
 });
 
+void test("resolves configurable Pi TUI attach shortcut", () => {
+  assert.equal(resolveAttachShortcut({}), DEFAULT_ATTACH_SHORTCUT);
+  assert.equal(resolveAttachShortcut({ [PI_X_IDE_ATTACH_SHORTCUT_ENV]: "Ctrl+Shift+I" }), "ctrl+shift+i");
+  assert.equal(resolveAttachShortcut({ [PI_X_IDE_ATTACH_SHORTCUT_ENV]: "off" }), undefined);
+  assert.equal(resolveAttachShortcut({ [PI_X_IDE_ATTACH_SHORTCUT_ENV]: "0" }), undefined);
+});
+
 void test("/ide install completion and handler are wired", async () => {
   type RegisteredCommand = {
     getArgumentCompletions: (argumentPrefix: string) => { value: string; label: string; description: string }[] | null;
@@ -97,19 +109,24 @@ void test("/ide install completion and handler are wired", async () => {
     },
   } as unknown as ExtensionAPI;
 
-  registerIdeCommand(pi, createRuntime(), {
-    refreshCandidates: () => Promise.resolve([]),
-    connectAuto: () => Promise.resolve(),
-    connectCandidate: () => Promise.resolve(),
-    disconnect: () => {},
-    installExtension: () => {
-      installCalled = true;
-      return Promise.resolve();
+  registerIdeCommand(
+    pi,
+    createRuntime(),
+    {
+      refreshCandidates: () => Promise.resolve([]),
+      connectAuto: () => Promise.resolve(),
+      connectCandidate: () => Promise.resolve(),
+      disconnect: () => {},
+      installExtension: () => {
+        installCalled = true;
+        return Promise.resolve();
+      },
     },
-  });
+    { env: { [PI_X_IDE_ATTACH_SHORTCUT_ENV]: "ctrl+shift+i" } },
+  );
 
   assert.ok(registered);
-  assert.equal(shortcut, "ctrl+alt+k");
+  assert.equal(shortcut, "ctrl+shift+i");
   assert.ok(registered.getArgumentCompletions("")?.some((completion) => completion.value === "install"));
 
   await registered.handler("install", createCommandContext());

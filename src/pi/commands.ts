@@ -1,10 +1,18 @@
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
+import { resolvePiConfigEnv } from "../shared/config";
 import { formatRangeMention } from "../shared/format";
 import type { LockFileCandidate } from "../shared/protocol";
 import type { PiIdeRuntime } from "./state";
 import { buildWidget, updateIdeUi } from "./ui";
+
+export const PI_X_IDE_ATTACH_SHORTCUT_ENV = "PI_X_IDE_ATTACH_SHORTCUT";
+export const DEFAULT_ATTACH_SHORTCUT = "ctrl+alt+k";
+
+const DISABLED_ATTACH_SHORTCUT_VALUES = new Set(["", "0", "false", "off", "none", "disabled"]);
+
+type ShortcutKey = Parameters<ExtensionAPI["registerShortcut"]>[0];
 
 export interface IdeCommandActions {
   refreshCandidates: (ctx: ExtensionCommandContext) => Promise<LockFileCandidate[]>;
@@ -14,14 +22,22 @@ export interface IdeCommandActions {
   installExtension: (ctx: ExtensionCommandContext) => Promise<void>;
 }
 
-export function registerIdeCommand(pi: ExtensionAPI, runtime: PiIdeRuntime, actions: IdeCommandActions): void {
-  pi.registerShortcut("ctrl+alt+k", {
-    description: "Attach latest IDE selection to the prompt",
-    handler: (ctx) => {
-      runtime.ctx = ctx;
-      attachLatest(runtime, ctx);
-    },
-  });
+export function registerIdeCommand(
+  pi: ExtensionAPI,
+  runtime: PiIdeRuntime,
+  actions: IdeCommandActions,
+  options: { env?: NodeJS.ProcessEnv } = {},
+): void {
+  const attachShortcut = resolveAttachShortcut(options.env);
+  if (attachShortcut) {
+    pi.registerShortcut(attachShortcut, {
+      description: "Attach latest IDE selection to the prompt",
+      handler: (ctx) => {
+        runtime.ctx = ctx;
+        attachLatest(runtime, ctx);
+      },
+    });
+  }
 
   pi.registerCommand("ide", {
     description: "Manage IDE connection and editor selection context",
@@ -120,6 +136,13 @@ async function listCandidates(actions: IdeCommandActions, ctx: ExtensionCommandC
       .join("\n"),
     "info",
   );
+}
+
+export function resolveAttachShortcut(env: NodeJS.ProcessEnv = process.env): ShortcutKey | undefined {
+  const value = resolvePiConfigEnv(env)[PI_X_IDE_ATTACH_SHORTCUT_ENV] ?? DEFAULT_ATTACH_SHORTCUT;
+  const normalized = value.trim().toLowerCase();
+  if (DISABLED_ATTACH_SHORTCUT_VALUES.has(normalized)) return undefined;
+  return normalized as ShortcutKey;
 }
 
 function attachLatest(runtime: PiIdeRuntime, ctx: ExtensionContext): void {

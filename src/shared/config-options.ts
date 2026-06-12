@@ -22,6 +22,11 @@ export const CONFIG_ENV_OPTIONS = {
     default: "enabled",
     description: "Controls VS Code-family extension auto-install. Values 0, false, and off disable it.",
   },
+  PI_X_IDE_ATTACH_SHORTCUT: {
+    type: ["string"],
+    default: "ctrl+alt+k",
+    description: "Pi TUI shortcut for attaching the latest IDE selection. Set to off, none, false, or 0 to disable.",
+  },
   PI_X_IDE_ZED_DB: {
     type: ["string"],
     description: "Override path to Zed's SQLite database.",
