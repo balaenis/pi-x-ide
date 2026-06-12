@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/balaenis/pi-x-ide/compare/v1.6.0...v1.7.0) (2026-06-12)
+
+
+### Features
+
+* **zed:** add configurable poll interval env var and clean up env schema ([04d870e](https://github.com/balaenis/pi-x-ide/commit/04d870e88d756a2faea998e741f8893bc95c3a31))
+
 ## [1.6.0](https://github.com/balaenis/pi-x-ide/compare/v1.5.1...v1.6.0) (2026-06-12)
 
 
