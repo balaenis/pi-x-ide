@@ -55,23 +55,115 @@ local function platform_target()
   return nil
 end
 
-local function resolve_sidecar_binary()
+local function sidecar_binary_name()
   local target = platform_target()
   if not target then
     return nil
   end
-  local name = "pi-x-ide-nvim-sidecar-" .. target
+  return "pi-x-ide-nvim-sidecar-" .. target
+end
+
+local function cache_paths(name)
+  local cache_dir = vim.fn.stdpath("cache") .. "/pi-x-ide"
+  local dest = cache_dir .. "/" .. name
+  return cache_dir, dest, dest .. ".verified"
+end
+
+local function download_path(dest)
+  if dest:sub(-4) == ".exe" then
+    return dest:sub(1, -5) .. ".download.exe"
+  end
+  return dest .. ".download"
+end
+
+local function ensure_executable(path)
+  if path:sub(-4) == ".exe" then
+    return true
+  end
+
+  local stat = vim.loop.fs_stat(path)
+  if not stat then
+    return false
+  end
+
+  if bit.band(stat.mode, 64) == 0 then -- missing owner x bit
+    vim.loop.fs_chmod(path, bit.bor(stat.mode, 73)) -- add u+x,g+x,o+x
+  end
+
+  local updated = vim.loop.fs_stat(path)
+  return updated ~= nil and bit.band(updated.mode, 64) ~= 0
+end
+
+local function verification_token(path)
+  local stat = vim.loop.fs_stat(path)
+  if not stat then
+    return nil
+  end
+  local mtime = stat.mtime and stat.mtime.sec or 0
+  return tostring(stat.size) .. ":" .. tostring(mtime)
+end
+
+local function marker_matches(path, marker)
+  local token = verification_token(path)
+  if not token then
+    return false
+  end
+
+  local ok, lines = pcall(vim.fn.readfile, marker)
+  return ok and type(lines) == "table" and lines[1] == token
+end
+
+local function write_marker(path, marker)
+  local token = verification_token(path)
+  if not token then
+    return false
+  end
+
+  local ok = pcall(vim.fn.writefile, { token }, marker)
+  return ok
+end
+
+local function verify_sidecar_binary(path)
+  if not vim.loop.fs_stat(path) then
+    return false
+  end
+  if not ensure_executable(path) then
+    return false
+  end
+
+  local output = vim.fn.system({ path, "--help" })
+  return vim.v.shell_error == 0
+    and type(output) == "string"
+    and output:find("Usage: pi%-x%-ide%-nvim%-sidecar", 1) ~= nil
+end
+
+local function resolve_sidecar_binary()
+  local name = sidecar_binary_name()
+  if not name then
+    return nil
+  end
 
   -- 1. Bundled with the plugin (npm / manual install)
   local bundled = plugin_root() .. "/bin/" .. name
   if vim.loop.fs_stat(bundled) then
+    ensure_executable(bundled)
     return bundled
   end
 
-  -- 2. Previously downloaded to cache
-  local cached = vim.fn.stdpath("cache") .. "/pi-x-ide/" .. name
-  if vim.loop.fs_stat(cached) then
+  -- 2. Previously downloaded to cache. Only trust files that were
+  -- verified after a complete download; old unmarked caches are checked
+  -- once, then either marked or deleted.
+  local _, cached, marker = cache_paths(name)
+  if marker_matches(cached, marker) then
+    ensure_executable(cached)
     return cached
+  end
+  if vim.loop.fs_stat(cached) then
+    if verify_sidecar_binary(cached) and write_marker(cached, marker) then
+      return cached
+    end
+    os.remove(cached)
+    os.remove(marker)
   end
 
   return nil
@@ -80,38 +172,32 @@ end
 local function default_sidecar_cmd()
   local binary = resolve_sidecar_binary()
   if binary then
-    -- Ensure binary is executable (belt-and-suspenders: the download
-    -- handler should have set this, but chmod can silently fail).
-    local stat = vim.loop.fs_stat(binary)
-    if stat and bit.band(stat.mode, 64) == 0 then -- missing owner x bit
-      vim.loop.fs_chmod(binary, stat.mode + 73) -- add u+x,g+x,o+x
-    end
+    ensure_executable(binary)
     return { binary }
   end
   return { "node", plugin_root() .. "/bin/pi-x-ide-nvim-sidecar.cjs" }
 end
 
 local function prefetch_binary()
-  local target = platform_target()
-  if not target then
+  local name = sidecar_binary_name()
+  if not name then
     return
   end
 
-  -- Already available (bundled or cached)
+  -- Already available (bundled or verified cached binary)
   if resolve_sidecar_binary() then
     return
   end
 
-  local name = "pi-x-ide-nvim-sidecar-" .. target
-  local cache_dir = vim.fn.stdpath("cache") .. "/pi-x-ide"
-  local dest = cache_dir .. "/" .. name
+  local cache_dir, dest, marker = cache_paths(name)
+  local tmp = download_path(dest)
   local url = "https://github.com/balaenis/pi-x-ide/releases/latest/download/" .. name
 
   local tool
   if vim.fn.executable("curl") == 1 then
-    tool = { "curl", "-fsSL", "--retry", "3", "--retry-delay", "5", "-C", "-", "-o", dest, url }
+    tool = { "curl", "-fsSL", "--retry", "3", "--retry-delay", "5", "-C", "-", "-o", tmp, url }
   elseif vim.fn.executable("wget") == 1 then
-    tool = { "wget", "-q", "-O", dest, url }
+    tool = { "wget", "-q", "--tries=3", "--continue", "-O", tmp, url }
   else
     return
   end
@@ -130,24 +216,23 @@ local function prefetch_binary()
     end,
     on_exit = function(_, code)
       vim.schedule(function()
-        if code == 0 and vim.loop.fs_stat(dest) then
-          -- Verify ELF header to detect truncated downloads
-          local fd, open_err = vim.loop.fs_open(dest, "r", 438)
-          local valid = false
-          if fd then
-            local magic = vim.loop.fs_read(fd, 4, 0)
-            vim.loop.fs_close(fd)
-            valid = magic == "\x7fELF"
-          end
-          if valid then
-            local chmod_ok = vim.loop.fs_chmod(dest, 493) -- 0755
-            if not chmod_ok then
-              vim.fn.system({ "chmod", "+x", dest })
-            end
-            notify("Sidecar binary ready (restart Neovim to use it)", vim.log.levels.INFO)
-          else
+        if code == 0 and vim.loop.fs_stat(tmp) then
+          if verify_sidecar_binary(tmp) then
             os.remove(dest)
-            notify("Sidecar binary download was corrupt (truncated) — deleted; will retry next restart", vim.log.levels.WARN)
+            os.remove(marker)
+            local ok, rename_err = vim.loop.fs_rename(tmp, dest)
+            if ok and write_marker(dest, marker) then
+              notify("Sidecar binary ready (restart Neovim to use it)", vim.log.levels.INFO)
+            else
+              os.remove(tmp)
+              os.remove(dest)
+              os.remove(marker)
+              notify("Sidecar binary download could not be cached" .. (rename_err and (" — " .. rename_err) or "") .. " — will retry next restart", vim.log.levels.WARN)
+            end
+          else
+            os.remove(tmp)
+            os.remove(marker)
+            notify("Sidecar binary download was corrupt or incomplete — deleted; will retry next restart", vim.log.levels.WARN)
           end
         else
           local detail = table.concat(stderr_lines, " ")
