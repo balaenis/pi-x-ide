@@ -39,18 +39,18 @@ function isPendingEditorContext(runtime: PiIdeRuntime): boolean {
 }
 
 export function buildStatusLine(runtime: PiIdeRuntime, cwd?: string): string {
-  if (!runtime.enabled || runtime.connectionStatus === "disabled") return "IDE: off";
-  if (runtime.connectionStatus === "connecting") return "IDE: connecting";
+  if (!runtime.enabled || runtime.connectionStatus === "disabled") return "Pi x IDE: off";
+  if (runtime.connectionStatus === "connecting") return "Pi x IDE: connecting";
   if (runtime.connectionStatus === "error")
-    return `IDE: error${runtime.connectionMessage ? ` ${runtime.connectionMessage}` : ""}`;
-  if (runtime.connectionStatus !== "connected") return "IDE: disconnected";
+    return `Pi x IDE: error${runtime.connectionMessage ? ` ${runtime.connectionMessage}` : ""}`;
+  if (runtime.connectionStatus !== "connected") return "Pi x IDE: disconnected";
 
   const ide = runtime.connectedServer?.ide ?? runtime.currentCandidate?.lock.ide ?? "ide";
   const selection = runtime.latestSelection;
-  if (!selection) return `IDE: ${ide} ✓`;
+  if (!selection) return `${ide} ✓`;
   const rel = toRelativeDisplayPath(selection.filePath, selection.workspaceFolder, cwd);
   const range = describeRanges(selection.ranges);
-  return `IDE: ${ide} ✓ ${rel}${range === "open file" ? "" : range} ${runtime.attachState}`;
+  return `${ide} ✓ ${rel}${range === "open file" ? "" : range} ${runtime.attachState}`;
 }
 
 export function buildWidget(runtime: PiIdeRuntime, cwd?: string): string[] | undefined {
