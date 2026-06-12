@@ -1,0 +1,6 @@
+{
+  "$schema": "https://raw.githubusercontent.com/balaenis/pi-x-ide/refs/heads/main/schemas/config.json",
+  "env": {
+    "PI_X_IDE_AUTO_INSTALL": "1"
+  }
+}
