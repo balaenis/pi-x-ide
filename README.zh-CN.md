@@ -176,7 +176,7 @@ require("pi_x_ide").setup({
 
 #### Pi 侧环境变量
 
-Pi 侧变量可设为真实环境变量或写入 `~/.pi/config.json` 的 `env` 中。真实环境变量优先级更高。
+Pi 侧变量可设为真实环境变量或写入 `~/.pi/pi-x-ide/config.json` 的 `env` 中。真实环境变量优先级更高。
 
 | 变量                            | 默认值       | 说明                                                                      |
 | ------------------------------- | ------------ | ------------------------------------------------------------------------- |
@@ -185,7 +185,7 @@ Pi 侧变量可设为真实环境变量或写入 `~/.pi/config.json` 的 `env` �
 | `PI_X_IDE_ZED_DB`               | （自动检测） | 覆盖 Zed SQLite 数据库路径                                                |
 | `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`       | Zed SQLite 轮询间隔，会被限制在 100-2000 ms 范围                          |
 
-编辑器 schema 指导见 [schemas/config.json](schemas/config.json)。
+编辑器 schema 指导见 [schemas/config.json](schemas/config.json)。[config.example.json](config.example.json) 提供了起始模板。
 
 ### 功能对比
 
@@ -236,13 +236,14 @@ pi -e ./src/pi/index.ts
 
 常用命令：
 
-| 命令                     | 说明                                                                                            |
-| ------------------------ | ----------------------------------------------------------------------------------------------- |
-| `bun run build`          | 编译 Pi 侧 TypeScript → `dist/` + Neovim sidecar → `nvim/bin/` + VS Code bundle → `vscode/out/` |
-| `bun run typecheck`      | 类型检查（不产出文件）                                                                          |
-| `bun run test`           | 编译 + 运行单元测试                                                                             |
-| `bun run package:vscode` | 打包 VS Code 扩展为 VSIX                                                                        |
-| `bun run vsix`           | `bun run package:vscode` 的别名                                                                 |
+| 命令                          | 说明                                                                                            |
+| ----------------------------- | ----------------------------------------------------------------------------------------------- |
+| `bun run build`               | 编译 Pi 侧 TypeScript → `dist/` + Neovim sidecar → `nvim/bin/` + VS Code bundle → `vscode/out/` |
+| `bun run typecheck`           | 类型检查（不产出文件）                                                                          |
+| `bun run test`                | 编译 + 运行单元测试                                                                             |
+| `bun run package:vsix`        | 打包 VS Code 扩展为 VSIX                                                                        |
+| `bun run vsix`                | `bun run package:vsix` 的别名                                                                   |
+| `bun run check:config-schema` | 验证 `schemas/config.json` 与配置注册表是否同步                                                 |
 
 ### 本地测试 VS Code 扩展
 
@@ -258,8 +259,8 @@ pi -e ./src/pi/index.ts
 #### 方式二：打包 VSIX 后安装
 
 ```bash
-bun run package:vscode
-code --install-extension './vscode'-0.1.0.vsix
+bun run package:vsix
+cd vscode && code --install-extension dist/pi-x-ide-$(node -p "require('./package.json').version").vsix
 ```
 
 这样安装的扩展在所有 VS Code 窗口中运行，不依赖 F5 Extension Host。

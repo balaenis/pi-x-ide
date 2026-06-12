@@ -178,7 +178,7 @@ when no binary matches.
 
 #### Pi-side Environment Variables
 
-Pi-side variables can be set as real environment variables or in `~/.pi/config.json` under `env`. Real environment variables take precedence.
+Pi-side variables can be set as real environment variables or in `~/.pi/pi-x-ide/config.json` under `env`. Real environment variables take precedence.
 
 | Variable                        | Default       | Description                                                                         |
 | ------------------------------- | ------------- | ----------------------------------------------------------------------------------- |
@@ -187,7 +187,7 @@ Pi-side variables can be set as real environment variables or in `~/.pi/config.j
 | `PI_X_IDE_ZED_DB`               | (auto-detect) | Override path to Zed SQLite database                                                |
 | `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`        | Zed SQLite polling interval, clamped to 100-2000 ms                                 |
 
-See [schemas/config.json](schemas/config.json) for editor schema guidance.
+See [schemas/config.json](schemas/config.json) for editor schema guidance. A [config.example.json](config.example.json) is provided as a starting template.
 
 ### Feature Parity
 
@@ -237,13 +237,14 @@ pi -e ./src/pi/index.ts
 
 Common commands:
 
-| Command                  | Description                                                                                        |
-| ------------------------ | -------------------------------------------------------------------------------------------------- |
-| `bun run build`          | Build Pi-side TypeScript → `dist/` + Neovim sidecar → `nvim/bin/` + VS Code bundle → `vscode/out/` |
-| `bun run typecheck`      | Type-check only (no output files)                                                                  |
-| `bun run test`           | Build + run unit tests                                                                             |
-| `bun run package:vscode` | Package VS Code extension as VSIX                                                                  |
-| `bun run vsix`           | Alias for `bun run package:vscode`                                                                 |
+| Command                       | Description                                                                                        |
+| ----------------------------- | -------------------------------------------------------------------------------------------------- |
+| `bun run build`               | Build Pi-side TypeScript → `dist/` + Neovim sidecar → `nvim/bin/` + VS Code bundle → `vscode/out/` |
+| `bun run typecheck`           | Type-check only (no output files)                                                                  |
+| `bun run test`                | Build + run unit tests                                                                             |
+| `bun run package:vsix`        | Package VS Code extension as VSIX                                                                  |
+| `bun run vsix`                | Alias for `bun run package:vsix`                                                                   |
+| `bun run check:config-schema` | Verify `schemas/config.json` is in sync with the config registry                                   |
 
 ### Testing the VS Code Extension Locally
 
@@ -259,8 +260,8 @@ Common commands:
 #### Option 2: Package VSIX and Install
 
 ```bash
-bun run package:vscode
-code --install-extension './vscode'-0.1.0.vsix
+bun run package:vsix
+cd vscode && code --install-extension dist/pi-x-ide-$(node -p "require('./package.json').version").vsix
 ```
 
 The extension installed this way runs in all VS Code windows, independent of the F5 Extension Host.
