@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.0](https://github.com/balaenis/pi-x-ide/compare/v1.5.1...v1.6.0) (2026-06-12)
+
+
+### Features
+
+* **mise:** add compile and compile:all tasks ([517e9cd](https://github.com/balaenis/pi-x-ide/commit/517e9cdfe533294f69d71021680b471662104a32))
+* **pi:** limit reconnect attempts and add handshake timeout ([4dc855e](https://github.com/balaenis/pi-x-ide/commit/4dc855e715f1b8bf141a0f055962af53ac581696))
+
 ## [1.5.1](https://github.com/balaenis/pi-x-ide/compare/v1.5.0...v1.5.1) (2026-06-11)
 
 
