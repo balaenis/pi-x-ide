@@ -176,10 +176,11 @@ require("pi_x_ide").setup({
 
 Pi 侧变量可设为真实环境变量或写入 `~/.pi/config.json` 的 `env` 中。真实环境变量优先级更高。
 
-| 变量                    | 默认值       | 说明                           |
-| ----------------------- | ------------ | ------------------------------ |
-| `PI_X_IDE_AUTO_INSTALL` | `1`          | Pi 启动时自动安装 VS Code 扩展 |
-| `PI_X_IDE_ZED_DB`       | （自动检测） | 覆盖 Zed SQLite 数据库路径     |
+| 变量                            | 默认值       | 说明                                             |
+| ------------------------------- | ------------ | ------------------------------------------------ |
+| `PI_X_IDE_AUTO_INSTALL`         | `1`          | Pi 启动时自动安装 VS Code 扩展                   |
+| `PI_X_IDE_ZED_DB`               | （自动检测） | 覆盖 Zed SQLite 数据库路径                       |
+| `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`       | Zed SQLite 轮询间隔，会被限制在 100-2000 ms 范围 |
 
 编辑器 schema 指导见 [schemas/config.json](schemas/config.json)。
 

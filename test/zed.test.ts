@@ -20,6 +20,7 @@ import {
   startZedPolling,
   stopZedPolling,
   PI_X_IDE_ZED_DB_ENV,
+  PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV,
 } from "../src/pi/zed";
 
 // ── Env / path detection ──────────────────────────────────────
@@ -669,6 +670,29 @@ void test("startZedPolling returns false when DB path not found", () => {
   const result = startZedPolling(runtime, createContext(), { env: { ZED_TERM: "true" } });
   assert.equal(result, false);
   assert.equal(runtime.zedPollTimer, undefined);
+});
+
+void test("startZedPolling clamps configured poll interval", async () => {
+  const { dir, dbPath, cleanup } = await createFixture();
+  after(cleanup);
+
+  const cases = [
+    { value: "1", expected: 100 },
+    { value: "250", expected: 250 },
+    { value: "5000", expected: 2000 },
+  ];
+
+  for (const { value, expected } of cases) {
+    const runtime = createRuntime();
+    const started = startZedPolling(runtime, createContext(dir), {
+      dbPath,
+      env: { ZED_TERM: "true", [PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV]: value },
+    });
+
+    assert.equal(started, true);
+    assert.equal((runtime.zedPollTimer as NodeJS.Timeout & { _idleTimeout?: number })._idleTimeout, expected);
+    stopZedPolling(runtime);
+  }
 });
 
 void test("startZedPolling clears stale WebSocket candidate state", async () => {

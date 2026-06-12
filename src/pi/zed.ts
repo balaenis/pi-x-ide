@@ -14,7 +14,10 @@ import type { PiIdeRuntime } from "./state";
 import { updateIdeUi } from "./ui";
 
 export const PI_X_IDE_ZED_DB_ENV = "PI_X_IDE_ZED_DB";
+export const PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV = "PI_X_IDE_ZED_POLL_INTERVAL_MS";
 export const ZED_POLL_INTERVAL_MS = 1000;
+export const ZED_POLL_INTERVAL_MS_MIN = 100;
+export const ZED_POLL_INTERVAL_MS_MAX = 2000;
 
 // ── Terminal detection ──────────────────────────────────────────
 
@@ -444,7 +447,14 @@ export function startZedPolling(
   const dbPath = options?.dbPath ?? resolveZedDbPath(env);
   if (!dbPath) return false;
 
-  const intervalMs = options?.intervalMs ?? ZED_POLL_INTERVAL_MS;
+  const configuredIntervalRaw = env[PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV];
+  let configuredInterval: number | undefined;
+  if (configuredIntervalRaw !== undefined) {
+    const parsed = Number(configuredIntervalRaw);
+    if (Number.isFinite(parsed) && parsed > 0) configuredInterval = parsed;
+  }
+  const resolved = options?.intervalMs ?? configuredInterval ?? ZED_POLL_INTERVAL_MS;
+  const intervalMs = Math.min(Math.max(resolved, ZED_POLL_INTERVAL_MS_MIN), ZED_POLL_INTERVAL_MS_MAX);
   const generation = options?.generation;
 
   // Set connection status and clear any stale WebSocket candidate state.

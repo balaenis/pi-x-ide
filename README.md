@@ -178,10 +178,11 @@ when no binary matches.
 
 Pi-side variables can be set as real environment variables or in `~/.pi/config.json` under `env`. Real environment variables take precedence.
 
-| Variable                | Default       | Description                                  |
-| ----------------------- | ------------- | -------------------------------------------- |
-| `PI_X_IDE_AUTO_INSTALL` | `1`           | Auto-install VS Code extension on Pi startup |
-| `PI_X_IDE_ZED_DB`       | (auto-detect) | Override path to Zed SQLite database         |
+| Variable                        | Default       | Description                                         |
+| ------------------------------- | ------------- | --------------------------------------------------- |
+| `PI_X_IDE_AUTO_INSTALL`         | `1`           | Auto-install VS Code extension on Pi startup        |
+| `PI_X_IDE_ZED_DB`               | (auto-detect) | Override path to Zed SQLite database                |
+| `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`        | Zed SQLite polling interval, clamped to 100-2000 ms |
 
 See [schemas/config.json](schemas/config.json) for editor schema guidance.
 
