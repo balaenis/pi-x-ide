@@ -41,10 +41,19 @@ run = "bun run format"
 description = "Check formatting with prettier"
 run = "bun run format:check"
 
+[tasks."compile"]
+description = "Compile the TypeScript code"
+depends = ["setup"]
+run = "bun run compile"
+
 [tasks."compile:vsix"]
 description = "Build the VS Code extension for local debugging"
 depends = ["setup"]
 run = "bun run compile:vsix"
+
+[tasks."compile:all"]
+description = "Compile all IDE extensions for local debugging"
+depends = ["setup", "compile", "compile:vsix"]
 
 [tasks."package:vsix"]
 description = "Build the production VS Code VSIX package"
