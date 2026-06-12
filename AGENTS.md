@@ -19,7 +19,9 @@ mise run test
 
 ## Update `README.md`
 
-When you add new features or make changes that require users to be aware of certain important details, please update the relevant sections in the README and make corresponding changes to the Chinese version of the README as well.
+When you add new features or make changes that require users to know some important details, please update `@README.md` and sync the other language versions:
+
+- `@README.zh-CN.md`
 
 ## Update config schema
 

@@ -191,14 +191,13 @@ See [schemas/config.json](schemas/config.json) for editor schema guidance.
 
 ### Feature Parity
 
-| Feature                                      | VS Code           | Zed                                                | Neovim                        |
-| -------------------------------------------- | ----------------- | -------------------------------------------------- | ----------------------------- |
-| Live file tracking                           | ✅ Real-time push | ✅ 1s polling                                      | ✅ Real-time push via sidecar |
-| Live selection tracking                      | ✅ Real-time push | ✅ 1s polling                                      | ✅ Real-time push via sidecar |
-| IDE-side `Ctrl+Alt+K` / `Cmd+Alt+K` shortcut | ✅                | Use Pi TUI shortcut or `@<relative-path>` manually | User-configured keymap        |
-| Pi TUI `Ctrl+Alt+K` attach shortcut          | ✅                | ✅                                                 | ✅                            |
-| LLM context injection                        | ✅                | ✅                                                 | ✅                            |
-| `/ide auto`                                  | ✅                | ✅                                                 | ✅                            |
+| Feature                                              | VS Code                 | Zed        | Neovim                        |
+| ---------------------------------------------------- | ----------------------- | ---------- | ----------------------------- |
+| Live file tracking                                   | ✅ Real-time push       | ✅ polling | ✅ Real-time push via sidecar |
+| Live selection tracking                              | ✅ Real-time push       | ✅ polling | ✅ Real-time push via sidecar |
+| IDE context attach shortcut                          | ✅ Default `Ctrl+Alt+K` | ❌         | ✅ Custom configured keymap   |
+| Pi TUI context attach shortcut(default `Ctrl+Alt+K`) | ✅                      | ✅         | ✅                            |
+| LLM context injection                                | ✅                      | ✅         | ✅                            |
 
 ### Lock File Protocol
 
