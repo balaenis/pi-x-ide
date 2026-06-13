@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.0](https://github.com/balaenis/pi-x-ide/compare/v1.8.0...v1.9.0) (2026-06-13)
+
+
+### Features
+
+* **vscode:** add useTmux setting to open Pi through tmux ([93cec4d](https://github.com/balaenis/pi-x-ide/commit/93cec4de9f2f51312db4c3a4672b2f2ffe2ddc61))
+
+
+### Bug Fixes
+
+* **pi/install:** filter out unknown-reason candidates from auto-install ([375449b](https://github.com/balaenis/pi-x-ide/commit/375449b2306d8fa1098a30a0176eff9dc5f602e2))
+
 ## [1.8.0](https://github.com/balaenis/pi-x-ide/compare/v1.7.0...v1.8.0) (2026-06-12)
 
 
