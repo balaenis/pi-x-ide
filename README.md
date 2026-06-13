@@ -65,15 +65,14 @@ starts. Plugin updates trigger a one-time re-download.
   init = function()
     vim.opt.rtp:prepend(vim.fn.stdpath("data") .. "/lazy/pi-x-ide/nvim")
   end,
-  config = function()
-    require("pi_x_ide").setup({
-      keymap = "<C-A-k>",
-    })
-  end,
+  main = "pi_x_ide",
+  opts = {
+    keymap = "<leader>aa",
+  },
 }
 ```
 
-> **Note:** The `init` block manually adds the `nvim/` subdirectory to the runtime path to avoid a Lua module resolution issue with some lazy.nvim versions.
+> **Note:** The `init` block manually adds the `nvim/` subdirectory to the runtime path to avoid a Lua module resolution issue with some lazy.nvim versions. The plugin options are passed through lazy.nvim's recommended `opts` field.
 
 **Native package:**
 

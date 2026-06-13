@@ -18,17 +18,17 @@ With lazy.nvim:
     init = function()
       vim.opt.rtp:prepend(vim.fn.stdpath("data") .. "/lazy/pi-x-ide/nvim")
     end,
-    config = function()
-      require("pi_x_ide").setup({
-        keymap = "<leader>pa",
-      })
-    end,
+    main = "pi_x_ide",
+    opts = {
+      keymap = "<leader>aa",
+    },
   }
 <
 
 Note: The `init` block manually adds the `nvim/` subdirectory to the runtime
 path. This avoids a Lua module resolution issue with lazy.nvim's `rtp` option
-on some versions.
+on some versions. Plugin options are passed through lazy.nvim's recommended
+`opts` field.
 
 With native packages, clone the repository into a `pack/*/start` directory and
 add the `nvim` subdirectory to your runtime path before setup:

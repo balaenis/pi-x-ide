@@ -64,15 +64,14 @@ x64 或 arm64）。下载失败或无匹配二进制时，插件降级到内置�
   init = function()
     vim.opt.rtp:prepend(vim.fn.stdpath("data") .. "/lazy/pi-x-ide/nvim")
   end,
-  config = function()
-    require("pi_x_ide").setup({
-      keymap = "<C-A-k>",
-    })
-  end,
+  main = "pi_x_ide",
+  opts = {
+    keymap = "<leader>aa",
+  },
 }
 ```
 
-> **注意：** `init` 块手动将 `nvim/` 子目录加入 runtime path，以规避部分版本 lazy.nvim 的 Lua 模块解析兼容性问题。
+> **注意：** `init` 块手动将 `nvim/` 子目录加入 runtime path，以规避部分版本 lazy.nvim 的 Lua 模块解析兼容性问题。插件选项通过 lazy.nvim 推荐的 `opts` 字段传入。
 
 **原生 package：**
 
