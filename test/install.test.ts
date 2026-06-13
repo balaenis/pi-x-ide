@@ -73,9 +73,11 @@ void test("selects only one high-confidence auto-install candidate", () => {
   const vscode = createCandidate({ id: "vscode", confidence: "current-terminal" });
   const cursor = createCandidate({ id: "cursor", confidence: "current-terminal", cli: "cursor", label: "Cursor" });
   const available = createCandidate({ id: "vscode", confidence: "available-cli" });
+  const unknown = createCandidate({ id: "vscode", confidence: "current-terminal", reason: "unknown" });
 
   assert.equal(selectAutoInstallCandidate([vscode], { TERM_PROGRAM: "vscode" }), vscode);
   assert.equal(selectAutoInstallCandidate([available], { TERM_PROGRAM: "vscode" }), undefined);
+  assert.equal(selectAutoInstallCandidate([unknown], { TERM_PROGRAM: "vscode" }), undefined);
   assert.equal(selectAutoInstallCandidate([vscode, cursor], {}), undefined);
   assert.equal(selectAutoInstallCandidate([cursor], { CURSOR_TRACE_ID: "trace" }), cursor);
 });

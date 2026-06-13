@@ -243,7 +243,10 @@ export function selectAutoInstallCandidate(
   const configuredEnv = resolvePiConfigEnv(env);
   const currentIde = inferCurrentIdeFromEnv(configuredEnv);
   const highConfidence = candidates.filter(
-    (candidate) => candidate.confidence === "current-terminal" && (!currentIde || candidate.id === currentIde),
+    (candidate) =>
+      candidate.confidence === "current-terminal" &&
+      candidate.reason !== "unknown" &&
+      (!currentIde || candidate.id === currentIde),
   );
   return highConfidence.length === 1 ? highConfidence[0] : undefined;
 }
