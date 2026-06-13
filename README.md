@@ -8,11 +8,7 @@ Automatically attaches the currently opened or selected file and text range from
 
 ## Installation & Usage
 
-### 1. Install Pi CLI
-
-[Pi Quickstart](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/quickstart.md)
-
-### 2. Install the Pi Extension Package
+### Install the Pi Extension Package
 
 ```bash
 pi install npm:pi-x-ide
@@ -20,7 +16,7 @@ pi install npm:pi-x-ide
 
 This installs `pi-x-ide` as a global Pi extension. Pi loads it automatically on startup — no flags needed.
 
-### 3. Install the IDE Extension
+### Install the IDE Extension
 
 #### VS Code / Cursor / Windsurf
 
@@ -83,7 +79,7 @@ lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
 
 See [Configuration Reference](#neovim-2) for full setup options, commands, and troubleshooting.
 
-### 4. Connect Pi & Verify
+### Connect Pi & Verify
 
 Start Pi in the **same project directory** as your IDE workspace:
 
@@ -198,6 +194,7 @@ See [schemas/config.json](schemas/config.json) for editor schema guidance. A [co
 | IDE context attach shortcut                          | ✅ Default `Ctrl+Alt+K` | ❌         | ✅ Custom configured keymap   |
 | Pi TUI context attach shortcut(default `Ctrl+Alt+K`) | ✅                      | ✅         | ✅                            |
 | LLM context injection                                | ✅                      | ✅         | ✅                            |
+| `/ide auto`                                          | ✅                      | ✅         | ✅                            |
 
 ### Lock File Protocol
 
@@ -215,7 +212,7 @@ See [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md) for protocol detail
 
 - Node.js ≥ 26
 - bun ≥ 1.3 (`packageManager` declared as `bun@1.3.14`)
-- VS Code ≥ 1.90 (VS Code extension only)
+- VS Code ≥ 1.120.0 (VS Code extension only)
 - Neovim ≥ 0.9 (Neovim plugin only)
 
 ### Install & Build
@@ -235,7 +232,7 @@ To load the local build without installing globally:
 pi -e ./src/pi/index.ts
 ```
 
-Common commands:
+All `bun run` commands have equivalent `mise run` tasks (see `mise.toml`):
 
 | Command                       | Description                                                                                        |
 | ----------------------------- | -------------------------------------------------------------------------------------------------- |
@@ -243,7 +240,6 @@ Common commands:
 | `bun run typecheck`           | Type-check only (no output files)                                                                  |
 | `bun run test`                | Build + run unit tests                                                                             |
 | `bun run package:vsix`        | Package VS Code extension as VSIX                                                                  |
-| `bun run vsix`                | Alias for `bun run package:vsix`                                                                   |
 | `bun run check:config-schema` | Verify `schemas/config.json` is in sync with the config registry                                   |
 
 ### Testing the VS Code Extension Locally

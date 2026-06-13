@@ -8,11 +8,7 @@
 
 ## 安装与使用
 
-### 1. 安装 Pi CLI
-
-[Pi Quickstart](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/quickstart.md)
-
-### 2. 安装 Pi 扩展包
+### 安装 Pi 扩展包
 
 ```bash
 pi install npm:pi-x-ide
@@ -20,7 +16,7 @@ pi install npm:pi-x-ide
 
 将 `pi-x-ide` 安装为全局 Pi 扩展，Pi 启动时自动加载，无需额外参数。
 
-### 3. 安装 IDE 扩展
+### 安装 IDE 扩展
 
 #### VS Code / Cursor / Windsurf
 
@@ -82,7 +78,7 @@ lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
 
 完整配置选项、命令和故障排查见 [配置参考](#neovim-2)。
 
-### 4. 连接 Pi 并验证
+### 连接 Pi 并验证
 
 在 IDE workspace **同一项目目录** 启动 Pi：
 
@@ -128,9 +124,9 @@ Pi 默认也会在 TUI 中注册 `Ctrl+Alt+K`，作为 `/ide attach` 的快捷�
 
 #### VS Code
 
-| 键                   | 类型                  | 默认值    | 说明                                                                                   |
-| -------------------- | --------------------- | --------- | -------------------------------------------------------------------------------------- |
-| `piXIde.rangeFormat` | `"comma"` \| `"dash"` | `"comma"` | 手动快捷键生成的文件引用格式                                                           |
+| 键                   | 类型                  | 默认值    | 说明                                                                                    |
+| -------------------- | --------------------- | --------- | --------------------------------------------------------------------------------------- |
+| `piXIde.rangeFormat` | `"comma"` \| `"dash"` | `"comma"` | 手动快捷键生成的文件引用格式                                                            |
 | `piXIde.useTmux`     | `boolean`             | `false`   | 通过终端图标用 `tmux` 打开 Pi。每次点击都会创建一个新 session，终端 detach 后自动销毁。 |
 
 #### Zed
@@ -214,7 +210,7 @@ Pi 通过 `ctx.cwd` 与 lock file 中的 `workspaceFolders` 做最长路径匹�
 
 - Node.js ≥ 26
 - bun ≥ 1.3（`packageManager` 声明为 `bun@1.3.14`）
-- VS Code ≥ 1.90（仅 VS Code 扩展需要）
+- VS Code ≥ 1.120.0（仅 VS Code 扩展需要）
 - Neovim ≥ 0.9（仅 Neovim 插件需要）
 
 ### 安装与构建
@@ -234,7 +230,7 @@ bun run build
 pi -e ./src/pi/index.ts
 ```
 
-常用命令：
+所有 `bun run` 命令都有等效的 `mise run` 任务（见 `mise.toml`）：
 
 | 命令                          | 说明                                                                                            |
 | ----------------------------- | ----------------------------------------------------------------------------------------------- |
@@ -242,7 +238,6 @@ pi -e ./src/pi/index.ts
 | `bun run typecheck`           | 类型检查（不产出文件）                                                                          |
 | `bun run test`                | 编译 + 运行单元测试                                                                             |
 | `bun run package:vsix`        | 打包 VS Code 扩展为 VSIX                                                                        |
-| `bun run vsix`                | `bun run package:vsix` 的别名                                                                   |
 | `bun run check:config-schema` | 验证 `schemas/config.json` 与配置注册表是否同步                                                 |
 
 ### 本地测试 VS Code 扩展
