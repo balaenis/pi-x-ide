@@ -7,6 +7,7 @@ Pi x IDE connects VS Code with Pi so your active file and selected text can be s
 - Tracks the active VS Code file for Pi
 - Sends selected text ranges as context
 - Provides a status bar action to attach the current selection
+- Provides an editor title action to open Pi in the integrated terminal
 - Supports manual attachment with a command or keyboard shortcut
 
 ## Usage
@@ -23,3 +24,10 @@ Default shortcut:
 - macOS: `Cmd+Alt+K`
 
 When no text is selected, Pi receives the active file reference. When text is selected, Pi receives the selected range and content.
+
+## Settings
+
+| Key                  | Default   | Description                                           |
+| -------------------- | --------- | ----------------------------------------------------- |
+| `piXIde.rangeFormat` | `"comma"` | Line range format used for manual `@file` references. |
+| `piXIde.useTmux`     | `false`   | Open `Pi Tui` with `tmux` when opening the terminal.  |

@@ -68,6 +68,11 @@
           ],
           "default": "comma",
           "description": "Line range format used for manual @file references."
+        },
+        "piXIde.useTmux": {
+          "type": "boolean",
+          "default": false,
+          "description": "Open `Pi Tui` with `tmux` when opening the terminal."
         }
       }
     }

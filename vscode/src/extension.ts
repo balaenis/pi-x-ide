@@ -13,12 +13,15 @@ import { IdeWebSocketServer } from "./server";
 import { getActiveSelectionSnapshot, getConfiguredRangeFormat } from "./selection";
 
 const PI_TERMINAL_NAME = "pi";
+const CONFIG_SECTION = "piXIde";
+const USE_TMUX_CONFIG_KEY = "useTmux";
 
 let server: IdeWebSocketServer | undefined;
 let lockFilePath: string | undefined;
 let lockFile = undefined as ReturnType<typeof createLockFile> | undefined;
 let debounceTimer: NodeJS.Timeout | undefined;
 let status: vscode.StatusBarItem | undefined;
+let tmuxSessionCounter = 0;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const packageJson = context.extension.packageJSON as { version?: string };
@@ -161,6 +164,7 @@ function updateStatus(state: "ready" | "file" | "selection" | "no-file"): void {
 }
 
 function openPiTerminal(context: vscode.ExtensionContext): void {
+  const useTmux = vscode.workspace.getConfiguration(CONFIG_SECTION).get<boolean>(USE_TMUX_CONFIG_KEY, false);
   const terminal = vscode.window.createTerminal({
     name: PI_TERMINAL_NAME,
     iconPath: {
@@ -174,5 +178,11 @@ function openPiTerminal(context: vscode.ExtensionContext): void {
   });
 
   terminal.show();
-  terminal.sendText("pi");
+  terminal.sendText(useTmux ? buildTmuxPiCommand() : "pi");
+}
+
+function buildTmuxPiCommand(): string {
+  tmuxSessionCounter += 1;
+  const sessionName = `pi-${Date.now().toString(36)}-${tmuxSessionCounter.toString(36)}`;
+  return `tmux new-session -d -s ${sessionName} "pi" \\; set-option -t ${sessionName} destroy-unattached on \\; attach-session -t ${sessionName}`;
 }
