@@ -62,8 +62,8 @@ starts. Plugin updates trigger a one-time re-download.
 ```lua
 {
   "balaenis/pi-x-ide",
-  init = function()
-    vim.opt.rtp:prepend(vim.fn.stdpath("data") .. "/lazy/pi-x-ide/nvim")
+  init = function(plugin)
+    vim.opt.rtp:prepend(plugin.dir .. "/nvim")
   end,
   main = "pi_x_ide",
   opts = {

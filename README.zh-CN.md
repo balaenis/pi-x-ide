@@ -61,8 +61,8 @@ x64 或 arm64）。下载失败或无匹配二进制时，插件降级到内置�
 ```lua
 {
   "balaenis/pi-x-ide",
-  init = function()
-    vim.opt.rtp:prepend(vim.fn.stdpath("data") .. "/lazy/pi-x-ide/nvim")
+  init = function(plugin)
+    vim.opt.rtp:prepend(plugin.dir .. "/nvim")
   end,
   main = "pi_x_ide",
   opts = {
