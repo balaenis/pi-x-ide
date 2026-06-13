@@ -26,7 +26,7 @@ pi install npm:pi-x-ide
 
 **方式一：从 Marketplace 安装（推荐）**
 
-在 IDE 的扩展商店中搜索并安装 `balaenis.pi-x-ide`。
+在 IDE 的扩展商店中搜索并安装 [balaenis.pi-x-ide](https://marketplace.visualstudio.com/items?itemName=balaenis.pi-x-ide)。
 
 **方式二：通过 Pi CLI 安装**
 

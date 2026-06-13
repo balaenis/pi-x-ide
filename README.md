@@ -26,7 +26,7 @@ This installs `pi-x-ide` as a global Pi extension. Pi loads it automatically on 
 
 **Option A: Install from Marketplace (Recommended)**
 
-Install `balaenis.pi-x-ide` from your IDE's Extensions marketplace.
+Install [balaenis.pi-x-ide](https://marketplace.visualstudio.com/items?itemName=balaenis.pi-x-ide) from your IDE's Extensions marketplace.
 
 **Option B: Install via Pi CLI**
 
@@ -129,10 +129,10 @@ Pi also registers `Ctrl+Alt+K` in the TUI as a shortcut for `/ide attach` by def
 
 #### VS Code
 
-| Key                  | Type                  | Default   | Description                                                                                                                    |
-| -------------------- | --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `piXIde.rangeFormat` | `"comma"` \| `"dash"` | `"comma"` | File reference format for the manual shortcut                                                                                  |
-| `piXIde.useTmux`     | `boolean`             | `false`   | Open Pi through `tmux` from the terminal icon. Each click creates a new session that is destroyed when the terminal detaches.   |
+| Key                  | Type                  | Default   | Description                                                                                                                   |
+| -------------------- | --------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `piXIde.rangeFormat` | `"comma"` \| `"dash"` | `"comma"` | File reference format for the manual shortcut                                                                                 |
+| `piXIde.useTmux`     | `boolean`             | `false`   | Open Pi through `tmux` from the terminal icon. Each click creates a new session that is destroyed when the terminal detaches. |
 
 #### Zed
 
