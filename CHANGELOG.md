@@ -2,85 +2,74 @@
 
 ## [1.9.0](https://github.com/balaenis/pi-x-ide/compare/v1.8.0...v1.9.0) (2026-06-13)
 
-
 ### Features
 
-* **vscode:** add useTmux setting to open Pi through tmux ([93cec4d](https://github.com/balaenis/pi-x-ide/commit/93cec4de9f2f51312db4c3a4672b2f2ffe2ddc61))
-
+- **vscode:** add useTmux setting to open Pi through tmux ([93cec4d](https://github.com/balaenis/pi-x-ide/commit/93cec4de9f2f51312db4c3a4672b2f2ffe2ddc61))
 
 ### Bug Fixes
 
-* **pi/install:** filter out unknown-reason candidates from auto-install ([375449b](https://github.com/balaenis/pi-x-ide/commit/375449b2306d8fa1098a30a0176eff9dc5f602e2))
+- **pi/install:** filter out unknown-reason candidates from auto-install ([375449b](https://github.com/balaenis/pi-x-ide/commit/375449b2306d8fa1098a30a0176eff9dc5f602e2))
 
 ## [1.8.0](https://github.com/balaenis/pi-x-ide/compare/v1.7.0...v1.8.0) (2026-06-12)
 
-
 ### Features
 
-* **attach:** make TUI attach shortcut configurable via PI_X_IDE_ATTACH_SHORTCUT ([20a7e9c](https://github.com/balaenis/pi-x-ide/commit/20a7e9c80644d4a46cdc4459c7394faa7f3e21e5))
-* **ide:** register Ctrl+Alt+K shortcut in Pi TUI for /ide attach ([9803840](https://github.com/balaenis/pi-x-ide/commit/9803840f73bc965dae3e0e0a53f7fccae173e2d7))
+- **attach:** make TUI attach shortcut configurable via PI_X_IDE_ATTACH_SHORTCUT ([20a7e9c](https://github.com/balaenis/pi-x-ide/commit/20a7e9c80644d4a46cdc4459c7394faa7f3e21e5))
+- **ide:** register Ctrl+Alt+K shortcut in Pi TUI for /ide attach ([9803840](https://github.com/balaenis/pi-x-ide/commit/9803840f73bc965dae3e0e0a53f7fccae173e2d7))
 
 ## [1.7.0](https://github.com/balaenis/pi-x-ide/compare/v1.6.0...v1.7.0) (2026-06-12)
 
-
 ### Features
 
-* **zed:** add configurable poll interval env var and clean up env schema ([04d870e](https://github.com/balaenis/pi-x-ide/commit/04d870e88d756a2faea998e741f8893bc95c3a31))
+- **zed:** add configurable poll interval env var and clean up env schema ([04d870e](https://github.com/balaenis/pi-x-ide/commit/04d870e88d756a2faea998e741f8893bc95c3a31))
 
 ## [1.6.0](https://github.com/balaenis/pi-x-ide/compare/v1.5.1...v1.6.0) (2026-06-12)
 
-
 ### Features
 
-* **mise:** add compile and compile:all tasks ([517e9cd](https://github.com/balaenis/pi-x-ide/commit/517e9cdfe533294f69d71021680b471662104a32))
-* **pi:** limit reconnect attempts and add handshake timeout ([4dc855e](https://github.com/balaenis/pi-x-ide/commit/4dc855e715f1b8bf141a0f055962af53ac581696))
+- **mise:** add compile and compile:all tasks ([517e9cd](https://github.com/balaenis/pi-x-ide/commit/517e9cdfe533294f69d71021680b471662104a32))
+- **pi:** limit reconnect attempts and add handshake timeout ([4dc855e](https://github.com/balaenis/pi-x-ide/commit/4dc855e715f1b8bf141a0f055962af53ac581696))
 
 ## [1.5.1](https://github.com/balaenis/pi-x-ide/compare/v1.5.0...v1.5.1) (2026-06-11)
 
-
 ### Bug Fixes
 
-* **nvim:** capture sidecar download stderr and handle job start failure ([eae98bf](https://github.com/balaenis/pi-x-ide/commit/eae98bfd7cd313f2e57b4c5665255df6ef30d25f))
+- **nvim:** capture sidecar download stderr and handle job start failure ([eae98bf](https://github.com/balaenis/pi-x-ide/commit/eae98bfd7cd313f2e57b4c5665255df6ef30d25f))
 
 ## [1.5.0](https://github.com/balaenis/pi-x-ide/compare/v1.4.3...v1.5.0) (2026-06-11)
 
-
 ### Features
 
-* **nvim:** auto-download sidecar binary from GitHub Releases ([85f8e0a](https://github.com/balaenis/pi-x-ide/commit/85f8e0a395cb12f436bf972628d0306e78ee0bf5))
-* **nvim:** compile sidecar to standalone binary via bun ([c7b0763](https://github.com/balaenis/pi-x-ide/commit/c7b07632a5d5a683c48f7517334bc4033cb8d556))
+- **nvim:** auto-download sidecar binary from GitHub Releases ([85f8e0a](https://github.com/balaenis/pi-x-ide/commit/85f8e0a395cb12f436bf972628d0306e78ee0bf5))
+- **nvim:** compile sidecar to standalone binary via bun ([c7b0763](https://github.com/balaenis/pi-x-ide/commit/c7b07632a5d5a683c48f7517334bc4033cb8d556))
 
 ## [1.4.3](https://github.com/balaenis/pi-x-ide/compare/v1.4.2...v1.4.3) (2026-06-11)
 
-
 ### Bug Fixes
 
-* always create a fresh Pi terminal instead of reusing existing ([6ad4438](https://github.com/balaenis/pi-x-ide/commit/6ad4438acdd41ea6464c62a0f0ac2858b0c2f2d7))
+- always create a fresh Pi terminal instead of reusing existing ([6ad4438](https://github.com/balaenis/pi-x-ide/commit/6ad4438acdd41ea6464c62a0f0ac2858b0c2f2d7))
 
 ## [1.4.2](https://github.com/balaenis/pi-x-ide/compare/v1.4.1...v1.4.2) (2026-06-11)
 
-
 ### Bug Fixes
 
-* **pi:** normalize Windows drive letter to uppercase for path matching ([cb4e8ad](https://github.com/balaenis/pi-x-ide/commit/cb4e8adef41d2d80cf2577c3e33879c5aaceb52b))
-* **pi:** skip extensionless search on Windows to avoid matching shell scripts ([bb47f76](https://github.com/balaenis/pi-x-ide/commit/bb47f761c7388f316c10d2a6eae53b839e486322))
-* **pi:** update install notification on connection success or failure ([46a8901](https://github.com/balaenis/pi-x-ide/commit/46a8901fb271c4c4c6931c02f4da33794224f638))
-* update notification messages to reference `/ide` instead of `/ide auto` ([cc27727](https://github.com/balaenis/pi-x-ide/commit/cc277274d1e0fda23e8fbf3e597de9924d2863f5))
+- **pi:** normalize Windows drive letter to uppercase for path matching ([cb4e8ad](https://github.com/balaenis/pi-x-ide/commit/cb4e8adef41d2d80cf2577c3e33879c5aaceb52b))
+- **pi:** skip extensionless search on Windows to avoid matching shell scripts ([bb47f76](https://github.com/balaenis/pi-x-ide/commit/bb47f761c7388f316c10d2a6eae53b839e486322))
+- **pi:** update install notification on connection success or failure ([46a8901](https://github.com/balaenis/pi-x-ide/commit/46a8901fb271c4c4c6931c02f4da33794224f638))
+- update notification messages to reference `/ide` instead of `/ide auto` ([cc27727](https://github.com/balaenis/pi-x-ide/commit/cc277274d1e0fda23e8fbf3e597de9924d2863f5))
 
 ## [1.4.1](https://github.com/balaenis/pi-x-ide/compare/v1.4.0...v1.4.1) (2026-06-11)
 
-
 ### Bug Fixes
 
-* **docs:** replace lazy.nvim `rtp` with `init` block in install instructions ([1f186ff](https://github.com/balaenis/pi-x-ide/commit/1f186fffa6e050e495fcece71a8ddc185a4f217d))
-* **nvim:** safely stop timer with pcall to prevent errors ([22c422e](https://github.com/balaenis/pi-x-ide/commit/22c422e53057eb2ed7c1b2b343851d751a936632))
+- **docs:** replace lazy.nvim `rtp` with `init` block in install instructions ([1f186ff](https://github.com/balaenis/pi-x-ide/commit/1f186fffa6e050e495fcece71a8ddc185a4f217d))
+- **nvim:** safely stop timer with pcall to prevent errors ([22c422e](https://github.com/balaenis/pi-x-ide/commit/22c422e53057eb2ed7c1b2b343851d751a936632))
 
 ## [1.4.0](https://github.com/balaenis/pi-x-ide/compare/v1.3.0...v1.4.0) (2026-06-11)
 
-
 ### Features
 
-* **config:** support pi config env overrides ([1aa20c1](https://github.com/balaenis/pi-x-ide/commit/1aa20c1027ec2172c5ca86cdfb4c1fb362d616b1))
+- **config:** support pi config env overrides ([1aa20c1](https://github.com/balaenis/pi-x-ide/commit/1aa20c1027ec2172c5ca86cdfb4c1fb362d616b1))
 
 ## [1.3.0](https://github.com/balaenis/pi-x-ide/compare/v1.2.0...v1.3.0) (2026-06-10)
 
