@@ -54,7 +54,7 @@ export function formatDiagnosticContext(params: DiagnosticFixRequestedParams, op
     if (diagnostic.contextLines.length > 0) {
       lines.push("- Context lines:");
       for (const contextLine of diagnostic.contextLines) {
-        const marker = contextLine.isPrimary ? ">" : " ";
+        const marker = contextLine.isPrimary ? "\\>" : " ";
         lines.push(`  ${marker} ${contextLine.line + 1}: ${contextLine.text}`);
       }
     }
