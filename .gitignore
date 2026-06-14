@@ -5,7 +5,7 @@ vscode/dist/
 vscode/assets/icons/
 *.vsix
 .DS_Store
-.pi
+.pi*
 .worktrees
 nul
 
