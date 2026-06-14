@@ -14,7 +14,10 @@ export function buildDiagnosticContextMessage(
   params: DiagnosticFixRequestedParams,
   options: { cwd?: string } = {},
 ): string {
-  return `${formatDiagnosticContext(params, options)}\n<!-- ${DIAGNOSTIC_CONTEXT_MARKER} -->`;
+  return `<!-- ${DIAGNOSTIC_CONTEXT_MARKER} -->
+${formatDiagnosticContext(params, options)}
+<!-- ${DIAGNOSTIC_CONTEXT_MARKER} -->
+`;
 }
 
 export function formatDiagnosticContext(params: DiagnosticFixRequestedParams, options: { cwd?: string } = {}): string {
