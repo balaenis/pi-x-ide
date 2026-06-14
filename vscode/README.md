@@ -9,7 +9,7 @@ Pi x IDE connects VS Code with Pi so your active file and selected text can be s
 - Provides a status bar action to attach the current selection
 - Provides an editor title action to open Pi in the integrated terminal
 - Supports manual attachment with a command or keyboard shortcut
-- Adds Quick Fix actions, **Pi: Fix it** and **Pi: Send diagnostic**, for error and warning diagnostics
+- Adds Quick Fix actions, **Pi: Fix it** and **Pi: Send diagnostic**, for error and warning diagnostics while Pi is connected
 
 ## Usage
 
@@ -26,7 +26,7 @@ Default shortcut:
 
 When no text is selected, Pi receives the active file reference. When text is selected, Pi receives the selected range and content.
 
-For diagnostics, place the cursor on an error or warning and open Quick Fix. Choose **Pi: Fix it** to send the diagnostic details and nearby source context to Pi and start a diagnostic-analysis turn using the built-in prompt template. Choose **Pi: Send diagnostic** to paste the diagnostic context into Pi's input box without starting a turn.
+For diagnostics, connect Pi first, then place the cursor on an error or warning and open Quick Fix. The Pi diagnostic actions appear only while at least one Pi client is connected. Choose **Pi: Fix it** to send the diagnostic details and nearby source context to one connected Pi client and start a diagnostic-analysis turn using the built-in prompt template. Choose **Pi: Send diagnostic** to send the same context to one connected Pi client and paste it into Pi's input box without starting a turn.
 
 ## Settings
 

@@ -102,7 +102,7 @@ Attach the selection from either side: press `Ctrl+Alt+K` (Linux/Windows) or `Cm
 
 Type a chat prompt in Pi and submit it. The selected text is injected as LLM context (does not persist in session history). After submission, the widget shows `sent`.
 
-For diagnostics in VS Code-family IDEs, place the cursor on an error or warning and open Quick Fix. Choose **Pi: Fix it** to send the diagnostic message, source range, nearby context lines, and related information to Pi and start a diagnostic-analysis turn with a configurable prompt template (see [`fix_prompt`](#pi-side-configuration)). Choose **Pi: Send diagnostic** to paste the diagnostic context into Pi's input box without starting a turn.
+For diagnostics in VS Code-family IDEs, connect Pi first, then place the cursor on an error or warning and open Quick Fix. The **Pi: Fix it** and **Pi: Send diagnostic** actions are shown only while at least one Pi client is connected. **Pi: Fix it** sends the diagnostic message, source range, nearby context lines, and related information to one connected Pi client and starts a diagnostic-analysis turn with a configurable prompt template (see [`fix_prompt`](#pi-side-configuration)). **Pi: Send diagnostic** sends the same context to one connected Pi client and pastes it into Pi's input box without starting a turn.
 
 **If the connection doesn't appear:**
 

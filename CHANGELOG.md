@@ -2,19 +2,17 @@
 
 ## [1.10.0](https://github.com/balaenis/pi-x-ide/compare/v1.9.0...v1.10.0) (2026-06-14)
 
-
 ### Features
 
-* **diagnostics:** add configurable fix prompt for IDE diagnostics ([ca8621c](https://github.com/balaenis/pi-x-ide/commit/ca8621c6050c37ed921e20efcb4dd38907b1cbb9))
-* **nvim:** verify sidecar binary against GitHub Release SHA-256 digest ([0cc1d9b](https://github.com/balaenis/pi-x-ide/commit/0cc1d9bf1ee5ef8f30d50374ffe68953c242d4ce))
-* **vscode:** add Fix with Pi suggest quick action for diagnostics ([e8dc6d5](https://github.com/balaenis/pi-x-ide/commit/e8dc6d56543afb1d8019bcede0a540cacd440c6d))
-* **vscode:** add Pi: Send diagnostic quick fix action ([d53d72b](https://github.com/balaenis/pi-x-ide/commit/d53d72bb1030f58da7f82136a75b95da2568f28a))
-* **vscode:** hide pi terminal from user initially and show without stealing focus ([15ca612](https://github.com/balaenis/pi-x-ide/commit/15ca6121a4c25a1ed68cb6631372b5a100c77a7b))
-
+- **diagnostics:** add configurable fix prompt for IDE diagnostics ([ca8621c](https://github.com/balaenis/pi-x-ide/commit/ca8621c6050c37ed921e20efcb4dd38907b1cbb9))
+- **nvim:** verify sidecar binary against GitHub Release SHA-256 digest ([0cc1d9b](https://github.com/balaenis/pi-x-ide/commit/0cc1d9bf1ee5ef8f30d50374ffe68953c242d4ce))
+- **vscode:** add Fix with Pi suggest quick action for diagnostics ([e8dc6d5](https://github.com/balaenis/pi-x-ide/commit/e8dc6d56543afb1d8019bcede0a540cacd440c6d))
+- **vscode:** add Pi: Send diagnostic quick fix action ([d53d72b](https://github.com/balaenis/pi-x-ide/commit/d53d72bb1030f58da7f82136a75b95da2568f28a))
+- **vscode:** hide pi terminal from user initially and show without stealing focus ([15ca612](https://github.com/balaenis/pi-x-ide/commit/15ca6121a4c25a1ed68cb6631372b5a100c77a7b))
 
 ### Bug Fixes
 
-* **pi:** wrap diagnostic context message with marker on both sides ([592da42](https://github.com/balaenis/pi-x-ide/commit/592da424d16a190c958eac86a70045405e91e936))
+- **pi:** wrap diagnostic context message with marker on both sides ([592da42](https://github.com/balaenis/pi-x-ide/commit/592da424d16a190c958eac86a70045405e91e936))
 
 ## [1.9.0](https://github.com/balaenis/pi-x-ide/compare/v1.8.0...v1.9.0) (2026-06-13)
 

@@ -28,7 +28,7 @@ export class IdeWebSocketServer {
   }
 
   get clientCount(): number {
-    return this.sockets.size;
+    return this.openSockets.length;
   }
 
   async start(): Promise<number> {
@@ -62,9 +62,14 @@ export class IdeWebSocketServer {
 
   broadcast(value: unknown): void {
     const text = JSON.stringify(value);
-    for (const socket of this.sockets) {
-      if (socket.readyState === WebSocket.OPEN) socket.send(text);
-    }
+    for (const socket of this.openSockets) socket.send(text);
+  }
+
+  sendToFirstClient(value: unknown): boolean {
+    const [socket] = this.openSockets;
+    if (!socket) return false;
+    socket.send(JSON.stringify(value));
+    return true;
   }
 
   async stop(): Promise<void> {
@@ -116,5 +121,9 @@ export class IdeWebSocketServer {
             },
       }),
     );
+  }
+
+  private get openSockets(): WebSocket[] {
+    return [...this.sockets].filter((socket) => socket.readyState === WebSocket.OPEN);
   }
 }

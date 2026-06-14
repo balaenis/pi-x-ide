@@ -101,7 +101,7 @@ IDE: vscode ✓ src/foo.ts#L10,20 pending
 
 在 Pi 中输入对话提示并提交，选中文本会作为 LLM 上下文注入（不写入 session 历史）。提交后 widget 显示 `sent`。
 
-对于 VS Code 系列 IDE 中的诊断信息，把光标放在 error 或 warning 上并打开 Quick Fix。选择 **Pi: Fix it** 会把诊断消息、源码范围、附近上下文行和 related information 发送给 Pi，并用可自定义的 prompt 模板自动开始诊断分析（参见 [`fix_prompt`](#pi-侧配置)）。选择 **Pi: Send diagnostic** 只会把诊断上下文粘贴到 Pi 输入框，不会自动开始一轮对话。
+对于 VS Code 系列 IDE 中的诊断信息，先连接 Pi，再把光标放在 error 或 warning 上并打开 Quick Fix。只有至少一个 Pi 客户端已连接时，才会显示 **Pi: Fix it** 和 **Pi: Send diagnostic**。**Pi: Fix it** 会把诊断消息、源码范围、附近上下文行和 related information 发送给一个已连接的 Pi 客户端，并用可自定义的 prompt 模板自动开始诊断分析（参见 [`fix_prompt`](#pi-侧配置)）。**Pi: Send diagnostic** 会把相同上下文发送给一个已连接的 Pi 客户端并粘贴到 Pi 输入框，不会自动开始一轮对话。
 
 **如果连接未出现：**
 

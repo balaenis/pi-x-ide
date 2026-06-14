@@ -20,7 +20,7 @@ export function registerDiagnosticQuickFixes(
   context: vscode.ExtensionContext,
   getServer: () => IdeWebSocketServer | undefined,
 ): void {
-  const provider = new PiDiagnosticCodeActionProvider();
+  const provider = new PiDiagnosticCodeActionProvider(getServer);
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider({ scheme: "file" }, provider, {
       providedCodeActionKinds: [vscode.CodeActionKind.QuickFix],
@@ -35,6 +35,8 @@ export function registerDiagnosticQuickFixes(
 }
 
 class PiDiagnosticCodeActionProvider implements vscode.CodeActionProvider<vscode.CodeAction> {
+  constructor(private readonly getServer: () => IdeWebSocketServer | undefined) {}
+
   provideCodeActions(
     document: vscode.TextDocument,
     range: vscode.Range | vscode.Selection,
@@ -42,6 +44,7 @@ class PiDiagnosticCodeActionProvider implements vscode.CodeActionProvider<vscode
   ): vscode.CodeAction[] {
     if (context.only && !context.only.contains(vscode.CodeActionKind.QuickFix)) return [];
     if (document.uri.scheme !== "file") return [];
+    if (!this.hasConnectedPiClient()) return [];
 
     const diagnostics = context.diagnostics.filter(isFixableDiagnostic);
     if (diagnostics.length === 0) return [];
@@ -51,6 +54,10 @@ class PiDiagnosticCodeActionProvider implements vscode.CodeActionProvider<vscode
       createDiagnosticAction(FIX_WITH_PI_TITLE, FIX_WITH_PI_COMMAND, payload, diagnostics),
       createDiagnosticAction(SEND_DIAGNOSTIC_TITLE, SEND_DIAGNOSTIC_COMMAND, payload, diagnostics),
     ];
+  }
+
+  private hasConnectedPiClient(): boolean {
+    return (this.getServer()?.clientCount ?? 0) > 0;
   }
 }
 
@@ -64,13 +71,13 @@ function sendDiagnosticRequest(
     return;
   }
 
-  server.broadcast({
+  const sent = server.sendToFirstClient({
     jsonrpc: "2.0",
     method: "diagnostic_fix_requested",
     params: payload,
   });
 
-  if (server.clientCount === 0) {
+  if (!sent) {
     void vscode.window.showWarningMessage(`Pi x IDE: no Pi clients connected for ${title}.`);
   } else {
     vscode.window.setStatusBarMessage(`Pi x IDE sent ${title}`, 2500);

@@ -81,9 +81,7 @@ function buildSchema(configOptions, envOptions, envPatternOptions, valueTypes) {
     examples: [
       {
         ...Object.fromEntries(
-          Object.entries(configOptions).flatMap(([name, option]) =>
-            option.default ? [[name, option.default]] : [],
-          ),
+          Object.entries(configOptions).flatMap(([name, option]) => (option.default ? [[name, option.default]] : [])),
         ),
         env: {
           PI_X_IDE_AUTO_INSTALL: "0",
@@ -97,7 +95,10 @@ function buildSchema(configOptions, envOptions, envPatternOptions, valueTypes) {
 }
 
 function buildOptionSchema(option) {
-  const schema = { type: option.type.length === 1 ? option.type[0] : [...option.type], description: option.description };
+  const schema = {
+    type: option.type.length === 1 ? option.type[0] : [...option.type],
+    description: option.description,
+  };
   if (option.default !== undefined) schema.default = option.default;
   return schema;
 }
