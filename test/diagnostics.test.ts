@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildDiagnosticFixPrompt, handleDiagnosticFixRequested } from "../src/pi/diagnostics";
+import {
+  buildDiagnosticContextMessage,
+  buildDiagnosticFixPrompt,
+  handleDiagnosticFixRequested,
+} from "../src/pi/diagnostics";
 import { createRuntime } from "../src/pi/state";
 import type { DiagnosticFixRequestedParams } from "../src/shared/protocol";
 import { isDiagnosticFixRequestedParams } from "../src/shared/schema";
@@ -47,6 +51,8 @@ const diagnosticPayload: DiagnosticFixRequestedParams = {
 
 void test("validates diagnostic fix request params", () => {
   assert.equal(isDiagnosticFixRequestedParams(diagnosticPayload), true);
+  assert.equal(isDiagnosticFixRequestedParams({ ...diagnosticPayload, action: "send-diagnostic" }), true);
+  assert.equal(isDiagnosticFixRequestedParams({ ...diagnosticPayload, action: "explain" }), false);
   assert.equal(isDiagnosticFixRequestedParams({ ...diagnosticPayload, diagnostics: [] }), false);
   assert.equal(
     isDiagnosticFixRequestedParams({
@@ -68,7 +74,7 @@ void test("builds diagnostic fix prompt from payload", () => {
   const prompt = buildDiagnosticFixPrompt(diagnosticPayload, { cwd: "/repo" });
 
   assert.match(prompt, /pi-x-ide\/diagnostic-context/);
-  assert.match(prompt, /<!-- Diagnostic Context -->/);
+  assert.match(prompt, /^Analyze the errors and warnings at the following location, and try to fix them:/);
   assert.match(prompt, /File: src\/main\.ts/);
   assert.match(prompt, /Severity: error/);
   assert.match(prompt, /Source: ts/);
@@ -77,10 +83,15 @@ void test("builds diagnostic fix prompt from payload", () => {
   assert.match(prompt, /```\nvalue\n```/);
   assert.match(prompt, /> 10: const count: number = value;/);
   assert.match(prompt, /src\/types\.ts L2:C1-L2:C17: The expected type is declared here\./);
-  assert.match(
-    prompt,
-    /Analyze the errors and warnings that appear in the above locations and provide recommendations for resolution\.$/,
-  );
+});
+
+void test("builds diagnostic context message without triggering fix instructions", () => {
+  const message = buildDiagnosticContextMessage(diagnosticPayload, { cwd: "/repo" });
+
+  assert.doesNotMatch(message, /^<!-- Diagnostic Context -->/);
+  assert.match(message, /File: src\/main\.ts/);
+  assert.doesNotMatch(message, /try to fix/);
+  assert.match(message, /<!-- pi-x-ide\/diagnostic-context -->$/);
 });
 
 void test("sends diagnostic fix prompt immediately when Pi is idle", () => {
@@ -93,7 +104,7 @@ void test("sends diagnostic fix prompt immediately when Pi is idle", () => {
 
   assert.equal(sent.length, 1);
   assert.equal(sent[0]?.options, undefined);
-  assert.match(String(sent[0]?.content), /Diagnostic Context/);
+  assert.match(String(sent[0]?.content), /pi-x-ide\/diagnostic-context/);
 });
 
 void test("queues diagnostic fix prompt as follow-up when Pi is busy", () => {
@@ -110,6 +121,23 @@ void test("queues diagnostic fix prompt as follow-up when Pi is busy", () => {
   assert.deepEqual(notifications, ["VS Code diagnostic fix request queued."]);
 });
 
+void test("pastes diagnostic context into Pi input for send diagnostic requests", () => {
+  const runtime = createRuntime();
+  const notifications: string[] = [];
+  const pasted: string[] = [];
+  runtime.ctx = createContext({ idle: true, notifications, pasted });
+  const sent: Array<{ content: unknown; options?: unknown }> = [];
+  const pi = createPi(sent);
+
+  handleDiagnosticFixRequested(pi, runtime, { ...diagnosticPayload, action: "send-diagnostic" });
+
+  assert.equal(sent.length, 0);
+  assert.equal(pasted.length, 1);
+  assert.match(pasted[0] ?? "", /pi-x-ide\/diagnostic-context/);
+  assert.match(pasted[0] ?? "", /Type 'string' is not assignable to type 'number'\./);
+  assert.deepEqual(notifications, ["VS Code diagnostic context added to input."]);
+});
+
 function createPi(
   sent: Array<{ content: unknown; options?: unknown }>,
 ): Parameters<typeof handleDiagnosticFixRequested>[0] {
@@ -123,6 +151,7 @@ function createPi(
 function createContext(options: {
   idle: boolean;
   notifications?: string[];
+  pasted?: string[];
 }): NonNullable<ReturnType<typeof createRuntime>["ctx"]> {
   return {
     cwd: "/repo",
@@ -130,6 +159,7 @@ function createContext(options: {
     isIdle: () => options.idle,
     ui: {
       notify: (message: string) => options.notifications?.push(message),
+      pasteToEditor: (text: string) => options.pasted?.push(text),
     },
   } as NonNullable<ReturnType<typeof createRuntime>["ctx"]>;
 }

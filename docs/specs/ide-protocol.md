@@ -137,13 +137,14 @@ Pi inserts `rangeText` into the TUI editor and caches the corresponding selectio
 
 ### `diagnostic_fix_requested`
 
-Sent by the VS Code-family extension when the user selects **Fix with Pi** from Quick Fix on an error or warning diagnostic. This notification is additive under protocol version `1`; clients that do not understand it may ignore it.
+Sent by the VS Code-family extension when the user selects **Pi: Fix it** or **Pi: Send diagnostic** from Quick Fix on an error or warning diagnostic. This notification is additive under protocol version `1`; clients that do not understand it may ignore it.
 
 ```json
 {
   "jsonrpc": "2.0",
   "method": "diagnostic_fix_requested",
   "params": {
+    "action": "fix",
     "source": "vscode",
     "filePath": "/home/user/project/src/main.ts",
     "workspaceFolder": "/home/user/project",
@@ -175,7 +176,7 @@ Sent by the VS Code-family extension when the user selects **Fix with Pi** from 
 }
 ```
 
-Pi formats the diagnostics into a `Diagnostic Context` prompt and sends it as a user message. If the agent is busy, Pi queues the diagnostic prompt as a follow-up.
+When `action` is `"fix"` or omitted, Pi formats the diagnostics into a prompt and sends it as a user message. If the agent is busy, Pi queues the diagnostic prompt as a follow-up. When `action` is `"send-diagnostic"`, Pi formats only the diagnostic context and pastes it into the TUI input box without starting an agent turn.
 
 ## TUI behavior
 

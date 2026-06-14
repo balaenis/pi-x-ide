@@ -131,7 +131,10 @@ export interface IdeDiagnostic {
   relatedInformation?: IdeDiagnosticRelatedInformation[];
 }
 
+export type DiagnosticRequestAction = "fix" | "send-diagnostic";
+
 export interface DiagnosticFixRequestedParams {
+  action?: DiagnosticRequestAction;
   source: "vscode";
   filePath: string;
   workspaceFolder?: string;

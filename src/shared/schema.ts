@@ -142,9 +142,14 @@ function isIdeDiagnostic(value: unknown): value is IdeDiagnostic {
   );
 }
 
+function isDiagnosticRequestAction(value: unknown): boolean {
+  return value === "fix" || value === "send-diagnostic";
+}
+
 export function isDiagnosticFixRequestedParams(value: unknown): value is DiagnosticFixRequestedParams {
   return (
     isRecord(value) &&
+    (value.action === undefined || isDiagnosticRequestAction(value.action)) &&
     value.source === "vscode" &&
     isString(value.filePath) &&
     (value.workspaceFolder === undefined || isString(value.workspaceFolder)) &&

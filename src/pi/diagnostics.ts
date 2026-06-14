@@ -7,8 +7,14 @@ export const DIAGNOSTIC_CONTEXT_MARKER = "pi-x-ide/diagnostic-context";
 
 export function buildDiagnosticFixPrompt(params: DiagnosticFixRequestedParams, options: { cwd?: string } = {}): string {
   return `Analyze the errors and warnings at the following location, and try to fix them:
-<!-- ${DIAGNOSTIC_CONTEXT_MARKER} -->
-${formatDiagnosticContext(params, options)}`;
+${buildDiagnosticContextMessage(params, options)}`;
+}
+
+export function buildDiagnosticContextMessage(
+  params: DiagnosticFixRequestedParams,
+  options: { cwd?: string } = {},
+): string {
+  return `${formatDiagnosticContext(params, options)}\n<!-- ${DIAGNOSTIC_CONTEXT_MARKER} -->`;
 }
 
 export function formatDiagnosticContext(params: DiagnosticFixRequestedParams, options: { cwd?: string } = {}): string {
@@ -56,6 +62,13 @@ export function handleDiagnosticFixRequested(
 ): void {
   const ctx = runtime.ctx;
   if (!ctx) return;
+
+  if (params.action === "send-diagnostic") {
+    if (!ctx.hasUI) return;
+    ctx.ui.pasteToEditor(buildDiagnosticContextMessage(params, { cwd: ctx.cwd }));
+    ctx.ui.notify("VS Code diagnostic context added to input.", "info");
+    return;
+  }
 
   const prompt = buildDiagnosticFixPrompt(params, { cwd: ctx.cwd });
   if (ctx.isIdle()) {

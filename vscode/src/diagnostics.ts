@@ -10,7 +10,9 @@ import type {
 import type { IdeWebSocketServer } from "./server";
 
 export const FIX_WITH_PI_COMMAND = "pi-x-ide.fixWithPiSuggest";
-export const FIX_WITH_PI_TITLE = "Fix with Pi";
+export const FIX_WITH_PI_TITLE = "Pi: Fix it";
+export const SEND_DIAGNOSTIC_COMMAND = "pi-x-ide.sendDiagnostic";
+export const SEND_DIAGNOSTIC_TITLE = "Pi: Send diagnostic";
 export const DIAGNOSTIC_CONTEXT_RADIUS = 2;
 export const MAX_SELECTED_TEXT_CHARS = 4_000;
 
@@ -23,25 +25,12 @@ export function registerDiagnosticQuickFixes(
     vscode.languages.registerCodeActionsProvider({ scheme: "file" }, provider, {
       providedCodeActionKinds: [vscode.CodeActionKind.QuickFix],
     }),
-    vscode.commands.registerCommand(FIX_WITH_PI_COMMAND, (payload: DiagnosticFixRequestedParams) => {
-      const server = getServer();
-      if (!server) {
-        void vscode.window.showWarningMessage("Pi x IDE: diagnostic fix server is not ready.");
-        return;
-      }
-
-      server.broadcast({
-        jsonrpc: "2.0",
-        method: "diagnostic_fix_requested",
-        params: payload,
-      });
-
-      if (server.clientCount === 0) {
-        void vscode.window.showWarningMessage("Pi x IDE: no Pi clients connected for Fix with Pi.");
-      } else {
-        vscode.window.setStatusBarMessage("Pi x IDE sent diagnostic fix request", 2500);
-      }
-    }),
+    vscode.commands.registerCommand(FIX_WITH_PI_COMMAND, (payload: DiagnosticFixRequestedParams) =>
+      sendDiagnosticRequest(getServer(), { ...payload, action: "fix" }, FIX_WITH_PI_TITLE),
+    ),
+    vscode.commands.registerCommand(SEND_DIAGNOSTIC_COMMAND, (payload: DiagnosticFixRequestedParams) =>
+      sendDiagnosticRequest(getServer(), { ...payload, action: "send-diagnostic" }, SEND_DIAGNOSTIC_TITLE),
+    ),
   );
 }
 
@@ -58,15 +47,50 @@ class PiDiagnosticCodeActionProvider implements vscode.CodeActionProvider<vscode
     if (diagnostics.length === 0) return [];
 
     const payload = createDiagnosticFixPayload(document, range, diagnostics);
-    const action = new vscode.CodeAction(FIX_WITH_PI_TITLE, vscode.CodeActionKind.QuickFix);
-    action.diagnostics = diagnostics;
-    action.command = {
-      command: FIX_WITH_PI_COMMAND,
-      title: FIX_WITH_PI_TITLE,
-      arguments: [payload],
-    };
-    return [action];
+    return [
+      createDiagnosticAction(FIX_WITH_PI_TITLE, FIX_WITH_PI_COMMAND, payload, diagnostics),
+      createDiagnosticAction(SEND_DIAGNOSTIC_TITLE, SEND_DIAGNOSTIC_COMMAND, payload, diagnostics),
+    ];
   }
+}
+
+function sendDiagnosticRequest(
+  server: IdeWebSocketServer | undefined,
+  payload: DiagnosticFixRequestedParams,
+  title: string,
+): void {
+  if (!server) {
+    void vscode.window.showWarningMessage(`Pi x IDE: diagnostic server is not ready for ${title}.`);
+    return;
+  }
+
+  server.broadcast({
+    jsonrpc: "2.0",
+    method: "diagnostic_fix_requested",
+    params: payload,
+  });
+
+  if (server.clientCount === 0) {
+    void vscode.window.showWarningMessage(`Pi x IDE: no Pi clients connected for ${title}.`);
+  } else {
+    vscode.window.setStatusBarMessage(`Pi x IDE sent ${title}`, 2500);
+  }
+}
+
+function createDiagnosticAction(
+  title: string,
+  command: string,
+  payload: DiagnosticFixRequestedParams,
+  diagnostics: vscode.Diagnostic[],
+): vscode.CodeAction {
+  const action = new vscode.CodeAction(title, vscode.CodeActionKind.QuickFix);
+  action.diagnostics = diagnostics;
+  action.command = {
+    command,
+    title,
+    arguments: [payload],
+  };
+  return action;
 }
 
 function createDiagnosticFixPayload(
