@@ -101,7 +101,7 @@ IDE: vscode ✓ src/foo.ts#L10,20 pending
 
 在 Pi 中输入对话提示并提交，选中文本会作为 LLM 上下文注入（不写入 session 历史）。提交后 widget 显示 `sent`。
 
-对于 VS Code 系列 IDE 中的诊断信息，把光标放在 error 或 warning 上并打开 Quick Fix。选择 **Pi: Fix it** 会把诊断消息、源码范围、附近上下文行和 related information 发送给 Pi，并用内置 prompt 模板自动开始诊断分析。选择 **Pi: Send diagnostic** 只会把诊断上下文粘贴到 Pi 输入框，不会自动开始一轮对话。
+对于 VS Code 系列 IDE 中的诊断信息，把光标放在 error 或 warning 上并打开 Quick Fix。选择 **Pi: Fix it** 会把诊断消息、源码范围、附近上下文行和 related information 发送给 Pi，并用可自定义的 prompt 模板自动开始诊断分析（参见 [`fix_prompt`](#pi-侧配置)）。选择 **Pi: Send diagnostic** 只会把诊断上下文粘贴到 Pi 输入框，不会自动开始一轮对话。
 
 **如果连接未出现：**
 
@@ -183,6 +183,12 @@ Pi 侧变量可设为真实环境变量或写入 `~/.pi/pi-x-ide/config.json` �
 | `PI_X_IDE_ATTACH_SHORTCUT`      | `ctrl+alt+k` | Pi TUI 的 `/ide attach` 快捷键；设为 `off`、`none`、`false` 或 `0` 可禁用 |
 | `PI_X_IDE_ZED_DB`               | （自动检测） | 覆盖 Zed SQLite 数据库路径                                                |
 | `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`       | Zed SQLite 轮询间隔，会被限制在 100-2000 ms 范围                          |
+
+#### 顶层配置选项
+
+| 选项         | 默认值                                                                                          | 说明                                                                                                                                            |
+| ------------ | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fix_prompt` | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | 请求修复 IDE 诊断信息时的自定义 prompt 前缀。使用 `{DIAGNOSTIC}` 作为诊断上下文的占位符。如果未包含占位符，诊断上下文会拼接在您的 prompt 之后。 |
 
 编辑器 schema 指导见 [schemas/config.json](schemas/config.json)。[config.example.json](config.example.json) 提供了起始模板。
 

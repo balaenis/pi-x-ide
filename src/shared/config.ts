@@ -49,6 +49,17 @@ export function isProcessEnvOrPiConfigOverlay(env: NodeJS.ProcessEnv): boolean {
   return env === process.env || processEnvOverlays.has(env);
 }
 
+export function readPiConfigFixPrompt(configPath: string = resolvePiConfigPath()): string | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(configPath, "utf8")) as unknown;
+  } catch {
+    return undefined;
+  }
+  if (!isRecord(parsed)) return undefined;
+  return typeof parsed.fix_prompt === "string" ? parsed.fix_prompt : undefined;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

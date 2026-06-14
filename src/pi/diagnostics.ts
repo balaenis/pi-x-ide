@@ -1,13 +1,26 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent" with { "resolution-mode": "import" };
+import { readPiConfigFixPrompt } from "../shared/config";
 import { toRelativeDisplayPath } from "../shared/paths";
 import type { DiagnosticFixRequestedParams, IdeDiagnosticCode, Position } from "../shared/protocol";
 import type { PiIdeRuntime } from "./state";
 
 export const DIAGNOSTIC_CONTEXT_MARKER = "pi-x-ide/diagnostic-context";
 
-export function buildDiagnosticFixPrompt(params: DiagnosticFixRequestedParams, options: { cwd?: string } = {}): string {
-  return `Analyze the errors and warnings at the following location, and try to fix them:
-${buildDiagnosticContextMessage(params, options)}`;
+export function buildDiagnosticFixPrompt(
+  params: DiagnosticFixRequestedParams,
+  options: { cwd?: string; fixPrompt?: string } = {},
+): string {
+  const context = buildDiagnosticContextMessage(params, options);
+  const template = options.fixPrompt;
+  if (!template) {
+    return `Analyze the errors and warnings at the following location, and try to fix them:
+${context}`;
+  }
+  if (template.includes("{DIAGNOSTIC}")) {
+    return template.replaceAll("{DIAGNOSTIC}", context);
+  }
+  return `${template}
+${context}`;
 }
 
 export function buildDiagnosticContextMessage(
@@ -73,7 +86,8 @@ export function handleDiagnosticFixRequested(
     return;
   }
 
-  const prompt = buildDiagnosticFixPrompt(params, { cwd: ctx.cwd });
+  const fixPrompt = readPiConfigFixPrompt();
+  const prompt = buildDiagnosticFixPrompt(params, { cwd: ctx.cwd, fixPrompt });
   if (ctx.isIdle()) {
     pi.sendUserMessage(prompt);
     return;

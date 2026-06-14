@@ -41,3 +41,19 @@ export const CONFIG_ENV_OPTIONS = {
 export const CONFIG_ENV_PATTERN_OPTIONS = [] as const satisfies readonly ConfigEnvPatternOption[];
 
 export type ConfigEnvOptionName = keyof typeof CONFIG_ENV_OPTIONS;
+
+export interface ConfigOption {
+  readonly type: readonly ConfigEnvValueType[];
+  readonly description: string;
+  readonly default?: string;
+}
+
+export const CONFIG_OPTIONS = {
+  fix_prompt: {
+    type: ["string"],
+    default:
+      "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
+    description:
+      "Custom prompt prefix when requesting a fix for IDE diagnostics. Use {DIAGNOSTIC} as a placeholder for the diagnostic context. If the placeholder is omitted, the diagnostic context is appended after your prompt.",
+  },
+} as const satisfies Record<string, ConfigOption>;

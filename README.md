@@ -102,7 +102,7 @@ Attach the selection from either side: press `Ctrl+Alt+K` (Linux/Windows) or `Cm
 
 Type a chat prompt in Pi and submit it. The selected text is injected as LLM context (does not persist in session history). After submission, the widget shows `sent`.
 
-For diagnostics in VS Code-family IDEs, place the cursor on an error or warning and open Quick Fix. Choose **Pi: Fix it** to send the diagnostic message, source range, nearby context lines, and related information to Pi and start a diagnostic-analysis turn with the built-in prompt template. Choose **Pi: Send diagnostic** to paste the diagnostic context into Pi's input box without starting a turn.
+For diagnostics in VS Code-family IDEs, place the cursor on an error or warning and open Quick Fix. Choose **Pi: Fix it** to send the diagnostic message, source range, nearby context lines, and related information to Pi and start a diagnostic-analysis turn with a configurable prompt template (see [`fix_prompt`](#pi-side-configuration)). Choose **Pi: Send diagnostic** to paste the diagnostic context into Pi's input box without starting a turn.
 
 **If the connection doesn't appear:**
 
@@ -185,6 +185,12 @@ Pi-side variables can be set as real environment variables or in `~/.pi/pi-x-ide
 | `PI_X_IDE_ATTACH_SHORTCUT`      | `ctrl+alt+k`  | Pi TUI shortcut for `/ide attach`; set to `off`, `none`, `false`, or `0` to disable |
 | `PI_X_IDE_ZED_DB`               | (auto-detect) | Override path to Zed SQLite database                                                |
 | `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`        | Zed SQLite polling interval, clamped to 100-2000 ms                                 |
+
+#### Top-level Configuration Options
+
+| Option       | Default                                                                                         | Description                                                                                                                                                                                                          |
+| ------------ | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fix_prompt` | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | Custom prompt prefix when requesting a fix for IDE diagnostics. Use `{DIAGNOSTIC}` as a placeholder for the diagnostic context. If the placeholder is omitted, the diagnostic context is appended after your prompt. |
 
 See [schemas/config.json](schemas/config.json) for editor schema guidance. A [config.example.json](config.example.json) is provided as a starting template.
 

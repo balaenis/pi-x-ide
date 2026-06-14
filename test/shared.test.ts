@@ -3,7 +3,7 @@ import { access, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
-import { readPiConfigEnv, resolvePiConfigEnv } from "../src/shared/config";
+import { readPiConfigEnv, readPiConfigFixPrompt, resolvePiConfigEnv } from "../src/shared/config";
 import { formatEditorContext, formatRangeMention, parseRangeMention } from "../src/shared/format";
 import { hasDirectWorkspaceMatch, relationshipMatchLength, resolveLockDir } from "../src/shared/paths";
 import { type EditorSelectionSnapshot, type IdeLockFile } from "../src/shared/protocol";
@@ -88,6 +88,32 @@ void test("loads environment overrides from pi config", async () => {
 
   const mergedEnv = resolvePiConfigEnv({ PI_X_IDE_AUTO_INSTALL: "1" }, { configPath });
   assert.equal(mergedEnv.PI_X_IDE_AUTO_INSTALL, "1");
+});
+
+void test("reads fix_prompt from pi config", async () => {
+  const home = await mkdtemp(join(tmpdir(), "pi-x-ide-config-"));
+  const configDir = join(home, ".pi");
+  const configPath = join(configDir, "config.json");
+  await mkdir(configDir, { recursive: true });
+
+  // Not set
+  const absent = readPiConfigFixPrompt(configPath);
+  assert.equal(absent, undefined);
+
+  // With placeholder
+  await writeFile(configPath, JSON.stringify({ fix_prompt: "Fix it: {DIAGNOSTIC}" }));
+  const withPlaceholder = readPiConfigFixPrompt(configPath);
+  assert.equal(withPlaceholder, "Fix it: {DIAGNOSTIC}");
+
+  // Without placeholder
+  await writeFile(configPath, JSON.stringify({ fix_prompt: "Just fix it." }));
+  const withoutPlaceholder = readPiConfigFixPrompt(configPath);
+  assert.equal(withoutPlaceholder, "Just fix it.");
+
+  // Not a string
+  await writeFile(configPath, JSON.stringify({ fix_prompt: 42 }));
+  const notString = readPiConfigFixPrompt(configPath);
+  assert.equal(notString, undefined);
 });
 
 void test("validates lock file content", () => {

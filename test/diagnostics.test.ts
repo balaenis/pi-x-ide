@@ -5,6 +5,7 @@ import {
   buildDiagnosticFixPrompt,
   handleDiagnosticFixRequested,
 } from "../src/pi/diagnostics";
+import { readPiConfigFixPrompt } from "../src/shared/config";
 import { createRuntime } from "../src/pi/state";
 import type { DiagnosticFixRequestedParams } from "../src/shared/protocol";
 import { isDiagnosticFixRequestedParams } from "../src/shared/schema";
@@ -85,13 +86,47 @@ void test("builds diagnostic fix prompt from payload", () => {
   assert.match(prompt, /src\/types\.ts L2:C1-L2:C17: The expected type is declared here\./);
 });
 
+void test("replaces {DIAGNOSTIC} placeholder with context when fix prompt includes it", () => {
+  const prompt = buildDiagnosticFixPrompt(diagnosticPayload, {
+    cwd: "/repo",
+    fixPrompt: "Fix the problem:\n{DIAGNOSTIC}",
+  });
+
+  assert.doesNotMatch(prompt, /{DIAGNOSTIC}/);
+  assert.match(prompt, /^Fix the problem:/);
+  assert.match(prompt, /pi-x-ide\/diagnostic-context/);
+  assert.match(prompt, /Type 'string' is not assignable to type 'number'\./);
+});
+
+void test("appends context after prompt when fix prompt omits {DIAGNOSTIC}", () => {
+  const contextMarker = "<!-- pi-x-ide/diagnostic-context -->";
+  const prompt = buildDiagnosticFixPrompt(diagnosticPayload, {
+    cwd: "/repo",
+    fixPrompt: "Please fix the following issue.",
+  });
+
+  assert.match(prompt, /^Please fix the following issue\./);
+  assert.match(prompt, /pi-x-ide\/diagnostic-context/);
+  // Context should appear after the prompt
+  const contextIndex = prompt.indexOf(contextMarker);
+  const promptEndIndex = prompt.indexOf("Please fix the following issue.") + "Please fix the following issue.".length;
+  assert.ok(contextIndex > promptEndIndex);
+});
+
+void test("falls back to default prompt when fix prompt is empty", () => {
+  const prompt = buildDiagnosticFixPrompt(diagnosticPayload, { cwd: "/repo", fixPrompt: "" });
+
+  assert.match(prompt, /^Analyze the errors and warnings/);
+  assert.match(prompt, /pi-x-ide\/diagnostic-context/);
+});
+
 void test("builds diagnostic context message without triggering fix instructions", () => {
   const message = buildDiagnosticContextMessage(diagnosticPayload, { cwd: "/repo" });
 
   assert.doesNotMatch(message, /^<!-- Diagnostic Context -->/);
   assert.match(message, /File: src\/main\.ts/);
   assert.doesNotMatch(message, /try to fix/);
-  assert.match(message, /<!-- pi-x-ide\/diagnostic-context -->$/);
+  assert.match(message, /<!-- pi-x-ide\/diagnostic-context -->/);
 });
 
 void test("sends diagnostic fix prompt immediately when Pi is idle", () => {
@@ -119,6 +154,11 @@ void test("queues diagnostic fix prompt as follow-up when Pi is busy", () => {
   assert.equal(sent.length, 1);
   assert.deepEqual(sent[0]?.options, { deliverAs: "followUp" });
   assert.deepEqual(notifications, ["VS Code diagnostic fix request queued."]);
+});
+
+void test("readPiConfigFixPrompt returns undefined for missing config file", () => {
+  const result = readPiConfigFixPrompt("/nonexistent/path/config.json");
+  assert.equal(result, undefined);
 });
 
 void test("pastes diagnostic context into Pi input for send diagnostic requests", () => {

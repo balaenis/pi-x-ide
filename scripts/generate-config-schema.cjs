@@ -9,8 +9,9 @@ const optionsPath = resolve(root, "src", "shared", "config-options.ts");
 const schemaPath = resolve(root, "schemas", "config.json");
 const check = process.argv.includes("--check");
 
-const { CONFIG_ENV_OPTIONS, CONFIG_ENV_PATTERN_OPTIONS, CONFIG_ENV_VALUE_TYPES } = loadConfigOptions(optionsPath);
-const schema = buildSchema(CONFIG_ENV_OPTIONS, CONFIG_ENV_PATTERN_OPTIONS, CONFIG_ENV_VALUE_TYPES);
+const { CONFIG_OPTIONS, CONFIG_ENV_OPTIONS, CONFIG_ENV_PATTERN_OPTIONS, CONFIG_ENV_VALUE_TYPES } =
+  loadConfigOptions(optionsPath);
+const schema = buildSchema(CONFIG_OPTIONS, CONFIG_ENV_OPTIONS, CONFIG_ENV_PATTERN_OPTIONS, CONFIG_ENV_VALUE_TYPES);
 const content = `${JSON.stringify(schema, null, 2)}\n`;
 
 if (check) {
@@ -52,7 +53,10 @@ function loadConfigOptions(path) {
   return module.exports;
 }
 
-function buildSchema(envOptions, envPatternOptions, valueTypes) {
+function buildSchema(configOptions, envOptions, envPatternOptions, valueTypes) {
+  const topLevelProperties = Object.fromEntries(
+    Object.entries(configOptions).map(([name, option]) => [name, buildOptionSchema(option)]),
+  );
   return {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     $id: "https://github.com/balaenis/pi-x-ide/schemas/config.json",
@@ -61,6 +65,7 @@ function buildSchema(envOptions, envPatternOptions, valueTypes) {
     type: "object",
     additionalProperties: true,
     properties: {
+      ...topLevelProperties,
       env: {
         type: "object",
         description: "Pi-side environment variables. Real environment variables override these values.",
@@ -75,6 +80,11 @@ function buildSchema(envOptions, envPatternOptions, valueTypes) {
     },
     examples: [
       {
+        ...Object.fromEntries(
+          Object.entries(configOptions).flatMap(([name, option]) =>
+            option.default ? [[name, option.default]] : [],
+          ),
+        ),
         env: {
           PI_X_IDE_AUTO_INSTALL: "0",
           PI_X_IDE_ATTACH_SHORTCUT: "ctrl+alt+k",
@@ -84,6 +94,12 @@ function buildSchema(envOptions, envPatternOptions, valueTypes) {
       },
     ],
   };
+}
+
+function buildOptionSchema(option) {
+  const schema = { type: option.type.length === 1 ? option.type[0] : [...option.type], description: option.description };
+  if (option.default !== undefined) schema.default = option.default;
+  return schema;
 }
 
 function buildEnvOptionSchema(option) {

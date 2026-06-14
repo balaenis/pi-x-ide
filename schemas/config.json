@@ -6,6 +6,11 @@
   "type": "object",
   "additionalProperties": true,
   "properties": {
+    "fix_prompt": {
+      "type": "string",
+      "description": "Custom prompt prefix when requesting a fix for IDE diagnostics. Use {DIAGNOSTIC} as a placeholder for the diagnostic context. If the placeholder is omitted, the diagnostic context is appended after your prompt.",
+      "default": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}"
+    },
     "env": {
       "type": "object",
       "description": "Pi-side environment variables. Real environment variables override these values.",
@@ -46,6 +51,7 @@
   },
   "examples": [
     {
+      "fix_prompt": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
       "env": {
         "PI_X_IDE_AUTO_INSTALL": "0",
         "PI_X_IDE_ATTACH_SHORTCUT": "ctrl+alt+k",
