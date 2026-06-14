@@ -1,6 +1,6 @@
 # VS Code Auto Fix Implementation Plan
 
-**Goal:** Add a VS Code Quick Fix action named `Fix with Pi suggest` that sends the selected diagnostic context to Pi and automatically starts a Pi diagnostic-analysis turn.
+**Goal:** Add a VS Code Quick Fix action named `Fix with Pi` that sends the selected diagnostic context to Pi and automatically starts a Pi diagnostic-analysis turn.
 
 **Inputs:** `docs/drafts/vscode_auto_fix.md`, repository evidence from `vscode/src/extension.ts`, `vscode/src/selection.ts`, `src/shared/protocol.ts`, `src/shared/schema.ts`, `src/pi/connection.ts`, `src/pi/context.ts`, `src/pi/index.ts`, `docs/specs/ide-protocol.md`, `README.md`, `README.zh-CN.md`, `vscode/README.md`, and Pi extension API evidence for `pi.sendUserMessage()` from the installed Pi documentation and examples.
 
@@ -84,7 +84,7 @@
 
 ### Task 2: Contribute the VS Code Quick Fix Action
 
-**Outcome:** VS Code-family IDEs show `Fix with Pi suggest` under Quick Fix when the current location has error or warning diagnostics, and clicking it broadcasts a bounded diagnostic context payload to connected Pi clients.
+**Outcome:** VS Code-family IDEs show `Fix with Pi` under Quick Fix when the current location has error or warning diagnostics, and clicking it broadcasts a bounded diagnostic context payload to connected Pi clients.
 
 **Files:**
 
@@ -94,10 +94,10 @@
 
 **Steps:**
 
-- [ ] In `vscode/src/diagnostics.ts`, define constants `FIX_WITH_PI_COMMAND = "pi-x-ide.fixWithPiSuggest"`, `FIX_WITH_PI_TITLE = "Fix with Pi suggest"`, `DIAGNOSTIC_CONTEXT_RADIUS = 2`, and `MAX_SELECTED_TEXT_CHARS = 4000`.
+- [ ] In `vscode/src/diagnostics.ts`, define constants `FIX_WITH_PI_COMMAND = "pi-x-ide.fixWithPiSuggest"`, `FIX_WITH_PI_TITLE = "Fix with Pi"`, `DIAGNOSTIC_CONTEXT_RADIUS = 2`, and `MAX_SELECTED_TEXT_CHARS = 4000`.
 - [ ] Implement `registerDiagnosticQuickFixes(context, getServer)` that registers both `vscode.languages.registerCodeActionsProvider({ scheme: "file" }, provider, { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] })` and `vscode.commands.registerCommand(FIX_WITH_PI_COMMAND, handler)`.
 - [ ] Implement `PiDiagnosticCodeActionProvider.provideCodeActions(document, range, context)` so it returns `[]` when `context.only` excludes `QuickFix`, when `document.uri.scheme !== "file"`, or when no diagnostics have severity `Error` or `Warning`.
-- [ ] When eligible diagnostics exist, return exactly one `vscode.CodeAction` with title `Fix with Pi suggest`, kind `vscode.CodeActionKind.QuickFix`, `action.diagnostics` set to the filtered diagnostics, and `action.command.arguments` containing one normalized `DiagnosticFixRequestedParams` payload.
+- [ ] When eligible diagnostics exist, return exactly one `vscode.CodeAction` with title `Fix with Pi`, kind `vscode.CodeActionKind.QuickFix`, `action.diagnostics` set to the filtered diagnostics, and `action.command.arguments` containing one normalized `DiagnosticFixRequestedParams` payload.
 - [ ] Normalize VS Code severities with `Error -> "error"` and `Warning -> "warning"`; do not include `Information` or `Hint` diagnostics.
 - [ ] Normalize `diagnostic.code` into `IdeDiagnosticCode`; when VS Code provides `{ value, target }`, serialize `target` as `target.toString()`.
 - [ ] Normalize diagnostic ranges into zero-based `Position` objects matching `src/shared/protocol.ts`.
@@ -106,7 +106,7 @@
 - [ ] Include `document.version`, `filePath`, `workspaceFolder`, `triggerRange`, and `receivedAt: Date.now()` in the payload.
 - [ ] In the command handler, call `getServer()?.broadcast({ jsonrpc: "2.0", method: "diagnostic_fix_requested", params: payload })`.
 - [ ] If the WebSocket server is not initialized, show `Pi x IDE: diagnostic fix server is not ready.` with `vscode.window.showWarningMessage()` and do not throw.
-- [ ] If the server has zero connected clients, still broadcast the payload but also show `Pi x IDE: no Pi clients connected for Fix with Pi suggest.` so the user knows why no Pi turn starts.
+- [ ] If the server has zero connected clients, still broadcast the payload but also show `Pi x IDE: no Pi clients connected for Fix with Pi.` so the user knows why no Pi turn starts.
 - [ ] In `vscode/src/extension.ts`, import `registerDiagnosticQuickFixes()` and call it inside `activate()` after `server` is created, passing `() => server`.
 
 **Validation:**
@@ -166,13 +166,13 @@
 **Steps:**
 
 - [ ] In `docs/specs/ide-protocol.md`, add a `diagnostic_fix_requested` notification section after `at_mentioned`.
-- [ ] Document that `diagnostic_fix_requested` is sent by VS Code when the user selects `Fix with Pi suggest` from Quick Fix.
+- [ ] Document that `diagnostic_fix_requested` is sent by VS Code when the user selects `Fix with Pi` from Quick Fix.
 - [ ] Include an example JSON-RPC payload with `source`, `filePath`, `workspaceFolder`, `documentVersion`, `triggerRange`, `diagnostics`, `contextLines`, and `receivedAt`.
 - [ ] Document that the notification is additive under protocol version `1`, and clients that do not understand it may ignore it.
-- [ ] In `README.md`, add the VS Code Quick Fix workflow to the VS Code / Cursor / Windsurf usage section: place the cursor on an error/warning, open Quick Fix, choose `Fix with Pi suggest`, and Pi starts a diagnostic-analysis turn.
+- [ ] In `README.md`, add the VS Code Quick Fix workflow to the VS Code / Cursor / Windsurf usage section: place the cursor on an error/warning, open Quick Fix, choose `Fix with Pi`, and Pi starts a diagnostic-analysis turn.
 - [ ] In `README.md`, state that this first version uses the built-in prompt template and does not yet prompt for custom user instructions.
 - [ ] In `README.zh-CN.md`, add the same Quick Fix workflow and the same custom-instruction limitation in Chinese.
-- [ ] In `vscode/README.md`, add a feature bullet and usage paragraph for `Fix with Pi suggest` so the VSIX marketplace page reflects the new feature.
+- [ ] In `vscode/README.md`, add a feature bullet and usage paragraph for `Fix with Pi` so the VSIX marketplace page reflects the new feature.
 
 **Validation:**
 
@@ -195,10 +195,10 @@
 - [ ] Start the VS Code Extension Development Host using the existing `Run Pi x IDE VS Code Extension` launch configuration.
 - [ ] Open a TypeScript file with a known error or warning in the Extension Development Host.
 - [ ] Place the cursor inside the diagnostic range and open Quick Fix.
-- [ ] Select `Fix with Pi suggest`.
+- [ ] Select `Fix with Pi`.
 - [ ] In a connected Pi TUI session, verify a new user message appears with `<!-- Diagnostic Context -->`, the diagnostic message, the file/range context, and the instruction `Analyze the errors and warnings that appear in the above locations and provide recommendations for resolution.`
-- [ ] While Pi is already streaming, trigger `Fix with Pi suggest` again and verify the request is queued as a follow-up instead of throwing.
-- [ ] Disconnect Pi, trigger `Fix with Pi suggest`, and verify VS Code shows `Pi x IDE: no Pi clients connected for Fix with Pi suggest.` without crashing.
+- [ ] While Pi is already streaming, trigger `Fix with Pi` again and verify the request is queued as a follow-up instead of throwing.
+- [ ] Disconnect Pi, trigger `Fix with Pi`, and verify VS Code shows `Pi x IDE: no Pi clients connected for Fix with Pi.` without crashing.
 
 **Validation:**
 
@@ -221,7 +221,7 @@
 - Expected: No lint errors are reported.
 - Run: `mise run build`
 - Expected: `dist/`, `vscode/out/`, and Neovim sidecar artifacts are built successfully.
-- Manual: Launch the VS Code Extension Development Host, trigger `Fix with Pi suggest` on an error/warning diagnostic, and confirm Pi receives and starts a diagnostic-analysis turn with the fixed template.
+- Manual: Launch the VS Code Extension Development Host, trigger `Fix with Pi` on an error/warning diagnostic, and confirm Pi receives and starts a diagnostic-analysis turn with the fixed template.
 
 ## Rollout Notes
 

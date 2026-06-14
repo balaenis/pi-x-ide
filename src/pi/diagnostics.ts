@@ -6,14 +6,9 @@ import type { PiIdeRuntime } from "./state";
 export const DIAGNOSTIC_CONTEXT_MARKER = "pi-x-ide/diagnostic-context";
 
 export function buildDiagnosticFixPrompt(params: DiagnosticFixRequestedParams, options: { cwd?: string } = {}): string {
-  return `<!-- ${DIAGNOSTIC_CONTEXT_MARKER} -->
-<!-- Diagnostic Context -->
-
-${formatDiagnosticContext(params, options)}
-
-<!-- Diagnostic Context -->
-
-Analyze the errors and warnings that appear in the above locations and provide recommendations for resolution.`;
+  return `Analyze the errors and warnings at the following location, and try to fix them:
+<!-- ${DIAGNOSTIC_CONTEXT_MARKER} -->
+${formatDiagnosticContext(params, options)}`;
 }
 
 export function formatDiagnosticContext(params: DiagnosticFixRequestedParams, options: { cwd?: string } = {}): string {

@@ -10,7 +10,7 @@ import type {
 import type { IdeWebSocketServer } from "./server";
 
 export const FIX_WITH_PI_COMMAND = "pi-x-ide.fixWithPiSuggest";
-export const FIX_WITH_PI_TITLE = "Fix with Pi suggest";
+export const FIX_WITH_PI_TITLE = "Fix with Pi";
 export const DIAGNOSTIC_CONTEXT_RADIUS = 2;
 export const MAX_SELECTED_TEXT_CHARS = 4_000;
 
@@ -37,7 +37,7 @@ export function registerDiagnosticQuickFixes(
       });
 
       if (server.clientCount === 0) {
-        void vscode.window.showWarningMessage("Pi x IDE: no Pi clients connected for Fix with Pi suggest.");
+        void vscode.window.showWarningMessage("Pi x IDE: no Pi clients connected for Fix with Pi.");
       } else {
         vscode.window.setStatusBarMessage("Pi x IDE sent diagnostic fix request", 2500);
       }

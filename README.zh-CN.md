@@ -101,7 +101,7 @@ IDE: vscode ✓ src/foo.ts#L10,20 pending
 
 在 Pi 中输入对话提示并提交，选中文本会作为 LLM 上下文注入（不写入 session 历史）。提交后 widget 显示 `sent`。
 
-对于 VS Code 系列 IDE 中的诊断信息，把光标放在 error 或 warning 上，打开 Quick Fix，并选择 **Fix with Pi suggest**。Pi 会收到诊断消息、源码范围、附近上下文行和 related information，然后用内置 prompt 模板自动开始诊断分析。当前版本发送前不会询问自定义补充说明。
+对于 VS Code 系列 IDE 中的诊断信息，把光标放在 error 或 warning 上，打开 Quick Fix，并选择 **Fix with Pi**。Pi 会收到诊断消息、源码范围、附近上下文行和 related information，然后用内置 prompt 模板自动开始诊断分析。当前版本发送前不会询问自定义补充说明。
 
 **如果连接未出现：**
 

@@ -137,7 +137,7 @@ Pi inserts `rangeText` into the TUI editor and caches the corresponding selectio
 
 ### `diagnostic_fix_requested`
 
-Sent by the VS Code-family extension when the user selects **Fix with Pi suggest** from Quick Fix on an error or warning diagnostic. This notification is additive under protocol version `1`; clients that do not understand it may ignore it.
+Sent by the VS Code-family extension when the user selects **Fix with Pi** from Quick Fix on an error or warning diagnostic. This notification is additive under protocol version `1`; clients that do not understand it may ignore it.
 
 ```json
 {
