@@ -8,6 +8,7 @@ vscode/assets/icons/
 .pi*
 .worktrees
 nul
+.vscode/settings.json
 
 # nvim sidecar platform binaries (built by bun build --compile)
 nvim/bin/pi-x-ide-nvim-sidecar-linux-*
