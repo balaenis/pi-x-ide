@@ -1,6 +1,7 @@
 import WebSocket from "ws";
 import {
   AUTH_HEADER,
+  type DiagnosticFixRequestedParams,
   PROTOCOL_VERSION,
   type AtMentionedParams,
   type EditorSelectionSnapshot,
@@ -9,7 +10,12 @@ import {
   type SelectionChangedParams,
   type SelectionClearedParams,
 } from "../shared/protocol";
-import { isAtMentionedParams, isSelectionChangedParams, isSelectionClearedParams } from "../shared/schema";
+import {
+  isAtMentionedParams,
+  isDiagnosticFixRequestedParams,
+  isSelectionChangedParams,
+  isSelectionClearedParams,
+} from "../shared/schema";
 import { decodeRawData } from "../shared/ws";
 
 export const IDE_CONNECT_TIMEOUT_MS = 5_000;
@@ -27,6 +33,7 @@ export interface IdeConnectionCallbacks {
   onSelectionChanged?: (snapshot: EditorSelectionSnapshot) => void;
   onSelectionCleared?: (params: SelectionClearedParams) => void;
   onAtMentioned?: (params: AtMentionedParams) => void;
+  onDiagnosticFixRequested?: (params: DiagnosticFixRequestedParams) => void;
   onError?: (error: Error) => void;
 }
 
@@ -136,11 +143,15 @@ export class IdeConnection {
     } else if (parsed.method === "at_mentioned" && isAtMentionedParams(parsed.params)) {
       const params = withReceivedAt(parsed.params);
       this.callbacks.onAtMentioned?.(params);
+    } else if (parsed.method === "diagnostic_fix_requested" && isDiagnosticFixRequestedParams(parsed.params)) {
+      this.callbacks.onDiagnosticFixRequested?.(withReceivedAt(parsed.params));
     }
   }
 }
 
-function withReceivedAt<T extends SelectionChangedParams | SelectionClearedParams>(params: T): T {
+function withReceivedAt<
+  T extends SelectionChangedParams | SelectionClearedParams | AtMentionedParams | DiagnosticFixRequestedParams,
+>(params: T): T {
   return { ...params, receivedAt: params.receivedAt ?? Date.now() };
 }
 

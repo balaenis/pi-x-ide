@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createServer, type AddressInfo, type Socket } from "node:net";
 import test from "node:test";
+import { WebSocketServer } from "ws";
 import { IdeConnection, IdeConnectionTimeoutError } from "../src/pi/connection";
 import {
   formatReconnectLimitMessage,
@@ -9,7 +10,13 @@ import {
   resetReconnectState,
 } from "../src/pi/reconnect";
 import { createRuntime } from "../src/pi/state";
-import type { LockFileCandidate } from "../src/shared/protocol";
+import {
+  AUTH_HEADER,
+  PROTOCOL_VERSION,
+  type DiagnosticFixRequestedParams,
+  type LockFileCandidate,
+} from "../src/shared/protocol";
+import { decodeRawData } from "../src/shared/ws";
 
 void test("caps reconnect attempts at three per candidate", () => {
   const runtime = createRuntime();
@@ -61,6 +68,71 @@ void test("times out stalled websocket handshakes", async () => {
     await new Promise<void>((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
     });
+  }
+});
+
+void test("dispatches diagnostic fix requested notifications", async () => {
+  const payload: DiagnosticFixRequestedParams = {
+    source: "vscode",
+    filePath: "/repo/src/main.ts",
+    workspaceFolder: "/repo",
+    triggerRange: { start: { line: 0, character: 0 }, end: { line: 0, character: 4 } },
+    diagnostics: [
+      {
+        severity: "warning",
+        message: "Unexpected any.",
+        source: "eslint",
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 4 } },
+        selectedText: "data",
+        contextLines: [{ line: 0, text: "const data: any = {};", isPrimary: true }],
+      },
+    ],
+  };
+  const wss = new WebSocketServer({
+    host: "127.0.0.1",
+    port: 0,
+    verifyClient: ({ req }, done) => {
+      done(req.headers[AUTH_HEADER] === "token");
+    },
+  });
+
+  await new Promise<void>((resolve) => wss.once("listening", resolve));
+  let connection: IdeConnection | undefined;
+
+  try {
+    wss.on("connection", (socket) => {
+      socket.on("message", (raw) => {
+        const request = JSON.parse(decodeRawData(raw)) as { id: number | string };
+        socket.send(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            id: request.id,
+            result: {
+              protocolVersion: PROTOCOL_VERSION,
+              server: { name: "Test IDE", ide: "vscode" },
+            },
+          }),
+        );
+        socket.send(JSON.stringify({ jsonrpc: "2.0", method: "diagnostic_fix_requested", params: payload }));
+      });
+    });
+
+    const address = wss.address() as AddressInfo;
+    const received = new Promise<DiagnosticFixRequestedParams>((resolve) => {
+      connection = new IdeConnection(createCandidate({ port: address.port }), "/repo", {
+        onDiagnosticFixRequested: resolve,
+      });
+      void connection.connect();
+    });
+
+    const params = await received;
+    assert.equal(params.filePath, "/repo/src/main.ts");
+    assert.equal(params.diagnostics[0]?.severity, "warning");
+    assert.equal(params.diagnostics[0]?.message, "Unexpected any.");
+    assert.equal(typeof params.receivedAt, "number");
+  } finally {
+    connection?.disconnect();
+    await new Promise<void>((resolve) => wss.close(() => resolve()));
   }
 });
 

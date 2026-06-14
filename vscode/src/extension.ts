@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { PROTOCOL_VERSION } from "../../src/shared/protocol";
 import { formatRangeMention } from "../../src/shared/format";
+import { registerDiagnosticQuickFixes } from "./diagnostics";
 import {
   createAuthToken,
   createLockFile,
@@ -46,6 +47,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   status.command = "pi-x-ide.attachSelection";
   context.subscriptions.push(status);
   updateStatus("ready");
+
+  registerDiagnosticQuickFixes(context, () => server);
 
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor(() => scheduleSelectionBroadcast()),

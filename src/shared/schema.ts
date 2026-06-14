@@ -1,9 +1,15 @@
 import type {
   AtMentionedParams,
+  DiagnosticFixRequestedParams,
+  IdeDiagnostic,
+  IdeDiagnosticCode,
+  IdeDiagnosticRelatedInformation,
+  DiagnosticContextLine,
   EditorSelectionSnapshot,
   IdeLockFile,
   IdeSource,
   JsonRpcRequest,
+  Position,
   SelectionChangedParams,
   SelectionClearedParams,
   SelectionRange,
@@ -55,6 +61,10 @@ function isPosition(value: unknown): value is { line: number; character: number 
   );
 }
 
+function isRange(value: unknown): value is { start: Position; end: Position } {
+  return isRecord(value) && isPosition(value.start) && isPosition(value.end);
+}
+
 function isSelectionRange(value: unknown): value is SelectionRange {
   if (!isRecord(value) || !isString(value.text) || !isRecord(value.selection)) return false;
   return isPosition(value.selection.start) && isPosition(value.selection.end);
@@ -87,6 +97,64 @@ export function isSelectionClearedParams(value: unknown): value is SelectionClea
 
 export function isAtMentionedParams(value: unknown): value is AtMentionedParams {
   return isEditorSelectionSnapshot(value) && isString((value as unknown as Record<string, unknown>).rangeText);
+}
+
+function isDiagnosticSeverity(value: unknown): value is IdeDiagnostic["severity"] {
+  return value === "error" || value === "warning";
+}
+
+function isDiagnosticCode(value: unknown): value is IdeDiagnosticCode {
+  if (isString(value) || isFiniteNumber(value)) return true;
+  return (
+    isRecord(value) &&
+    (isString(value.value) || isFiniteNumber(value.value)) &&
+    (value.target === undefined || isString(value.target))
+  );
+}
+
+function isDiagnosticContextLine(value: unknown): value is DiagnosticContextLine {
+  return (
+    isRecord(value) &&
+    isFiniteNumber(value.line) &&
+    value.line >= 0 &&
+    isString(value.text) &&
+    typeof value.isPrimary === "boolean"
+  );
+}
+
+function isDiagnosticRelatedInformation(value: unknown): value is IdeDiagnosticRelatedInformation {
+  return isRecord(value) && isString(value.filePath) && isRange(value.range) && isString(value.message);
+}
+
+function isIdeDiagnostic(value: unknown): value is IdeDiagnostic {
+  return (
+    isRecord(value) &&
+    isDiagnosticSeverity(value.severity) &&
+    isString(value.message) &&
+    (value.source === undefined || isString(value.source)) &&
+    (value.code === undefined || isDiagnosticCode(value.code)) &&
+    isRange(value.range) &&
+    isString(value.selectedText) &&
+    Array.isArray(value.contextLines) &&
+    value.contextLines.every(isDiagnosticContextLine) &&
+    (value.relatedInformation === undefined ||
+      (Array.isArray(value.relatedInformation) && value.relatedInformation.every(isDiagnosticRelatedInformation)))
+  );
+}
+
+export function isDiagnosticFixRequestedParams(value: unknown): value is DiagnosticFixRequestedParams {
+  return (
+    isRecord(value) &&
+    value.source === "vscode" &&
+    isString(value.filePath) &&
+    (value.workspaceFolder === undefined || isString(value.workspaceFolder)) &&
+    (value.documentVersion === undefined || isFiniteNumber(value.documentVersion)) &&
+    isRange(value.triggerRange) &&
+    Array.isArray(value.diagnostics) &&
+    value.diagnostics.length > 0 &&
+    value.diagnostics.every(isIdeDiagnostic) &&
+    (value.receivedAt === undefined || isFiniteNumber(value.receivedAt))
+  );
 }
 
 export function parseJsonObject(input: string): Record<string, unknown> | undefined {

@@ -10,11 +10,19 @@
       "type": "object",
       "description": "Pi-side environment variables. Real environment variables override these values.",
       "additionalProperties": {
-        "type": ["string", "number", "boolean"]
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
       },
       "properties": {
         "PI_X_IDE_AUTO_INSTALL": {
-          "type": ["string", "number", "boolean"],
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ],
           "description": "Controls VS Code-family extension auto-install. Values 0, false, and off disable it."
         },
         "PI_X_IDE_ATTACH_SHORTCUT": {
@@ -26,7 +34,10 @@
           "description": "Override path to Zed's SQLite database."
         },
         "PI_X_IDE_ZED_POLL_INTERVAL_MS": {
-          "type": ["string", "number"],
+          "type": [
+            "string",
+            "number"
+          ],
           "description": "Polling interval in milliseconds when checking Zed's SQLite database for selection changes."
         }
       },

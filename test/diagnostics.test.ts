@@ -1,0 +1,135 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { buildDiagnosticFixPrompt, handleDiagnosticFixRequested } from "../src/pi/diagnostics";
+import { createRuntime } from "../src/pi/state";
+import type { DiagnosticFixRequestedParams } from "../src/shared/protocol";
+import { isDiagnosticFixRequestedParams } from "../src/shared/schema";
+
+const diagnosticPayload: DiagnosticFixRequestedParams = {
+  source: "vscode",
+  filePath: "/repo/src/main.ts",
+  workspaceFolder: "/repo",
+  documentVersion: 7,
+  triggerRange: {
+    start: { line: 9, character: 4 },
+    end: { line: 9, character: 10 },
+  },
+  diagnostics: [
+    {
+      severity: "error",
+      message: "Type 'string' is not assignable to type 'number'.",
+      source: "ts",
+      code: { value: 2322, target: "https://typescript.tv/errors/2322" },
+      range: {
+        start: { line: 9, character: 4 },
+        end: { line: 9, character: 10 },
+      },
+      selectedText: "value",
+      contextLines: [
+        { line: 8, text: "const value = getValue();", isPrimary: false },
+        { line: 9, text: "const count: number = value;", isPrimary: true },
+        { line: 10, text: "console.log(count);", isPrimary: false },
+      ],
+      relatedInformation: [
+        {
+          filePath: "/repo/src/types.ts",
+          range: {
+            start: { line: 1, character: 0 },
+            end: { line: 1, character: 16 },
+          },
+          message: "The expected type is declared here.",
+        },
+      ],
+    },
+  ],
+  receivedAt: 1780963200000,
+};
+
+void test("validates diagnostic fix request params", () => {
+  assert.equal(isDiagnosticFixRequestedParams(diagnosticPayload), true);
+  assert.equal(isDiagnosticFixRequestedParams({ ...diagnosticPayload, diagnostics: [] }), false);
+  assert.equal(
+    isDiagnosticFixRequestedParams({
+      ...diagnosticPayload,
+      diagnostics: [{ ...diagnosticPayload.diagnostics[0], severity: "information" }],
+    }),
+    false,
+  );
+  assert.equal(
+    isDiagnosticFixRequestedParams({
+      ...diagnosticPayload,
+      diagnostics: [{ ...diagnosticPayload.diagnostics[0], range: { start: { line: -1, character: 0 } } }],
+    }),
+    false,
+  );
+});
+
+void test("builds diagnostic fix prompt from payload", () => {
+  const prompt = buildDiagnosticFixPrompt(diagnosticPayload, { cwd: "/repo" });
+
+  assert.match(prompt, /pi-x-ide\/diagnostic-context/);
+  assert.match(prompt, /<!-- Diagnostic Context -->/);
+  assert.match(prompt, /File: src\/main\.ts/);
+  assert.match(prompt, /Severity: error/);
+  assert.match(prompt, /Source: ts/);
+  assert.match(prompt, /Code: 2322 \(https:\/\/typescript\.tv\/errors\/2322\)/);
+  assert.match(prompt, /Type 'string' is not assignable to type 'number'\./);
+  assert.match(prompt, /```\nvalue\n```/);
+  assert.match(prompt, /> 10: const count: number = value;/);
+  assert.match(prompt, /src\/types\.ts L2:C1-L2:C17: The expected type is declared here\./);
+  assert.match(
+    prompt,
+    /Analyze the errors and warnings that appear in the above locations and provide recommendations for resolution\.$/,
+  );
+});
+
+void test("sends diagnostic fix prompt immediately when Pi is idle", () => {
+  const runtime = createRuntime();
+  runtime.ctx = createContext({ idle: true });
+  const sent: Array<{ content: unknown; options?: unknown }> = [];
+  const pi = createPi(sent);
+
+  handleDiagnosticFixRequested(pi, runtime, diagnosticPayload);
+
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0]?.options, undefined);
+  assert.match(String(sent[0]?.content), /Diagnostic Context/);
+});
+
+void test("queues diagnostic fix prompt as follow-up when Pi is busy", () => {
+  const runtime = createRuntime();
+  const notifications: string[] = [];
+  runtime.ctx = createContext({ idle: false, notifications });
+  const sent: Array<{ content: unknown; options?: unknown }> = [];
+  const pi = createPi(sent);
+
+  handleDiagnosticFixRequested(pi, runtime, diagnosticPayload);
+
+  assert.equal(sent.length, 1);
+  assert.deepEqual(sent[0]?.options, { deliverAs: "followUp" });
+  assert.deepEqual(notifications, ["VS Code diagnostic fix request queued."]);
+});
+
+function createPi(
+  sent: Array<{ content: unknown; options?: unknown }>,
+): Parameters<typeof handleDiagnosticFixRequested>[0] {
+  return {
+    sendUserMessage: (content: unknown, options?: unknown) => {
+      sent.push({ content, options });
+    },
+  } as Parameters<typeof handleDiagnosticFixRequested>[0];
+}
+
+function createContext(options: {
+  idle: boolean;
+  notifications?: string[];
+}): NonNullable<ReturnType<typeof createRuntime>["ctx"]> {
+  return {
+    cwd: "/repo",
+    hasUI: true,
+    isIdle: () => options.idle,
+    ui: {
+      notify: (message: string) => options.notifications?.push(message),
+    },
+  } as NonNullable<ReturnType<typeof createRuntime>["ctx"]>;
+}

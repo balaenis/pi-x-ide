@@ -1,4 +1,5 @@
 dist/
+schemas/config.json
 nvim/bin/
 vscode/out/
 vscode/dist/

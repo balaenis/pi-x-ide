@@ -98,9 +98,56 @@ export interface AtMentionedParams extends EditorSelectionSnapshot {
   rangeText: string;
 }
 
+export type IdeDiagnosticSeverity = "error" | "warning";
+
+export type IdeDiagnosticCode = string | number | { value: string | number; target?: string };
+
+export interface DiagnosticContextLine {
+  line: number;
+  text: string;
+  isPrimary: boolean;
+}
+
+export interface IdeDiagnosticRelatedInformation {
+  filePath: string;
+  range: {
+    start: Position;
+    end: Position;
+  };
+  message: string;
+}
+
+export interface IdeDiagnostic {
+  severity: IdeDiagnosticSeverity;
+  message: string;
+  source?: string;
+  code?: IdeDiagnosticCode;
+  range: {
+    start: Position;
+    end: Position;
+  };
+  selectedText: string;
+  contextLines: DiagnosticContextLine[];
+  relatedInformation?: IdeDiagnosticRelatedInformation[];
+}
+
+export interface DiagnosticFixRequestedParams {
+  source: "vscode";
+  filePath: string;
+  workspaceFolder?: string;
+  documentVersion?: number;
+  triggerRange: {
+    start: Position;
+    end: Position;
+  };
+  diagnostics: IdeDiagnostic[];
+  receivedAt?: number;
+}
+
 export type IdeNotification =
   | JsonRpcNotification<SelectionChangedParams>
   | JsonRpcNotification<SelectionClearedParams>
-  | JsonRpcNotification<AtMentionedParams>;
+  | JsonRpcNotification<AtMentionedParams>
+  | JsonRpcNotification<DiagnosticFixRequestedParams>;
 
 export type AttachState = "pending" | "sent" | "idle";

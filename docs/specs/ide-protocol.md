@@ -135,6 +135,48 @@ Sent when the user invokes an IDE attach-selection command, such as VS Code's co
 
 Pi inserts `rangeText` into the TUI editor and caches the corresponding selection text for context injection.
 
+### `diagnostic_fix_requested`
+
+Sent by the VS Code-family extension when the user selects **Fix with Pi suggest** from Quick Fix on an error or warning diagnostic. This notification is additive under protocol version `1`; clients that do not understand it may ignore it.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "diagnostic_fix_requested",
+  "params": {
+    "source": "vscode",
+    "filePath": "/home/user/project/src/main.ts",
+    "workspaceFolder": "/home/user/project",
+    "documentVersion": 7,
+    "triggerRange": {
+      "start": { "line": 9, "character": 4 },
+      "end": { "line": 9, "character": 10 }
+    },
+    "diagnostics": [
+      {
+        "severity": "error",
+        "message": "Type 'string' is not assignable to type 'number'.",
+        "source": "ts",
+        "code": 2322,
+        "range": {
+          "start": { "line": 9, "character": 4 },
+          "end": { "line": 9, "character": 10 }
+        },
+        "selectedText": "value",
+        "contextLines": [
+          { "line": 8, "text": "const value = getValue();", "isPrimary": false },
+          { "line": 9, "text": "const count: number = value;", "isPrimary": true },
+          { "line": 10, "text": "console.log(count);", "isPrimary": false }
+        ]
+      }
+    ],
+    "receivedAt": 1780963200000
+  }
+}
+```
+
+Pi formats the diagnostics into a `Diagnostic Context` prompt and sends it as a user message. If the agent is busy, Pi queues the diagnostic prompt as a follow-up.
+
 ## TUI behavior
 
 When connected, Pi displays:

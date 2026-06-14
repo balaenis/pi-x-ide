@@ -3,6 +3,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 };
 import { formatEditorContext, snapshotKey } from "../shared/format";
 import type { EditorSelectionSnapshot } from "../shared/protocol";
+import { DIAGNOSTIC_CONTEXT_MARKER } from "./diagnostics";
 import type { PiIdeRuntime } from "./state";
 import { updateIdeUi } from "./ui";
 
@@ -24,7 +25,10 @@ export function registerContextHandlers(pi: ExtensionAPI, runtime: PiIdeRuntime)
     runtime.ctx = ctx;
     if (!runtime.enabled || !runtime.turnSelection) return;
     if (event.message.role !== "user") return;
-    if (messageContainsMarker(event.message)) return;
+    if (messageContainsMarker(event.message)) {
+      runtime.turnSelection = undefined;
+      return;
+    }
 
     const text = `${formatEditorContext(runtime.turnSelection, { cwd: ctx.cwd })}\n<!-- ${CONTEXT_MARKER} -->\n`;
     const message = mergeIntoUserMessage(event.message, text);
@@ -78,5 +82,6 @@ function normalizeUserContent(content: MergeableUserMessage["content"]): UserCon
 }
 
 function messageContainsMarker(message: MergeableUserMessage): boolean {
-  return JSON.stringify(message).includes(CONTEXT_MARKER);
+  const serialized = JSON.stringify(message);
+  return serialized.includes(CONTEXT_MARKER) || serialized.includes(DIAGNOSTIC_CONTEXT_MARKER);
 }

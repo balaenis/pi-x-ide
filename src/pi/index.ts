@@ -15,6 +15,7 @@ import {
 } from "./install";
 import { registerIdeCommand } from "./commands";
 import { clearLatestSelection, registerContextHandlers, setLatestSelection } from "./context";
+import { handleDiagnosticFixRequested } from "./diagnostics";
 import { formatReconnectLimitMessage, recordReconnectAttempt, resetReconnectState } from "./reconnect";
 import { createRuntime, type PiIdeRuntime } from "./state";
 import { clearIdeUi, updateIdeUi } from "./ui";
@@ -23,6 +24,8 @@ import { startZedPolling, stopZedPolling } from "./zed";
 const RECONNECT_DELAY_MS = 2_000;
 const INSTALL_RECONNECT_RETRY_MS = 1_500;
 const INSTALL_RECONNECT_TIMEOUT_MS = 15_000;
+
+let activePi: ExtensionAPI | undefined;
 
 interface ConnectOptions {
   resetReconnectState?: boolean;
@@ -33,6 +36,7 @@ function formatConnectTimeoutMessage(error: IdeConnectionTimeoutError): string {
 }
 
 export default function (pi: ExtensionAPI): void {
+  activePi = pi;
   const runtime = createRuntime();
 
   registerContextHandlers(pi, runtime);
@@ -317,7 +321,7 @@ async function connectCandidate(
   const connection = new IdeConnection(
     candidate,
     ctx.cwd,
-    createConnectionCallbacks(runtime, () => connectionRef.current),
+    createConnectionCallbacks(activePi, runtime, () => connectionRef.current),
   );
   connectionRef.current = connection;
 
@@ -343,6 +347,7 @@ async function connectCandidate(
 }
 
 function createConnectionCallbacks(
+  pi: ExtensionAPI | undefined,
   runtime: PiIdeRuntime,
   getConnection: () => IdeConnection | undefined,
 ): IdeConnectionCallbacks {
@@ -375,6 +380,10 @@ function createConnectionCallbacks(
     onAtMentioned: (params) => {
       if (!isCurrentConnection(runtime, getConnection())) return;
       handleAtMentioned(runtime, params);
+    },
+    onDiagnosticFixRequested: (params) => {
+      if (!pi || !isCurrentConnection(runtime, getConnection())) return;
+      handleDiagnosticFixRequested(pi, runtime, params);
     },
     onError: (error) => {
       if (!isCurrentConnection(runtime, getConnection())) return;
