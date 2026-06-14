@@ -167,6 +167,7 @@ function openPiTerminal(context: vscode.ExtensionContext): void {
   const useTmux = vscode.workspace.getConfiguration(CONFIG_SECTION).get<boolean>(USE_TMUX_CONFIG_KEY, false);
   const terminal = vscode.window.createTerminal({
     name: PI_TERMINAL_NAME,
+    hideFromUser: true,
     iconPath: {
       light: vscode.Uri.file(context.asAbsolutePath("assets/icons/icon-light.png")),
       dark: vscode.Uri.file(context.asAbsolutePath("assets/icons/icon-dark.png")),
@@ -177,8 +178,8 @@ function openPiTerminal(context: vscode.ExtensionContext): void {
     },
   });
 
-  terminal.show();
   terminal.sendText(useTmux ? buildTmuxPiCommand() : "pi");
+  terminal.show(false);
 }
 
 function buildTmuxPiCommand(): string {
