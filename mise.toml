@@ -18,10 +18,12 @@ run = "bun run test"
 
 [tasks."generate:config-schema"]
 description = "Generate schemas/config.json from the config registry"
+depends = ["setup"]
 run = "bun run generate:config-schema"
 
 [tasks."check:config-schema"]
 description = "Check schemas/config.json is in sync with the config registry"
+depends = ["setup"]
 run = "bun run check:config-schema"
 
 [tasks.lint]
@@ -31,14 +33,17 @@ run = "bun run lint"
 
 [tasks."lint:fix"]
 description = "Lint and auto-fix the project"
+depends = ["setup"]
 run = "bun run lint:fix"
 
 [tasks.format]
 description = "Format the project with prettier"
+depends = ["setup"]
 run = "bun run format"
 
 [tasks."format:check"]
 description = "Check formatting with prettier"
+depends = ["setup"]
 run = "bun run format:check"
 
 [tasks."compile"]
