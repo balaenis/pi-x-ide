@@ -43,7 +43,7 @@ jobs:
 
       - name: Run Prettier
         if: steps.check-commit.outputs.already-formatted != 'true'
-        run: bun run format
+        run: mise run format
 
       - name: Commit formatting changes
         if: steps.check-commit.outputs.already-formatted != 'true'
