@@ -13,6 +13,8 @@ mise run test
 # ...More
 ```
 
+- When writing github/workflows workflows, please prefer using `mise` instead of `bun` or anything else.
+
 ## Dependency packages
 
 - When the feature you’re building needs other dependencies, always use the latest stable version:
