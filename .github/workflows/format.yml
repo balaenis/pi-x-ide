@@ -47,7 +47,7 @@ jobs:
 
       - name: Commit formatting changes
         if: steps.check-commit.outputs.already-formatted != 'true'
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "style: apply prettier formatting"
           commit_user_name: "github-actions[bot]"

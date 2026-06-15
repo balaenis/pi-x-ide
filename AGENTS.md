@@ -15,7 +15,19 @@ mise run test
 
 ## Dependency packages
 
-- When the feature you’re building needs other dependencies, always use the latest stable version
+- When the feature you’re building needs other dependencies, always use the latest stable version:
+
+For `package.json`:
+
+```json
+"typescript": "{find the latest version}"
+```
+
+For `github/workflows`:
+
+```yaml
+- uses: actions/checkout@{find the latest version}
+```
 
 ## Update `README.md`
 
