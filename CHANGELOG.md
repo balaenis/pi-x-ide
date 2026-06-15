@@ -2,15 +2,13 @@
 
 ## [1.11.0](https://github.com/balaenis/pi-x-ide/compare/v1.10.0...v1.11.0) (2026-06-14)
 
-
 ### Features
 
-* **diagnostics:** send diagnostic context to one connected Pi client instead of broadcasting ([9681fd4](https://github.com/balaenis/pi-x-ide/commit/9681fd4dcf88aad1a43a5c1d002219a2477c5279))
-
+- **diagnostics:** send diagnostic context to one connected Pi client instead of broadcasting ([9681fd4](https://github.com/balaenis/pi-x-ide/commit/9681fd4dcf88aad1a43a5c1d002219a2477c5279))
 
 ### Bug Fixes
 
-* **diagnostics:** escape primary context line marker to avoid markdown blockquote interpretation ([c2f005e](https://github.com/balaenis/pi-x-ide/commit/c2f005e8cd16c2743838d2e79d0ca0987a2e0a8d))
+- **diagnostics:** escape primary context line marker to avoid markdown blockquote interpretation ([c2f005e](https://github.com/balaenis/pi-x-ide/commit/c2f005e8cd16c2743838d2e79d0ca0987a2e0a8d))
 
 ## [1.10.0](https://github.com/balaenis/pi-x-ide/compare/v1.9.0...v1.10.0) (2026-06-14)
 

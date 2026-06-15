@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent" with { "resolution-mode": "import" };
 import { readPiConfigFixPrompt } from "../shared/config";
-import { toRelativeDisplayPath } from "../shared/paths";
+
 import type { DiagnosticFixRequestedParams, IdeDiagnosticCode, Position } from "../shared/protocol";
 import type { PiIdeRuntime } from "./state";
 
@@ -8,9 +8,9 @@ export const DIAGNOSTIC_CONTEXT_MARKER = "pi-x-ide/diagnostic-context";
 
 export function buildDiagnosticFixPrompt(
   params: DiagnosticFixRequestedParams,
-  options: { cwd?: string; fixPrompt?: string } = {},
+  options: { fixPrompt?: string } = {},
 ): string {
-  const context = buildDiagnosticContextMessage(params, options);
+  const context = buildDiagnosticContextMessage(params);
   const template = options.fixPrompt;
   if (!template) {
     return `Analyze the errors and warnings at the following location, and try to fix them:
@@ -23,19 +23,16 @@ ${context}`;
 ${context}`;
 }
 
-export function buildDiagnosticContextMessage(
-  params: DiagnosticFixRequestedParams,
-  options: { cwd?: string } = {},
-): string {
+export function buildDiagnosticContextMessage(params: DiagnosticFixRequestedParams): string {
   return `<!-- ${DIAGNOSTIC_CONTEXT_MARKER} -->
-${formatDiagnosticContext(params, options)}
+${formatDiagnosticContext(params)}
 <!-- ${DIAGNOSTIC_CONTEXT_MARKER} -->
 `;
 }
 
-export function formatDiagnosticContext(params: DiagnosticFixRequestedParams, options: { cwd?: string } = {}): string {
-  const rel = toRelativeDisplayPath(params.filePath, params.workspaceFolder, options.cwd);
-  const lines = [`File: ${rel}`, `Source: ${params.source}`];
+export function formatDiagnosticContext(params: DiagnosticFixRequestedParams): string {
+  const filePath = params.filePath;
+  const lines = [`File: ${filePath}`, `Source: ${params.source}`];
   if (params.documentVersion !== undefined) lines.push(`Document version: ${params.documentVersion}`);
   lines.push(`Trigger range: ${formatRange(params.triggerRange)}`);
 
@@ -62,7 +59,7 @@ export function formatDiagnosticContext(params: DiagnosticFixRequestedParams, op
     if (diagnostic.relatedInformation && diagnostic.relatedInformation.length > 0) {
       lines.push("- Related information:");
       for (const related of diagnostic.relatedInformation) {
-        const relatedPath = toRelativeDisplayPath(related.filePath, params.workspaceFolder, options.cwd);
+        const relatedPath = related.filePath;
         lines.push(`  - ${relatedPath} ${formatRange(related.range)}: ${related.message}`);
       }
     }
@@ -81,13 +78,13 @@ export function handleDiagnosticFixRequested(
 
   if (params.action === "send-diagnostic") {
     if (!ctx.hasUI) return;
-    ctx.ui.pasteToEditor(buildDiagnosticContextMessage(params, { cwd: ctx.cwd }));
+    ctx.ui.pasteToEditor(buildDiagnosticContextMessage(params));
     ctx.ui.notify("VS Code diagnostic context added to input.", "info");
     return;
   }
 
   const fixPrompt = readPiConfigFixPrompt();
-  const prompt = buildDiagnosticFixPrompt(params, { cwd: ctx.cwd, fixPrompt });
+  const prompt = buildDiagnosticFixPrompt(params, { fixPrompt });
   if (ctx.isIdle()) {
     pi.sendUserMessage(prompt);
     return;

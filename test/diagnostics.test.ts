@@ -72,23 +72,22 @@ void test("validates diagnostic fix request params", () => {
 });
 
 void test("builds diagnostic fix prompt from payload", () => {
-  const prompt = buildDiagnosticFixPrompt(diagnosticPayload, { cwd: "/repo" });
+  const prompt = buildDiagnosticFixPrompt(diagnosticPayload);
 
   assert.match(prompt, /pi-x-ide\/diagnostic-context/);
   assert.match(prompt, /^Analyze the errors and warnings at the following location, and try to fix them:/);
-  assert.match(prompt, /File: src\/main\.ts/);
+  assert.match(prompt, /File: \/repo\/src\/main\.ts/);
   assert.match(prompt, /Severity: error/);
   assert.match(prompt, /Source: ts/);
   assert.match(prompt, /Code: 2322 \(https:\/\/typescript\.tv\/errors\/2322\)/);
   assert.match(prompt, /Type 'string' is not assignable to type 'number'\./);
   assert.match(prompt, /```\nvalue\n```/);
   assert.match(prompt, /> 10: const count: number = value;/);
-  assert.match(prompt, /src\/types\.ts L2:C1-L2:C17: The expected type is declared here\./);
+  assert.match(prompt, /\/repo\/src\/types\.ts L2:C1-L2:C17: The expected type is declared here\./);
 });
 
 void test("replaces {DIAGNOSTIC} placeholder with context when fix prompt includes it", () => {
   const prompt = buildDiagnosticFixPrompt(diagnosticPayload, {
-    cwd: "/repo",
     fixPrompt: "Fix the problem:\n{DIAGNOSTIC}",
   });
 
@@ -101,7 +100,6 @@ void test("replaces {DIAGNOSTIC} placeholder with context when fix prompt includ
 void test("appends context after prompt when fix prompt omits {DIAGNOSTIC}", () => {
   const contextMarker = "<!-- pi-x-ide/diagnostic-context -->";
   const prompt = buildDiagnosticFixPrompt(diagnosticPayload, {
-    cwd: "/repo",
     fixPrompt: "Please fix the following issue.",
   });
 
@@ -114,17 +112,17 @@ void test("appends context after prompt when fix prompt omits {DIAGNOSTIC}", () 
 });
 
 void test("falls back to default prompt when fix prompt is empty", () => {
-  const prompt = buildDiagnosticFixPrompt(diagnosticPayload, { cwd: "/repo", fixPrompt: "" });
+  const prompt = buildDiagnosticFixPrompt(diagnosticPayload, { fixPrompt: "" });
 
   assert.match(prompt, /^Analyze the errors and warnings/);
   assert.match(prompt, /pi-x-ide\/diagnostic-context/);
 });
 
 void test("builds diagnostic context message without triggering fix instructions", () => {
-  const message = buildDiagnosticContextMessage(diagnosticPayload, { cwd: "/repo" });
+  const message = buildDiagnosticContextMessage(diagnosticPayload);
 
   assert.doesNotMatch(message, /^<!-- Diagnostic Context -->/);
-  assert.match(message, /File: src\/main\.ts/);
+  assert.match(message, /File: \/repo\/src\/main\.ts/);
   assert.doesNotMatch(message, /try to fix/);
   assert.match(message, /<!-- pi-x-ide\/diagnostic-context -->/);
 });
