@@ -30,7 +30,7 @@ export function registerContextHandlers(pi: ExtensionAPI, runtime: PiIdeRuntime)
       return;
     }
 
-    const text = `${formatEditorContext(runtime.turnSelection, { cwd: ctx.cwd })}\n<!-- ${CONTEXT_MARKER} -->\n`;
+    const text = `${formatEditorContext(runtime.turnSelection)}\n<!-- ${CONTEXT_MARKER} -->\n`;
     const message = mergeIntoUserMessage(event.message, text);
     runtime.attachState = "sent";
     runtime.turnSelection = undefined;

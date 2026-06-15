@@ -60,15 +60,12 @@ export function snapshotKey(snapshot: EditorSelectionSnapshot): string {
   });
 }
 
-export function formatEditorContext(
-  snapshot: EditorSelectionSnapshot,
-  options: { cwd?: string; maxChars?: number } = {},
-): string {
-  const rel = toRelativeDisplayPath(snapshot.filePath, snapshot.workspaceFolder, options.cwd);
+export function formatEditorContext(snapshot: EditorSelectionSnapshot, options: { maxChars?: number } = {}): string {
+  const filePath = snapshot.filePath;
   const maxChars = options.maxChars ?? 24_000;
 
   if (snapshot.ranges.length === 0) {
-    return `<system-reminder>\nThe user currently has \`${rel}\` open in ${snapshot.source}. This may or may not be relevant.\n</system-reminder>`;
+    return `<system-reminder>\nThe user currently has \`${filePath}\` open in ${snapshot.source}. This may or may not be relevant.\n</system-reminder>`;
   }
 
   const sections: string[] = [];
@@ -85,7 +82,7 @@ export function formatEditorContext(
     }
     remaining -= text.length;
     sections.push(
-      `${label} lines ${startLine}-${endLine} from \`${rel}\` in ${snapshot.source}:\n\n\`\`\`\n${text}\n\`\`\``,
+      `${label} lines ${startLine}-${endLine} from \`${filePath}\` in ${snapshot.source}:\n\n\`\`\`\n${text}\n\`\`\``,
     );
     if (remaining <= 0) break;
   }
