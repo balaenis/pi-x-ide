@@ -4,15 +4,13 @@
 
 Prefer using `mise` as the development environment management tool.
 
-```bash
-mise run setup
-mise run build
-mise run lint
-mise run typecheck
-mise run test
-# ...More
-```
-
+- Common commands:
+  - `mise run setup`
+  - `mise run build`
+  - `mise run lint`
+  - `mise run typecheck`
+  - `mise run test`
+  - More details, see `@mise.toml`
 - When writing github/workflows workflows, please prefer using `mise` instead of `bun` or anything else.
 
 ## Dependency packages
