@@ -7,6 +7,10 @@ import type { PiIdeRuntime } from "./state";
 
 const IDE_ICON = "⧉";
 
+// Spinner shown while connecting. Swap this array (and optionally the interval) to change the style.
+const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+const SPINNER_INTERVAL_MS = 90;
+
 interface StatusSegment {
   text: string;
   color: ThemeColor;
@@ -17,17 +21,41 @@ export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undef
 
   ctx.ui.setWidget(
     "pi-x-ide",
-    (_tui, theme) => ({
-      render(width: number): string[] {
-        const segments = buildStatusSegments(runtime, ctx.cwd);
-        if (segments.length === 0 || width <= 0) return [];
-        const visible = truncateSegments(segments, width);
-        const plainLength = visible.reduce((sum, segment) => sum + segment.text.length, 0);
-        const pad = " ".repeat(Math.max(0, width - plainLength));
-        return [pad + visible.map((segment) => theme.fg(segment.color, segment.text)).join("")];
-      },
-      invalidate() {},
-    }),
+    (tui, theme) => {
+      let frame = 0;
+      let timer: ReturnType<typeof setInterval> | undefined;
+
+      // Drive the connecting spinner: tick a frame and request a redraw only while connecting.
+      const animate = (active: boolean): void => {
+        if (active && !timer) {
+          timer = setInterval(() => {
+            frame = (frame + 1) % SPINNER_FRAMES.length;
+            tui.requestRender();
+          }, SPINNER_INTERVAL_MS);
+          timer.unref?.();
+        } else if (!active && timer) {
+          clearInterval(timer);
+          timer = undefined;
+        }
+      };
+
+      return {
+        render(width: number): string[] {
+          const connecting = runtime.enabled && runtime.connectionStatus === "connecting";
+          animate(connecting);
+          const segments = buildStatusSegments(runtime, ctx.cwd, SPINNER_FRAMES[frame]);
+          if (segments.length === 0 || width <= 0) return [];
+          const visible = truncateSegments(segments, width);
+          const plainLength = visible.reduce((sum, segment) => sum + segment.text.length, 0);
+          const pad = " ".repeat(Math.max(0, width - plainLength));
+          return [pad + visible.map((segment) => theme.fg(segment.color, segment.text)).join("")];
+        },
+        invalidate() {},
+        dispose() {
+          animate(false);
+        },
+      };
+    },
     { placement: "aboveEditor" },
   );
 }
@@ -62,12 +90,12 @@ function truncateSegments(segments: StatusSegment[], width: number): StatusSegme
   return visible;
 }
 
-export function buildStatusSegments(runtime: PiIdeRuntime, cwd?: string): StatusSegment[] {
+export function buildStatusSegments(runtime: PiIdeRuntime, cwd?: string, spinnerFrame = SPINNER_FRAMES[0]): StatusSegment[] {
   if (!runtime.enabled) return [];
 
   switch (runtime.connectionStatus) {
     case "connecting":
-      return [{ text: `${IDE_ICON} ...`, color: "dim" }];
+      return [{ text: `${IDE_ICON} ${spinnerFrame}`, color: "dim" }];
     case "error":
       return [
         { text: `${IDE_ICON} `, color: "dim" },
