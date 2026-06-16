@@ -6,8 +6,6 @@ import { toRelativeDisplayPath } from "../shared/paths";
 import type { PiIdeRuntime } from "./state";
 
 const IDE_ICON = "⧉";
-
-// Spinner shown while connecting. Swap this array (and optionally the interval) to change the style.
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 const SPINNER_INTERVAL_MS = 90;
 
@@ -90,7 +88,11 @@ function truncateSegments(segments: StatusSegment[], width: number): StatusSegme
   return visible;
 }
 
-export function buildStatusSegments(runtime: PiIdeRuntime, cwd?: string, spinnerFrame = SPINNER_FRAMES[0]): StatusSegment[] {
+export function buildStatusSegments(
+  runtime: PiIdeRuntime,
+  cwd?: string,
+  spinnerFrame = SPINNER_FRAMES[0],
+): StatusSegment[] {
   if (!runtime.enabled) return [];
 
   switch (runtime.connectionStatus) {
