@@ -2,10 +2,9 @@
 
 ## [1.11.1](https://github.com/balaenis/pi-x-ide/compare/v1.11.0...v1.11.1) (2026-06-15)
 
-
 ### Bug Fixes
 
-* **ci:** Modify the rules guide and trigger once release pr ([f468f5a](https://github.com/balaenis/pi-x-ide/commit/f468f5ab8d61227b1d16faf2719f218a17829ecc))
+- **ci:** Modify the rules guide and trigger once release pr ([f468f5a](https://github.com/balaenis/pi-x-ide/commit/f468f5ab8d61227b1d16faf2719f218a17829ecc))
 
 ## [1.11.0](https://github.com/balaenis/pi-x-ide/compare/v1.10.0...v1.11.0) (2026-06-14)
 

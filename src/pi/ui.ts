@@ -1,7 +1,16 @@
-import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with { "resolution-mode": "import" };
+import type { ExtensionContext, ThemeColor } from "@earendil-works/pi-coding-agent" with {
+  "resolution-mode": "import",
+};
 import { describeRanges } from "../shared/format";
 import { toRelativeDisplayPath } from "../shared/paths";
 import type { PiIdeRuntime } from "./state";
+
+const IDE_ICON = "⧉";
+
+interface StatusSegment {
+  text: string;
+  color: ThemeColor;
+}
 
 export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undefined = runtime.ctx): void {
   if (!ctx?.hasUI) return;
@@ -10,12 +19,12 @@ export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undef
     "pi-x-ide",
     (_tui, theme) => ({
       render(width: number): string[] {
-        const status = buildStatusLine(runtime, ctx.cwd);
-        if (!status) return [];
-        const text = truncatePlainStatus(status, width);
-        const pad = " ".repeat(Math.max(0, width - text.length));
-        const color = isPendingEditorContext(runtime) ? "success" : "dim";
-        return [pad + theme.fg(color, text)];
+        const segments = buildStatusSegments(runtime, ctx.cwd);
+        if (segments.length === 0 || width <= 0) return [];
+        const visible = truncateSegments(segments, width);
+        const plainLength = visible.reduce((sum, segment) => sum + segment.text.length, 0);
+        const pad = " ".repeat(Math.max(0, width - plainLength));
+        return [pad + visible.map((segment) => theme.fg(segment.color, segment.text)).join("")];
       },
       invalidate() {},
     }),
@@ -28,27 +37,60 @@ export function clearIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undefi
   ctx.ui.setWidget("pi-x-ide", undefined);
 }
 
-function truncatePlainStatus(text: string, width: number): string {
-  if (width <= 0) return "";
-  if (text.length <= width) return text;
-  if (width <= 3) return ".".repeat(width);
-  return `${text.slice(0, width - 3)}...`;
+// Truncates colored segments to the given width, appending an ellipsis when content overflows.
+function truncateSegments(segments: StatusSegment[], width: number): StatusSegment[] {
+  const total = segments.reduce((sum, segment) => sum + segment.text.length, 0);
+  if (total <= width) return segments;
+  const fallbackColor = segments[0]?.color ?? "dim";
+  if (width <= 3) return [{ text: ".".repeat(width), color: fallbackColor }];
+
+  const limit = width - 3;
+  const visible: StatusSegment[] = [];
+  let used = 0;
+  for (const segment of segments) {
+    if (used >= limit) break;
+    const room = limit - used;
+    if (segment.text.length <= room) {
+      visible.push(segment);
+      used += segment.text.length;
+    } else {
+      visible.push({ text: segment.text.slice(0, room), color: segment.color });
+      used = limit;
+    }
+  }
+  visible.push({ text: "...", color: visible[visible.length - 1]?.color ?? fallbackColor });
+  return visible;
 }
 
-function isPendingEditorContext(runtime: PiIdeRuntime): boolean {
-  return !!runtime.latestSelection && runtime.attachState === "pending";
+export function buildStatusSegments(runtime: PiIdeRuntime, cwd?: string): StatusSegment[] {
+  if (!runtime.enabled) return [];
+
+  switch (runtime.connectionStatus) {
+    case "connecting":
+      return [{ text: `${IDE_ICON} ...`, color: "dim" }];
+    case "error":
+      return [
+        { text: `${IDE_ICON} `, color: "dim" },
+        { text: "✕", color: "error" },
+      ];
+    case "connected":
+      return buildConnectedSegments(runtime, cwd);
+    default:
+      return [];
+  }
 }
 
-const IDE_ICON = "⧉";
-
-export function buildStatusLine(runtime: PiIdeRuntime, cwd?: string): string {
-  if (!runtime.enabled || runtime.connectionStatus !== "connected") return "";
-
+function buildConnectedSegments(runtime: PiIdeRuntime, cwd?: string): StatusSegment[] {
   const selection = runtime.latestSelection;
-  if (!selection) return `${IDE_ICON}  ✓`;
+  if (!selection) return [{ text: `${IDE_ICON} ✓`, color: "dim" }];
+
   const rel = toRelativeDisplayPath(selection.filePath, selection.workspaceFolder, cwd);
   const range = describeRanges(selection.ranges);
-  return `${IDE_ICON}  ✓ ${rel}${range === "open file" ? "" : range}`;
+  // Pending selections are still queued for the next prompt (⇡, success); sent ones are attached (✓, dim).
+  const pending = runtime.attachState === "pending";
+  const marker = pending ? "⇡" : "✓";
+  const color: ThemeColor = pending ? "success" : "dim";
+  return [{ text: `${IDE_ICON} ${marker} ${rel}${range === "open file" ? "" : range}`, color }];
 }
 
 export function buildWidget(runtime: PiIdeRuntime, cwd?: string): string[] | undefined {
