@@ -9,6 +9,8 @@ vscode/assets/icons/
 .worktrees
 nul
 .vscode/settings.json
+.claude
+CLAUDE.md
 
 # nvim sidecar platform binaries (built by bun build --compile)
 nvim/bin/pi-x-ide-nvim-sidecar-linux-*

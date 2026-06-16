@@ -11,6 +11,7 @@ export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undef
     (_tui, theme) => ({
       render(width: number): string[] {
         const status = buildStatusLine(runtime, ctx.cwd);
+        if (!status) return [];
         const text = truncatePlainStatus(status, width);
         const pad = " ".repeat(Math.max(0, width - text.length));
         const color = isPendingEditorContext(runtime) ? "success" : "dim";
@@ -38,19 +39,16 @@ function isPendingEditorContext(runtime: PiIdeRuntime): boolean {
   return !!runtime.latestSelection && runtime.attachState === "pending";
 }
 
-export function buildStatusLine(runtime: PiIdeRuntime, cwd?: string): string {
-  if (!runtime.enabled || runtime.connectionStatus === "disabled") return "Pi x IDE: off";
-  if (runtime.connectionStatus === "connecting") return "Pi x IDE: connecting";
-  if (runtime.connectionStatus === "error")
-    return `Pi x IDE: error${runtime.connectionMessage ? ` ${runtime.connectionMessage}` : ""}`;
-  if (runtime.connectionStatus !== "connected") return "Pi x IDE: disconnected";
+const IDE_ICON = "⧉";
 
-  const ide = runtime.connectedServer?.ide ?? runtime.currentCandidate?.lock.ide ?? "ide";
+export function buildStatusLine(runtime: PiIdeRuntime, cwd?: string): string {
+  if (!runtime.enabled || runtime.connectionStatus !== "connected") return "";
+
   const selection = runtime.latestSelection;
-  if (!selection) return `${ide} ✓`;
+  if (!selection) return `${IDE_ICON}  ✓`;
   const rel = toRelativeDisplayPath(selection.filePath, selection.workspaceFolder, cwd);
   const range = describeRanges(selection.ranges);
-  return `${ide} ✓ ${rel}${range === "open file" ? "" : range} ${runtime.attachState}`;
+  return `${IDE_ICON}  ✓ ${rel}${range === "open file" ? "" : range}`;
 }
 
 export function buildWidget(runtime: PiIdeRuntime, cwd?: string): string[] | undefined {
