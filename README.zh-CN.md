@@ -282,3 +282,7 @@ ls -l ~/.pi/pi-x-ide/lock
 本项目使用 [Release Please](https://github.com/googleapis/release-please) 和 [Conventional Commits](https://www.conventionalcommits.org/) 来自动化版本管理和发布流程。
 
 详见 [RELEASE.md](RELEASE.md)。
+
+## 致谢
+
+- [opencode](https://github.com/anomalyco/opencode)

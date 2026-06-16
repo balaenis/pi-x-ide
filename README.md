@@ -284,3 +284,7 @@ You should see a file like `vscode-12345-48123.lock`. If not, run **Developer: R
 This project uses [Release Please](https://github.com/googleapis/release-please) with [Conventional Commits](https://www.conventionalcommits.org/) to automate versioning and publishing.
 
 See [RELEASE.md](RELEASE.md) for the full release guide.
+
+## Acknowledgments
+
+- [opencode](https://github.com/anomalyco/opencode)
