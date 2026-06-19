@@ -57,22 +57,26 @@ class PiDiagnosticCodeActionProvider implements vscode.CodeActionProvider<vscode
     context: vscode.CodeActionContext,
   ): vscode.CodeAction[] {
     return (
-      safeRun("VS Code diagnostic code actions", () => {
-        if (context.only && !context.only.contains(vscode.CodeActionKind.QuickFix)) return [];
-        if (document.uri.scheme !== "file") return [];
-        if (!this.hasConnectedPiClient()) return [];
+      safeRun(
+        "VS Code diagnostic code actions",
+        () => {
+          if (context.only && !context.only.contains(vscode.CodeActionKind.QuickFix)) return [];
+          if (document.uri.scheme !== "file") return [];
+          if (!this.hasConnectedPiClient()) return [];
 
-        const diagnostics = context.diagnostics.filter(isFixableDiagnostic);
-        if (diagnostics.length === 0) return [];
+          const diagnostics = context.diagnostics.filter(isFixableDiagnostic);
+          if (diagnostics.length === 0) return [];
 
-        const payload = createDiagnosticFixPayload(document, range, diagnostics);
-        return [
-          createDiagnosticAction(FIX_WITH_PI_TITLE, FIX_WITH_PI_COMMAND, payload, diagnostics),
-          createDiagnosticAction(SEND_DIAGNOSTIC_TITLE, SEND_DIAGNOSTIC_COMMAND, payload, diagnostics),
-        ];
-      }, (error) => {
-        logExtensionError("VS Code diagnostic code actions", error);
-      }) ?? []
+          const payload = createDiagnosticFixPayload(document, range, diagnostics);
+          return [
+            createDiagnosticAction(FIX_WITH_PI_TITLE, FIX_WITH_PI_COMMAND, payload, diagnostics),
+            createDiagnosticAction(SEND_DIAGNOSTIC_TITLE, SEND_DIAGNOSTIC_COMMAND, payload, diagnostics),
+          ];
+        },
+        (error) => {
+          logExtensionError("VS Code diagnostic code actions", error);
+        },
+      ) ?? []
     );
   }
 

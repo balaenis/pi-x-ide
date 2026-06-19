@@ -53,35 +53,45 @@ export default function (pi: ExtensionAPI): void {
   });
 
   pi.on("session_start", (_event, ctx) =>
-    runPiBoundaryAsync("Pi session start", runtime, async () => {
-      runtime.sessionGeneration += 1;
-      const generation = runtime.sessionGeneration;
-      runtime.ctx = ctx;
-      runtime.cwd = ctx.cwd;
-      stopZedPolling(runtime);
-      if (!runtime.enabled) {
-        runtime.connectionStatus = "disabled";
-        updateIdeUi(runtime, ctx);
-        return;
-      }
-      void maybeAutoInstallAndReconnect(runtime, ctx, generation);
-      await connectAutoWithZedFallback(runtime, ctx, generation);
-    }, ctx),
+    runPiBoundaryAsync(
+      "Pi session start",
+      runtime,
+      async () => {
+        runtime.sessionGeneration += 1;
+        const generation = runtime.sessionGeneration;
+        runtime.ctx = ctx;
+        runtime.cwd = ctx.cwd;
+        stopZedPolling(runtime);
+        if (!runtime.enabled) {
+          runtime.connectionStatus = "disabled";
+          updateIdeUi(runtime, ctx);
+          return;
+        }
+        void maybeAutoInstallAndReconnect(runtime, ctx, generation);
+        await connectAutoWithZedFallback(runtime, ctx, generation);
+      },
+      ctx,
+    ),
   );
 
   pi.on("session_shutdown", (_event, ctx) =>
-    runPiBoundary("Pi session shutdown", runtime, () => {
-      runtime.sessionGeneration += 1;
-      runtime.ctx = ctx;
-      stopZedPolling(runtime);
-      if (runtime.reconnectTimer) clearTimeout(runtime.reconnectTimer);
-      runtime.reconnectTimer = undefined;
-      const connection = runtime.connection;
-      runtime.connection = undefined;
-      connection?.disconnect();
-      clearIdeUi(runtime, ctx);
-      runtime.ctx = undefined;
-    }, ctx),
+    runPiBoundary(
+      "Pi session shutdown",
+      runtime,
+      () => {
+        runtime.sessionGeneration += 1;
+        runtime.ctx = ctx;
+        stopZedPolling(runtime);
+        if (runtime.reconnectTimer) clearTimeout(runtime.reconnectTimer);
+        runtime.reconnectTimer = undefined;
+        const connection = runtime.connection;
+        runtime.connection = undefined;
+        connection?.disconnect();
+        clearIdeUi(runtime, ctx);
+        runtime.ctx = undefined;
+      },
+      ctx,
+    ),
   );
 }
 

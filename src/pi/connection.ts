@@ -71,9 +71,8 @@ export class IdeConnection {
       this.runSocketHandler("close", () => {
         if (this.socket !== socket) return;
         this.socket = undefined;
-        this.emitCallback(
-          "disconnected callback",
-          () => this.callbacks.onDisconnected?.(reason.toString("utf8") || (this.closedByUser ? "closed" : "disconnected")),
+        this.emitCallback("disconnected callback", () =>
+          this.callbacks.onDisconnected?.(reason.toString("utf8") || (this.closedByUser ? "closed" : "disconnected")),
         );
       });
     });

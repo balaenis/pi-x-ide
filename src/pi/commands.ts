@@ -36,10 +36,15 @@ export function registerIdeCommand(
     pi.registerShortcut(attachShortcut, {
       description: "Attach latest IDE selection to the prompt",
       handler: (ctx) => {
-        runPiBoundary("IDE attach shortcut", runtime, () => {
-          runtime.ctx = ctx;
-          attachLatest(runtime, ctx);
-        }, ctx);
+        runPiBoundary(
+          "IDE attach shortcut",
+          runtime,
+          () => {
+            runtime.ctx = ctx;
+            attachLatest(runtime, ctx);
+          },
+          ctx,
+        );
       },
     });
   }
@@ -59,36 +64,41 @@ export function registerIdeCommand(
       return filtered.length > 0 ? filtered : null;
     },
     handler: (args, ctx) =>
-      runPiBoundaryAsync("/ide command", runtime, async () => {
-        runtime.ctx = ctx;
-        const [subcommand] = args.trim().split(/\s+/, 1);
-        switch (subcommand || "") {
-          case "":
-            await showPicker(runtime, actions, ctx);
-            return;
-          case "status":
-            showStatus(runtime, ctx);
-            return;
-          case "list":
-            await listCandidates(actions, ctx);
-            return;
-          case "auto":
-            runtime.enabled = true;
-            await actions.connectAuto(ctx);
-            return;
-          case "off":
-            actions.disconnect(ctx, true);
-            return;
-          case "attach":
-            attachLatest(runtime, ctx);
-            return;
-          case "install":
-            await actions.installExtension(ctx);
-            return;
-          default:
-            ctx.ui.notify("Usage: /ide [status|list|auto|off|attach|install]", "warning");
-        }
-      }, ctx),
+      runPiBoundaryAsync(
+        "/ide command",
+        runtime,
+        async () => {
+          runtime.ctx = ctx;
+          const [subcommand] = args.trim().split(/\s+/, 1);
+          switch (subcommand || "") {
+            case "":
+              await showPicker(runtime, actions, ctx);
+              return;
+            case "status":
+              showStatus(runtime, ctx);
+              return;
+            case "list":
+              await listCandidates(actions, ctx);
+              return;
+            case "auto":
+              runtime.enabled = true;
+              await actions.connectAuto(ctx);
+              return;
+            case "off":
+              actions.disconnect(ctx, true);
+              return;
+            case "attach":
+              attachLatest(runtime, ctx);
+              return;
+            case "install":
+              await actions.installExtension(ctx);
+              return;
+            default:
+              ctx.ui.notify("Usage: /ide [status|list|auto|off|attach|install]", "warning");
+          }
+        },
+        ctx,
+      ),
   });
 }
 
