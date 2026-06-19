@@ -1,3 +1,5 @@
+// ABOUTME: Exercises shared protocol, config, path, and runtime selection helper behavior.
+// ABOUTME: Covers regression cases for stale pi extension context handling.
 import assert from "node:assert/strict";
 import { access, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
@@ -74,6 +76,30 @@ void test("clears stale editor selection state", () => {
   assert.equal(runtime.latestSelectionKey, undefined);
   assert.equal(runtime.turnSelection, undefined);
   assert.equal(runtime.attachState, "idle");
+});
+
+void test("ignores stale extension ctx while updating selection UI", () => {
+  const runtime = createRuntime();
+  runtime.ctx = {
+    get hasUI(): boolean {
+      throw new Error("This extension ctx is stale after session replacement or reload.");
+    },
+  } as NonNullable<typeof runtime.ctx>;
+
+  assert.doesNotThrow(() => setLatestSelection(runtime, snapshot));
+  assert.equal(runtime.latestSelection, snapshot);
+  assert.equal(runtime.attachState, "pending");
+});
+
+void test("rethrows non-stale extension ctx errors while updating selection UI", () => {
+  const runtime = createRuntime();
+  runtime.ctx = {
+    get hasUI(): boolean {
+      throw new Error("unexpected UI failure");
+    },
+  } as NonNullable<typeof runtime.ctx>;
+
+  assert.throws(() => setLatestSelection(runtime, snapshot), /unexpected UI failure/);
 });
 
 void test("resolves default lock directory under .pi subdirectory", () => {

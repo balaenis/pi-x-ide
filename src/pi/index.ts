@@ -1,3 +1,5 @@
+// ABOUTME: Registers the pi-x-ide extension lifecycle, commands, and IDE connection callbacks.
+// ABOUTME: Coordinates session-scoped runtime state with editor WebSocket and polling integrations.
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
@@ -69,9 +71,11 @@ export default function (pi: ExtensionAPI): void {
     stopZedPolling(runtime);
     if (runtime.reconnectTimer) clearTimeout(runtime.reconnectTimer);
     runtime.reconnectTimer = undefined;
-    runtime.connection?.disconnect();
+    const connection = runtime.connection;
     runtime.connection = undefined;
+    connection?.disconnect();
     clearIdeUi(runtime, ctx);
+    runtime.ctx = undefined;
   });
 }
 
@@ -317,11 +321,12 @@ async function connectCandidate(
   runtime.connectionMessage = `Connecting to ${candidate.lock.name} at ${candidate.lock.host}:${candidate.lock.port}`;
   updateIdeUi(runtime, ctx);
 
+  const generation = runtime.sessionGeneration;
   const connectionRef: { current?: IdeConnection } = {};
   const connection = new IdeConnection(
     candidate,
     ctx.cwd,
-    createConnectionCallbacks(activePi, runtime, () => connectionRef.current),
+    createConnectionCallbacks(activePi, runtime, () => connectionRef.current, generation),
   );
   connectionRef.current = connection;
 
@@ -350,10 +355,11 @@ function createConnectionCallbacks(
   pi: ExtensionAPI | undefined,
   runtime: PiIdeRuntime,
   getConnection: () => IdeConnection | undefined,
+  generation: number,
 ): IdeConnectionCallbacks {
   return {
     onConnected: (server) => {
-      if (!isCurrentConnection(runtime, getConnection())) return;
+      if (!isCurrentConnection(runtime, getConnection(), generation)) return;
       runtime.connectedServer = server;
       runtime.connectionStatus = "connected";
       runtime.connectionMessage = undefined;
@@ -361,7 +367,7 @@ function createConnectionCallbacks(
       updateIdeUi(runtime);
     },
     onDisconnected: (reason) => {
-      if (!isCurrentConnection(runtime, getConnection())) return;
+      if (!isCurrentConnection(runtime, getConnection(), generation)) return;
       runtime.connection = undefined;
       runtime.connectedServer = undefined;
       runtime.connectionStatus = runtime.enabled ? "disconnected" : "disabled";
@@ -370,23 +376,23 @@ function createConnectionCallbacks(
       if (runtime.enabled) scheduleReconnect(runtime);
     },
     onSelectionChanged: (snapshot) => {
-      if (!isCurrentConnection(runtime, getConnection())) return;
+      if (!isCurrentConnection(runtime, getConnection(), generation)) return;
       setLatestSelection(runtime, snapshot);
     },
     onSelectionCleared: () => {
-      if (!isCurrentConnection(runtime, getConnection())) return;
+      if (!isCurrentConnection(runtime, getConnection(), generation)) return;
       clearLatestSelection(runtime);
     },
     onAtMentioned: (params) => {
-      if (!isCurrentConnection(runtime, getConnection())) return;
+      if (!isCurrentConnection(runtime, getConnection(), generation)) return;
       handleAtMentioned(runtime, params);
     },
     onDiagnosticFixRequested: (params) => {
-      if (!pi || !isCurrentConnection(runtime, getConnection())) return;
+      if (!pi || !isCurrentConnection(runtime, getConnection(), generation)) return;
       handleDiagnosticFixRequested(pi, runtime, params);
     },
     onError: (error) => {
-      if (!isCurrentConnection(runtime, getConnection())) return;
+      if (!isCurrentConnection(runtime, getConnection(), generation)) return;
       runtime.connectionStatus = "error";
       runtime.connectionMessage = error.message;
       updateIdeUi(runtime);
@@ -394,8 +400,12 @@ function createConnectionCallbacks(
   };
 }
 
-function isCurrentConnection(runtime: PiIdeRuntime, connection: IdeConnection | undefined): boolean {
-  return !!connection && runtime.connection === connection;
+function isCurrentConnection(
+  runtime: PiIdeRuntime,
+  connection: IdeConnection | undefined,
+  generation = runtime.sessionGeneration,
+): boolean {
+  return runtime.sessionGeneration === generation && !!connection && runtime.connection === connection;
 }
 
 function disconnect(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionCommandContext, disabled = false): void {
@@ -422,6 +432,7 @@ function disconnect(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionComm
 
 function scheduleReconnect(runtime: PiIdeRuntime): void {
   if (runtime.reconnectTimer || !runtime.enabled) return;
+  const generation = runtime.sessionGeneration;
   const attempt = recordReconnectAttempt(runtime, runtime.currentCandidate);
   if (attempt === undefined) {
     runtime.connectionStatus = "error";
@@ -432,7 +443,7 @@ function scheduleReconnect(runtime: PiIdeRuntime): void {
   runtime.reconnectTimer = setTimeout(() => {
     runtime.reconnectTimer = undefined;
     const ctx = runtime.ctx;
-    if (!ctx || !runtime.enabled) return;
+    if (!ctx || !runtime.enabled || runtime.sessionGeneration !== generation) return;
     connectAutoWithZedFallback(runtime, ctx, runtime.sessionGeneration, { resetReconnectState: false }).catch(
       (error: unknown) => {
         runtime.connectionStatus = "error";
