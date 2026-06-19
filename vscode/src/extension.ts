@@ -1,6 +1,9 @@
+// ABOUTME: Starts the VS Code-side pi-x-ide WebSocket bridge and lock-file lifecycle.
+// ABOUTME: Publishes editor selections to Pi while containing extension-host callback failures.
 import * as vscode from "vscode";
 import { PROTOCOL_VERSION } from "../../src/shared/protocol";
 import { formatRangeMention } from "../../src/shared/format";
+import { errorMessage, logExtensionError, safeRun, safeRunAsync } from "../../src/shared/errors";
 import { registerDiagnosticQuickFixes } from "./diagnostics";
 import {
   createAuthToken,
@@ -24,7 +27,29 @@ let debounceTimer: NodeJS.Timeout | undefined;
 let status: vscode.StatusBarItem | undefined;
 let tmuxSessionCounter = 0;
 
+function runVscode(scope: string, action: () => void): void {
+  safeRun(`VS Code ${scope}`, action, (error) => reportVscodeError(scope, error));
+}
+
+async function runVscodeAsync(scope: string, action: () => Promise<void>): Promise<void> {
+  await safeRunAsync(`VS Code ${scope}`, action, (error) => reportVscodeError(scope, error));
+}
+
+function reportVscodeError(scope: string, error: unknown): void {
+  logExtensionError(`VS Code ${scope}`, error);
+  void vscode.window.showWarningMessage(`Pi x IDE: ${scope} failed: ${errorMessage(error)}`);
+}
+
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  try {
+    await activateExtension(context);
+  } catch (error) {
+    reportVscodeError("activate", error);
+    await runVscodeAsync("cleanup after failed activate", cleanup);
+  }
+}
+
+async function activateExtension(context: vscode.ExtensionContext): Promise<void> {
   const packageJson = context.extension.packageJSON as { version?: string };
   const authToken = createAuthToken();
 
@@ -55,19 +80,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.window.onDidChangeTextEditorSelection(() => scheduleSelectionBroadcast()),
     vscode.window.tabGroups.onDidChangeTabs(() => scheduleSelectionBroadcast()),
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
-      refreshLock().catch(handleRefreshLockError);
+      refreshLock().catch((error: unknown) => handleRefreshLockError(error));
       scheduleSelectionBroadcast();
     }),
-    vscode.commands.registerCommand("pi-x-ide.attachSelection", () => attachSelection()),
-    vscode.commands.registerCommand("pi-x-ide.openPiTerminal", () => openPiTerminal(context)),
-    { dispose: () => void cleanup() },
+    vscode.commands.registerCommand("pi-x-ide.attachSelection", () =>
+      runVscode("attach selection", () => attachSelection()),
+    ),
+    vscode.commands.registerCommand("pi-x-ide.openPiTerminal", () =>
+      runVscode("open Pi terminal", () => openPiTerminal(context)),
+    ),
+    { dispose: () => void runVscodeAsync("dispose", cleanup) },
   );
 
   scheduleSelectionBroadcast(0);
 }
 
 export async function deactivate(): Promise<void> {
-  await cleanup();
+  await runVscodeAsync("deactivate", cleanup);
 }
 
 async function cleanup(): Promise<void> {
@@ -88,6 +117,7 @@ async function refreshLock(): Promise<void> {
 }
 
 function handleRefreshLockError(error: unknown): void {
+  logExtensionError("VS Code refresh lock file", error);
   const suffix = error instanceof Error ? `: ${error.message}` : "";
   void vscode.window.showWarningMessage(`Pi x IDE: failed to refresh lock file${suffix}`);
 }
@@ -96,7 +126,7 @@ function scheduleSelectionBroadcast(delayMs = 150): void {
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
     debounceTimer = undefined;
-    broadcastSelection();
+    runVscode("broadcast selection", () => broadcastSelection());
   }, delayMs);
 }
 

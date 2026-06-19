@@ -1,6 +1,9 @@
+// ABOUTME: Renders pi-x-ide's TUI status widget for IDE connection state.
+// ABOUTME: Provides safe UI update helpers that tolerate stale pi extension contexts.
 import type { ExtensionContext, ThemeColor } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
+import { logExtensionError } from "../shared/errors";
 import { describeRanges } from "../shared/format";
 import { toRelativeDisplayPath } from "../shared/paths";
 import type { PiIdeRuntime } from "./state";
@@ -14,53 +17,93 @@ interface StatusSegment {
   color: ThemeColor;
 }
 
+type ActiveUiContext = Pick<ExtensionContext, "cwd" | "ui">;
+
+function getActiveUiContext(ctx: ExtensionContext | undefined): ActiveUiContext | undefined {
+  if (!ctx) return undefined;
+
+  try {
+    if (!ctx.hasUI) return undefined;
+    return { cwd: ctx.cwd, ui: ctx.ui };
+  } catch (error) {
+    logExtensionError("read active Pi UI context", error);
+    return undefined;
+  }
+}
+
+function runReportingUiFailure(scope: string, action: () => void): void {
+  try {
+    action();
+  } catch (error) {
+    logExtensionError(scope, error);
+  }
+}
+
 export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undefined = runtime.ctx): void {
-  if (!ctx?.hasUI) return;
+  const uiContext = getActiveUiContext(ctx);
+  if (!uiContext) return;
 
-  ctx.ui.setWidget(
-    "pi-x-ide",
-    (tui, theme) => {
-      let frame = 0;
-      let timer: ReturnType<typeof setInterval> | undefined;
+  runReportingUiFailure("update IDE UI widget", () =>
+    uiContext.ui.setWidget(
+      "pi-x-ide",
+      (tui, theme) => {
+        let frame = 0;
+        let timer: ReturnType<typeof setInterval> | undefined;
 
-      // Drive the connecting spinner: tick a frame and request a redraw only while connecting.
-      const animate = (active: boolean): void => {
-        if (active && !timer) {
-          timer = setInterval(() => {
-            frame = (frame + 1) % SPINNER_FRAMES.length;
-            tui.requestRender();
-          }, SPINNER_INTERVAL_MS);
-          timer.unref?.();
-        } else if (!active && timer) {
-          clearInterval(timer);
-          timer = undefined;
-        }
-      };
+        // Drive the connecting spinner: tick a frame and request a redraw only while connecting.
+        const animate = (active: boolean): void => {
+          if (active && !timer) {
+            timer = setInterval(() => {
+              try {
+                frame = (frame + 1) % SPINNER_FRAMES.length;
+                tui.requestRender();
+              } catch (error) {
+                logExtensionError("animate IDE UI widget", error);
+                if (timer) {
+                  clearInterval(timer);
+                  timer = undefined;
+                }
+              }
+            }, SPINNER_INTERVAL_MS);
+            timer.unref?.();
+          } else if (!active && timer) {
+            clearInterval(timer);
+            timer = undefined;
+          }
+        };
 
-      return {
-        render(width: number): string[] {
-          const connecting = runtime.enabled && runtime.connectionStatus === "connecting";
-          animate(connecting);
-          const segments = buildStatusSegments(runtime, ctx.cwd, SPINNER_FRAMES[frame]);
-          if (segments.length === 0 || width <= 0) return [];
-          const visible = truncateSegments(segments, width);
-          const plainLength = visible.reduce((sum, segment) => sum + segment.text.length, 0);
-          const pad = " ".repeat(Math.max(0, width - plainLength));
-          return [pad + visible.map((segment) => theme.fg(segment.color, segment.text)).join("")];
-        },
-        invalidate() {},
-        dispose() {
-          animate(false);
-        },
-      };
-    },
-    { placement: "aboveEditor" },
+        return {
+          render(width: number): string[] {
+            try {
+              const connecting = runtime.enabled && runtime.connectionStatus === "connecting";
+              animate(connecting);
+              const segments = buildStatusSegments(runtime, uiContext.cwd, SPINNER_FRAMES[frame]);
+              if (segments.length === 0 || width <= 0) return [];
+              const visible = truncateSegments(segments, width);
+              const plainLength = visible.reduce((sum, segment) => sum + segment.text.length, 0);
+              const pad = " ".repeat(Math.max(0, width - plainLength));
+              return [pad + visible.map((segment) => theme.fg(segment.color, segment.text)).join("")];
+            } catch (error) {
+              logExtensionError("render IDE UI widget", error);
+              animate(false);
+              return [];
+            }
+          },
+          invalidate() {},
+          dispose() {
+            animate(false);
+          },
+        };
+      },
+      { placement: "aboveEditor" },
+    ),
   );
 }
 
 export function clearIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undefined = runtime.ctx): void {
-  if (!ctx?.hasUI) return;
-  ctx.ui.setWidget("pi-x-ide", undefined);
+  const uiContext = getActiveUiContext(ctx);
+  if (!uiContext) return;
+  runReportingUiFailure("clear IDE UI widget", () => uiContext.ui.setWidget("pi-x-ide", undefined));
 }
 
 // Truncates colored segments to the given width, appending an ellipsis when content overflows.

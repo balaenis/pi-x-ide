@@ -1,3 +1,5 @@
+// ABOUTME: Registers the /ide command and selection attach shortcut for pi-x-ide.
+// ABOUTME: Routes user actions through safe Pi boundaries before calling IDE integration actions.
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
@@ -5,6 +7,7 @@ import { resolvePiConfigEnv } from "../shared/config";
 import { formatRangeMention } from "../shared/format";
 import type { LockFileCandidate } from "../shared/protocol";
 import type { PiIdeRuntime } from "./state";
+import { runPiBoundary, runPiBoundaryAsync } from "./safety";
 import { buildWidget, updateIdeUi } from "./ui";
 
 export const PI_X_IDE_ATTACH_SHORTCUT_ENV = "PI_X_IDE_ATTACH_SHORTCUT";
@@ -33,8 +36,15 @@ export function registerIdeCommand(
     pi.registerShortcut(attachShortcut, {
       description: "Attach latest IDE selection to the prompt",
       handler: (ctx) => {
-        runtime.ctx = ctx;
-        attachLatest(runtime, ctx);
+        runPiBoundary(
+          "IDE attach shortcut",
+          runtime,
+          () => {
+            runtime.ctx = ctx;
+            attachLatest(runtime, ctx);
+          },
+          ctx,
+        );
       },
     });
   }
@@ -53,36 +63,42 @@ export function registerIdeCommand(
       const filtered = subcommands.filter((s) => s.value.startsWith(argumentPrefix));
       return filtered.length > 0 ? filtered : null;
     },
-    handler: async (args, ctx) => {
-      runtime.ctx = ctx;
-      const [subcommand] = args.trim().split(/\s+/, 1);
-      switch (subcommand || "") {
-        case "":
-          await showPicker(runtime, actions, ctx);
-          return;
-        case "status":
-          showStatus(runtime, ctx);
-          return;
-        case "list":
-          await listCandidates(actions, ctx);
-          return;
-        case "auto":
-          runtime.enabled = true;
-          await actions.connectAuto(ctx);
-          return;
-        case "off":
-          actions.disconnect(ctx, true);
-          return;
-        case "attach":
-          attachLatest(runtime, ctx);
-          return;
-        case "install":
-          await actions.installExtension(ctx);
-          return;
-        default:
-          ctx.ui.notify("Usage: /ide [status|list|auto|off|attach|install]", "warning");
-      }
-    },
+    handler: (args, ctx) =>
+      runPiBoundaryAsync(
+        "/ide command",
+        runtime,
+        async () => {
+          runtime.ctx = ctx;
+          const [subcommand] = args.trim().split(/\s+/, 1);
+          switch (subcommand || "") {
+            case "":
+              await showPicker(runtime, actions, ctx);
+              return;
+            case "status":
+              showStatus(runtime, ctx);
+              return;
+            case "list":
+              await listCandidates(actions, ctx);
+              return;
+            case "auto":
+              runtime.enabled = true;
+              await actions.connectAuto(ctx);
+              return;
+            case "off":
+              actions.disconnect(ctx, true);
+              return;
+            case "attach":
+              attachLatest(runtime, ctx);
+              return;
+            case "install":
+              await actions.installExtension(ctx);
+              return;
+            default:
+              ctx.ui.notify("Usage: /ide [status|list|auto|off|attach|install]", "warning");
+          }
+        },
+        ctx,
+      ),
   });
 }
 
