@@ -13,6 +13,7 @@ import { parseLockFileContent, isSelectionClearedParams, isEditorSelectionSnapsh
 import { discoverIdeCandidates } from "../src/pi/discovery";
 import { clearLatestSelection, setLatestSelection } from "../src/pi/context";
 import { createRuntime } from "../src/pi/state";
+import { updateIdeUi } from "../src/pi/ui";
 
 const snapshot: EditorSelectionSnapshot = {
   source: "vscode",
@@ -28,6 +29,20 @@ const snapshot: EditorSelectionSnapshot = {
     },
   ],
 };
+
+function captureConsoleErrors(action: () => void): string[] {
+  const original = console.error;
+  const messages: string[] = [];
+  console.error = (...args: unknown[]) => {
+    messages.push(args.map(String).join(" "));
+  };
+  try {
+    action();
+  } finally {
+    console.error = original;
+  }
+  return messages;
+}
 
 void test("formats and parses range mentions", () => {
   assert.equal(formatRangeMention(snapshot), "@src/main.ts#L10-L20");
@@ -78,7 +93,7 @@ void test("clears stale editor selection state", () => {
   assert.equal(runtime.attachState, "idle");
 });
 
-void test("ignores stale extension ctx while updating selection UI", () => {
+void test("logs stale extension ctx while updating selection UI", () => {
   const runtime = createRuntime();
   runtime.ctx = {
     get hasUI(): boolean {
@@ -86,12 +101,16 @@ void test("ignores stale extension ctx while updating selection UI", () => {
     },
   } as NonNullable<typeof runtime.ctx>;
 
-  assert.doesNotThrow(() => setLatestSelection(runtime, snapshot));
+  const errors = captureConsoleErrors(() => {
+    assert.doesNotThrow(() => setLatestSelection(runtime, snapshot));
+  });
   assert.equal(runtime.latestSelection, snapshot);
   assert.equal(runtime.attachState, "pending");
+  assert.equal(errors.length, 1);
+  assert.match(errors[0] ?? "", /read active Pi UI context: This extension ctx is stale/);
 });
 
-void test("rethrows non-stale extension ctx errors while updating selection UI", () => {
+void test("logs non-stale extension ctx errors while updating selection UI", () => {
   const runtime = createRuntime();
   runtime.ctx = {
     get hasUI(): boolean {
@@ -99,7 +118,49 @@ void test("rethrows non-stale extension ctx errors while updating selection UI",
     },
   } as NonNullable<typeof runtime.ctx>;
 
-  assert.throws(() => setLatestSelection(runtime, snapshot), /unexpected UI failure/);
+  const errors = captureConsoleErrors(() => {
+    assert.doesNotThrow(() => setLatestSelection(runtime, snapshot));
+  });
+  assert.equal(runtime.latestSelection, snapshot);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0] ?? "", /read active Pi UI context: unexpected UI failure/);
+});
+
+void test("logs IDE widget render errors without throwing", () => {
+  const runtime = createRuntime();
+  runtime.connectionStatus = "connected";
+  let widgetFactory:
+    | ((
+        tui: { requestRender: () => void },
+        theme: { fg: (color: string, text: string) => string },
+      ) => { render: (width: number) => string[]; invalidate: () => void; dispose: () => void })
+    | undefined;
+  const ctx = {
+    cwd: "/repo",
+    hasUI: true,
+    ui: {
+      setWidget: (_id: string, factory: typeof widgetFactory) => {
+        widgetFactory = factory;
+      },
+    },
+  } as unknown as NonNullable<typeof runtime.ctx>;
+
+  updateIdeUi(runtime, ctx);
+  if (!widgetFactory) assert.fail("widget factory was not registered");
+  const widget = widgetFactory(
+    { requestRender: () => undefined },
+    {
+      fg: () => {
+        throw new Error("theme failure");
+      },
+    },
+  );
+
+  const errors = captureConsoleErrors(() => {
+    assert.deepEqual(widget.render(10), []);
+  });
+  assert.equal(errors.length, 1);
+  assert.match(errors[0] ?? "", /render IDE UI widget: theme failure/);
 });
 
 void test("resolves default lock directory under .pi subdirectory", () => {

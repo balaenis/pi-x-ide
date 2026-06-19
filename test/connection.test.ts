@@ -1,3 +1,5 @@
+// ABOUTME: Verifies Pi-side IDE connection and reconnect behavior over WebSocket.
+// ABOUTME: Covers callback error containment so IDE messages cannot crash Pi.
 import assert from "node:assert/strict";
 import { createServer, type AddressInfo, type Socket } from "node:net";
 import test from "node:test";
@@ -118,14 +120,17 @@ void test("dispatches diagnostic fix requested notifications", async () => {
     });
 
     const address = wss.address() as AddressInfo;
+    let receivedResolve!: (params: DiagnosticFixRequestedParams) => void;
     const received = new Promise<DiagnosticFixRequestedParams>((resolve) => {
-      connection = new IdeConnection(createCandidate({ port: address.port }), "/repo", {
-        onDiagnosticFixRequested: resolve,
-      });
-      void connection.connect();
+      receivedResolve = resolve;
     });
+    const candidateConnection = new IdeConnection(createCandidate({ port: address.port }), "/repo", {
+      onDiagnosticFixRequested: receivedResolve,
+    });
+    connection = candidateConnection;
 
-    const params = await received;
+    await candidateConnection.connect();
+    const params = await withTimeout(received, 500, "timed out waiting for diagnostic fix notification");
     assert.equal(params.filePath, "/repo/src/main.ts");
     assert.equal(params.diagnostics[0]?.severity, "warning");
     assert.equal(params.diagnostics[0]?.message, "Unexpected any.");
@@ -135,6 +140,80 @@ void test("dispatches diagnostic fix requested notifications", async () => {
     await new Promise<void>((resolve) => wss.close(() => resolve()));
   }
 });
+
+void test("reports callback failures without throwing from websocket message handling", async () => {
+  const wss = new WebSocketServer({
+    host: "127.0.0.1",
+    port: 0,
+    verifyClient: ({ req }, done) => {
+      done(req.headers[AUTH_HEADER] === "token");
+    },
+  });
+
+  await new Promise<void>((resolve) => wss.once("listening", resolve));
+  let connection: IdeConnection | undefined;
+
+  try {
+    wss.on("connection", (socket) => {
+      socket.on("message", () => {
+        socket.send(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            method: "selection_changed",
+            params: {
+              source: "vscode",
+              filePath: "/repo/src/main.ts",
+              workspaceFolder: "/repo",
+              ranges: [
+                {
+                  text: "const value = 1;",
+                  selection: { start: { line: 0, character: 0 }, end: { line: 0, character: 16 } },
+                },
+              ],
+            },
+          }),
+        );
+      });
+    });
+
+    const address = wss.address() as AddressInfo;
+    let reportedResolve!: (error: Error) => void;
+    const reported = new Promise<Error>((resolve) => {
+      reportedResolve = resolve;
+    });
+    const candidateConnection = new IdeConnection(createCandidate({ port: address.port }), "/repo", {
+      onSelectionChanged: () => {
+        throw new Error("selection callback failed");
+      },
+      onError: (error) => reportedResolve(error),
+    });
+    connection = candidateConnection;
+
+    await candidateConnection.connect();
+    const error = await withTimeout(reported, 500, "timed out waiting for callback error report");
+    assert.match(error.message, /selection changed callback: selection callback failed/);
+    assert.equal(candidateConnection.isOpen, true);
+  } finally {
+    connection?.disconnect();
+    await new Promise<void>((resolve) => wss.close(() => resolve()));
+  }
+});
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error instanceof Error ? error : new Error(String(error)));
+      },
+    );
+  });
+}
 
 function createCandidate(overrides: Partial<LockFileCandidate["lock"]> = {}): LockFileCandidate {
   return {

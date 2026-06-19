@@ -3,6 +3,7 @@
 import type { ExtensionContext, ThemeColor } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
+import { logExtensionError } from "../shared/errors";
 import { describeRanges } from "../shared/format";
 import { toRelativeDisplayPath } from "../shared/paths";
 import type { PiIdeRuntime } from "./state";
@@ -18,12 +19,6 @@ interface StatusSegment {
 
 type ActiveUiContext = Pick<ExtensionContext, "cwd" | "ui">;
 
-const STALE_EXTENSION_CTX_MESSAGE = "This extension ctx is stale after session replacement or reload";
-
-function isStaleExtensionContextError(error: unknown): boolean {
-  return error instanceof Error && error.message.includes(STALE_EXTENSION_CTX_MESSAGE);
-}
-
 function getActiveUiContext(ctx: ExtensionContext | undefined): ActiveUiContext | undefined {
   if (!ctx) return undefined;
 
@@ -31,17 +26,16 @@ function getActiveUiContext(ctx: ExtensionContext | undefined): ActiveUiContext 
     if (!ctx.hasUI) return undefined;
     return { cwd: ctx.cwd, ui: ctx.ui };
   } catch (error) {
-    if (isStaleExtensionContextError(error)) return undefined;
-    throw error;
+    logExtensionError("read active Pi UI context", error);
+    return undefined;
   }
 }
 
-function runIgnoringStaleContext(action: () => void): void {
+function runReportingUiFailure(scope: string, action: () => void): void {
   try {
     action();
   } catch (error) {
-    if (isStaleExtensionContextError(error)) return;
-    throw error;
+    logExtensionError(scope, error);
   }
 }
 
@@ -49,7 +43,7 @@ export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undef
   const uiContext = getActiveUiContext(ctx);
   if (!uiContext) return;
 
-  runIgnoringStaleContext(() =>
+  runReportingUiFailure("update IDE UI widget", () =>
     uiContext.ui.setWidget(
       "pi-x-ide",
       (tui, theme) => {
@@ -60,8 +54,16 @@ export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undef
         const animate = (active: boolean): void => {
           if (active && !timer) {
             timer = setInterval(() => {
-              frame = (frame + 1) % SPINNER_FRAMES.length;
-              tui.requestRender();
+              try {
+                frame = (frame + 1) % SPINNER_FRAMES.length;
+                tui.requestRender();
+              } catch (error) {
+                logExtensionError("animate IDE UI widget", error);
+                if (timer) {
+                  clearInterval(timer);
+                  timer = undefined;
+                }
+              }
             }, SPINNER_INTERVAL_MS);
             timer.unref?.();
           } else if (!active && timer) {
@@ -72,14 +74,20 @@ export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undef
 
         return {
           render(width: number): string[] {
-            const connecting = runtime.enabled && runtime.connectionStatus === "connecting";
-            animate(connecting);
-            const segments = buildStatusSegments(runtime, uiContext.cwd, SPINNER_FRAMES[frame]);
-            if (segments.length === 0 || width <= 0) return [];
-            const visible = truncateSegments(segments, width);
-            const plainLength = visible.reduce((sum, segment) => sum + segment.text.length, 0);
-            const pad = " ".repeat(Math.max(0, width - plainLength));
-            return [pad + visible.map((segment) => theme.fg(segment.color, segment.text)).join("")];
+            try {
+              const connecting = runtime.enabled && runtime.connectionStatus === "connecting";
+              animate(connecting);
+              const segments = buildStatusSegments(runtime, uiContext.cwd, SPINNER_FRAMES[frame]);
+              if (segments.length === 0 || width <= 0) return [];
+              const visible = truncateSegments(segments, width);
+              const plainLength = visible.reduce((sum, segment) => sum + segment.text.length, 0);
+              const pad = " ".repeat(Math.max(0, width - plainLength));
+              return [pad + visible.map((segment) => theme.fg(segment.color, segment.text)).join("")];
+            } catch (error) {
+              logExtensionError("render IDE UI widget", error);
+              animate(false);
+              return [];
+            }
           },
           invalidate() {},
           dispose() {
@@ -95,7 +103,7 @@ export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undef
 export function clearIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undefined = runtime.ctx): void {
   const uiContext = getActiveUiContext(ctx);
   if (!uiContext) return;
-  runIgnoringStaleContext(() => uiContext.ui.setWidget("pi-x-ide", undefined));
+  runReportingUiFailure("clear IDE UI widget", () => uiContext.ui.setWidget("pi-x-ide", undefined));
 }
 
 // Truncates colored segments to the given width, appending an ellipsis when content overflows.

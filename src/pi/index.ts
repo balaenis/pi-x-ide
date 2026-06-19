@@ -3,6 +3,7 @@
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
+import { logExtensionError } from "../shared/errors";
 import { formatRangeMention } from "../shared/format";
 import { hasDirectWorkspaceMatch } from "../shared/paths";
 import type { AtMentionedParams, LockFileCandidate } from "../shared/protocol";
@@ -19,6 +20,7 @@ import { registerIdeCommand } from "./commands";
 import { clearLatestSelection, registerContextHandlers, setLatestSelection } from "./context";
 import { handleDiagnosticFixRequested } from "./diagnostics";
 import { formatReconnectLimitMessage, recordReconnectAttempt, resetReconnectState } from "./reconnect";
+import { containPiError, runPiBoundary, runPiBoundaryAsync } from "./safety";
 import { createRuntime, type PiIdeRuntime } from "./state";
 import { clearIdeUi, updateIdeUi } from "./ui";
 import { startZedPolling, stopZedPolling } from "./zed";
@@ -50,33 +52,37 @@ export default function (pi: ExtensionAPI): void {
     installExtension: (ctx) => installExtension(runtime, ctx),
   });
 
-  pi.on("session_start", async (_event, ctx) => {
-    runtime.sessionGeneration += 1;
-    const generation = runtime.sessionGeneration;
-    runtime.ctx = ctx;
-    runtime.cwd = ctx.cwd;
-    stopZedPolling(runtime);
-    if (!runtime.enabled) {
-      runtime.connectionStatus = "disabled";
-      updateIdeUi(runtime, ctx);
-      return;
-    }
-    void maybeAutoInstallAndReconnect(runtime, ctx, generation);
-    await connectAutoWithZedFallback(runtime, ctx, generation);
-  });
+  pi.on("session_start", (_event, ctx) =>
+    runPiBoundaryAsync("Pi session start", runtime, async () => {
+      runtime.sessionGeneration += 1;
+      const generation = runtime.sessionGeneration;
+      runtime.ctx = ctx;
+      runtime.cwd = ctx.cwd;
+      stopZedPolling(runtime);
+      if (!runtime.enabled) {
+        runtime.connectionStatus = "disabled";
+        updateIdeUi(runtime, ctx);
+        return;
+      }
+      void maybeAutoInstallAndReconnect(runtime, ctx, generation);
+      await connectAutoWithZedFallback(runtime, ctx, generation);
+    }, ctx),
+  );
 
-  pi.on("session_shutdown", (_event, ctx) => {
-    runtime.sessionGeneration += 1;
-    runtime.ctx = ctx;
-    stopZedPolling(runtime);
-    if (runtime.reconnectTimer) clearTimeout(runtime.reconnectTimer);
-    runtime.reconnectTimer = undefined;
-    const connection = runtime.connection;
-    runtime.connection = undefined;
-    connection?.disconnect();
-    clearIdeUi(runtime, ctx);
-    runtime.ctx = undefined;
-  });
+  pi.on("session_shutdown", (_event, ctx) =>
+    runPiBoundary("Pi session shutdown", runtime, () => {
+      runtime.sessionGeneration += 1;
+      runtime.ctx = ctx;
+      stopZedPolling(runtime);
+      if (runtime.reconnectTimer) clearTimeout(runtime.reconnectTimer);
+      runtime.reconnectTimer = undefined;
+      const connection = runtime.connection;
+      runtime.connection = undefined;
+      connection?.disconnect();
+      clearIdeUi(runtime, ctx);
+      runtime.ctx = undefined;
+    }, ctx),
+  );
 }
 
 async function maybeAutoInstallAndReconnect(
@@ -231,8 +237,12 @@ function notifyInstall(
   message: string,
   level: "info" | "warning",
 ): void {
-  if (!ctx.hasUI) return;
-  ctx.ui.notify(message, level);
+  try {
+    if (!ctx.hasUI) return;
+    ctx.ui.notify(message, level);
+  } catch (error) {
+    logExtensionError("IDE install notification", error);
+  }
 }
 
 function describeInstallError(error: string | undefined, stderr: string): string {
@@ -393,9 +403,7 @@ function createConnectionCallbacks(
     },
     onError: (error) => {
       if (!isCurrentConnection(runtime, getConnection(), generation)) return;
-      runtime.connectionStatus = "error";
-      runtime.connectionMessage = error.message;
-      updateIdeUi(runtime);
+      containPiError(runtime, "IDE connection error", error);
     },
   };
 }
@@ -445,11 +453,7 @@ function scheduleReconnect(runtime: PiIdeRuntime): void {
     const ctx = runtime.ctx;
     if (!ctx || !runtime.enabled || runtime.sessionGeneration !== generation) return;
     connectAutoWithZedFallback(runtime, ctx, runtime.sessionGeneration, { resetReconnectState: false }).catch(
-      (error: unknown) => {
-        runtime.connectionStatus = "error";
-        runtime.connectionMessage = error instanceof Error ? error.message : String(error);
-        updateIdeUi(runtime);
-      },
+      (error: unknown) => containPiError(runtime, "IDE reconnect", error),
     );
   }, RECONNECT_DELAY_MS);
 }

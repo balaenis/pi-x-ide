@@ -1,3 +1,5 @@
+// ABOUTME: Provides Zed editor integration by polling Zed's local SQLite state.
+// ABOUTME: Normalizes Zed paths and selections while containing polling failures.
 import { copyFileSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -11,6 +13,7 @@ import { snapshotKey } from "../shared/format";
 import { isPathInsideOrEqual } from "../shared/paths";
 import { setLatestSelection, clearLatestSelection } from "./context";
 import type { PiIdeRuntime } from "./state";
+import { containPiError } from "./safety";
 import { updateIdeUi } from "./ui";
 
 export const PI_X_IDE_ZED_DB_ENV = "PI_X_IDE_ZED_DB";
@@ -469,54 +472,59 @@ export function startZedPolling(
   const schedule = () => {
     if (runtime.zedPollTimer) return; // already stopped
     runtime.zedPollTimer = setTimeout(() => {
-      runtime.zedPollTimer = undefined;
-
-      // Guard: session generation changed
-      if (generation !== undefined && runtime.sessionGeneration !== generation) return;
-      // Guard: WebSocket has taken over
-      if (runtime.connection && runtime.connection !== undefined) {
-        // connection is an IdeConnection — if WebSocket took over, stop
-        if (runtime.connectedServer?.ide !== "zed") return;
-      }
-
-      // Check whether the WAL sidecar has changed since the last poll.
-      // On WSL the DB snapshot is expensive (~10 MB copy + checkpoint),
-      // so skip the work when nothing changed in the editor.
-      const walPath = `${dbPath}-wal`;
-      let walMtimeMs: number | undefined;
       try {
-        walMtimeMs = statSync(walPath).mtimeMs;
-      } catch {
-        // WAL absent — always poll (Zed may be in a different journal mode).
-      }
-      if (
-        walMtimeMs !== undefined &&
-        runtime.zedPollWalMtimeMs !== undefined &&
-        walMtimeMs === runtime.zedPollWalMtimeMs
-      ) {
-        schedule();
-        return;
-      }
-      runtime.zedPollWalMtimeMs = walMtimeMs;
+        runtime.zedPollTimer = undefined;
 
-      let snapshot: EditorSelectionSnapshot | undefined;
-      try {
-        snapshot = resolveZedSelection({ dbPath, cwd: ctx.cwd, env });
-      } catch {
-        snapshot = undefined;
-      }
-
-      if (snapshot) {
-        const key = snapshotKey(snapshot);
-        if (key !== runtime.zedPollSelectionKey) {
-          runtime.zedPollSelectionKey = key;
-          setLatestSelection(runtime, snapshot, ctx as ExtensionContext);
+        // Guard: session generation changed
+        if (generation !== undefined && runtime.sessionGeneration !== generation) return;
+        // Guard: WebSocket has taken over
+        if (runtime.connection && runtime.connection !== undefined) {
+          // connection is an IdeConnection — if WebSocket took over, stop
+          if (runtime.connectedServer?.ide !== "zed") return;
         }
-      } else {
-        clearLatestSelection(runtime, ctx as ExtensionContext);
-      }
 
-      schedule();
+        // Check whether the WAL sidecar has changed since the last poll.
+        // On WSL the DB snapshot is expensive (~10 MB copy + checkpoint),
+        // so skip the work when nothing changed in the editor.
+        const walPath = `${dbPath}-wal`;
+        let walMtimeMs: number | undefined;
+        try {
+          walMtimeMs = statSync(walPath).mtimeMs;
+        } catch {
+          // WAL absent — always poll (Zed may be in a different journal mode).
+        }
+        if (
+          walMtimeMs !== undefined &&
+          runtime.zedPollWalMtimeMs !== undefined &&
+          walMtimeMs === runtime.zedPollWalMtimeMs
+        ) {
+          schedule();
+          return;
+        }
+        runtime.zedPollWalMtimeMs = walMtimeMs;
+
+        let snapshot: EditorSelectionSnapshot | undefined;
+        try {
+          snapshot = resolveZedSelection({ dbPath, cwd: ctx.cwd, env });
+        } catch {
+          snapshot = undefined;
+        }
+
+        if (snapshot) {
+          const key = snapshotKey(snapshot);
+          if (key !== runtime.zedPollSelectionKey) {
+            runtime.zedPollSelectionKey = key;
+            setLatestSelection(runtime, snapshot, ctx as ExtensionContext);
+          }
+        } else {
+          clearLatestSelection(runtime, ctx as ExtensionContext);
+        }
+
+        schedule();
+      } catch (error) {
+        stopZedPolling(runtime);
+        containPiError(runtime, "Zed polling", error, ctx as ExtensionContext);
+      }
     }, intervalMs);
   };
 

@@ -1,3 +1,5 @@
+// ABOUTME: Implements the Pi-side WebSocket client that receives IDE selection notifications.
+// ABOUTME: Contains callback dispatch boundaries so IDE messages cannot crash the Pi process.
 import WebSocket from "ws";
 import {
   AUTH_HEADER,
@@ -16,6 +18,7 @@ import {
   isSelectionChangedParams,
   isSelectionClearedParams,
 } from "../shared/schema";
+import { toError, logExtensionError } from "../shared/errors";
 import { decodeRawData } from "../shared/ws";
 
 export const IDE_CONNECT_TIMEOUT_MS = 5_000;
@@ -63,14 +66,19 @@ export class IdeConnection {
     });
     this.socket = socket;
 
-    socket.on("message", (raw) => this.handleMessage(decodeRawData(raw)));
+    socket.on("message", (raw) => this.runSocketHandler("message", () => this.handleMessage(decodeRawData(raw))));
     socket.on("close", (_code, reason) => {
-      if (this.socket !== socket) return;
-      this.socket = undefined;
-      this.callbacks.onDisconnected?.(reason.toString("utf8") || (this.closedByUser ? "closed" : "disconnected"));
+      this.runSocketHandler("close", () => {
+        if (this.socket !== socket) return;
+        this.socket = undefined;
+        this.emitCallback(
+          "disconnected callback",
+          () => this.callbacks.onDisconnected?.(reason.toString("utf8") || (this.closedByUser ? "closed" : "disconnected")),
+        );
+      });
     });
     socket.on("error", (error) => {
-      if (this.socket === socket) this.callbacks.onError?.(error);
+      if (this.socket === socket) this.reportError("websocket error", error);
     });
 
     await new Promise<void>((resolve, reject) => {
@@ -131,20 +139,52 @@ export class IdeConnection {
 
     if (isRpcResponse(parsed)) {
       const server = getServerInfo(parsed);
-      if (server) this.callbacks.onConnected?.(server);
+      if (server) this.emitCallback("connected callback", () => this.callbacks.onConnected?.(server));
       return;
     }
 
     if (!isNotification(parsed)) return;
     if (parsed.method === "selection_changed" && isSelectionChangedParams(parsed.params)) {
-      this.callbacks.onSelectionChanged?.(withReceivedAt(parsed.params));
+      const params = withReceivedAt(parsed.params);
+      this.emitCallback("selection changed callback", () => this.callbacks.onSelectionChanged?.(params));
     } else if (parsed.method === "selection_cleared" && isSelectionClearedParams(parsed.params)) {
-      this.callbacks.onSelectionCleared?.(withReceivedAt(parsed.params));
+      const params = withReceivedAt(parsed.params);
+      this.emitCallback("selection cleared callback", () => this.callbacks.onSelectionCleared?.(params));
     } else if (parsed.method === "at_mentioned" && isAtMentionedParams(parsed.params)) {
       const params = withReceivedAt(parsed.params);
-      this.callbacks.onAtMentioned?.(params);
+      this.emitCallback("at mentioned callback", () => this.callbacks.onAtMentioned?.(params));
     } else if (parsed.method === "diagnostic_fix_requested" && isDiagnosticFixRequestedParams(parsed.params)) {
-      this.callbacks.onDiagnosticFixRequested?.(withReceivedAt(parsed.params));
+      const params = withReceivedAt(parsed.params);
+      this.emitCallback("diagnostic fix requested callback", () => this.callbacks.onDiagnosticFixRequested?.(params));
+    }
+  }
+
+  private runSocketHandler(label: string, action: () => void): void {
+    try {
+      action();
+    } catch (error) {
+      this.reportError(`websocket ${label}`, error);
+    }
+  }
+
+  private emitCallback(label: string, action: () => void): void {
+    try {
+      action();
+    } catch (error) {
+      this.reportError(label, error);
+    }
+  }
+
+  private reportError(label: string, error: unknown): void {
+    const reported = toError(error, label);
+    if (!this.callbacks.onError) {
+      logExtensionError(label, reported);
+      return;
+    }
+    try {
+      this.callbacks.onError(reported);
+    } catch (callbackError) {
+      logExtensionError(`${label} onError callback`, callbackError);
     }
   }
 }

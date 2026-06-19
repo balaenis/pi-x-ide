@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// ABOUTME: Runs the Neovim sidecar process that bridges Neovim selections to Pi over WebSocket.
+// ABOUTME: Maintains lock files and contains sidecar message handling failures.
 import { createInterface } from "node:readline";
 import { type EditorSelectionSnapshot, type IdeLockFile } from "../shared/protocol";
 import { formatRangeMention } from "../shared/format";
@@ -72,6 +74,11 @@ export async function startNvimSidecar(options: NvimSidecarOptions = {}): Promis
 
   const stdin = options.stdin ?? process.stdin;
   const stderr = options.stderr ?? process.stderr;
+  const stopSafely = (reason: string) => {
+    void stop().catch((error: unknown) => {
+      stderr.write(`pi-x-ide nvim sidecar: failed to stop after ${reason}: ${errorMessage(error)}\n`);
+    });
+  };
   const rl = createInterface({ input: stdin });
   rl.on("line", (line) => {
     const trimmed = line.trim();
@@ -79,7 +86,9 @@ export async function startNvimSidecar(options: NvimSidecarOptions = {}): Promis
     const parsed = parseJsonLine(trimmed);
     const config = parseSidecarConfig(parsed);
     if (config && !("type" in (parsed as Record<string, unknown>))) {
-      void applyConfig(state, config, stderr);
+      void applyConfig(state, config, stderr).catch((error: unknown) => {
+        stderr.write(`pi-x-ide nvim sidecar: failed to apply config: ${errorMessage(error)}\n`);
+      });
       return;
     }
 
@@ -88,11 +97,13 @@ export async function startNvimSidecar(options: NvimSidecarOptions = {}): Promis
       stderr.write(`pi-x-ide nvim sidecar: ignored malformed message: ${trimmed}\n`);
       return;
     }
-    void handleMessage(state, server, message, stderr, stop);
+    void handleMessage(state, server, message, stderr, stop).catch((error: unknown) => {
+      stderr.write(`pi-x-ide nvim sidecar: failed to handle message: ${errorMessage(error)}\n`);
+    });
   });
-  rl.on("close", () => void stop());
+  rl.on("close", () => stopSafely("stdin close"));
 
-  const cleanup = () => void stop();
+  const cleanup = () => stopSafely("process signal");
   process.once("SIGINT", cleanup);
   process.once("SIGTERM", cleanup);
   process.once("beforeExit", cleanup);

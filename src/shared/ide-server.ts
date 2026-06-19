@@ -1,3 +1,5 @@
+// ABOUTME: Hosts the local authenticated WebSocket server used by IDE extensions and sidecars.
+// ABOUTME: Sends JSON-RPC selection notifications while isolating individual socket failures.
 import { createServer, type Server } from "node:http";
 import WebSocket, { WebSocketServer } from "ws";
 import {
@@ -8,6 +10,7 @@ import {
   type InitializeResult,
 } from "./protocol";
 import { isJsonRpcRequest } from "./schema";
+import { logExtensionError } from "./errors";
 import { decodeRawData } from "./ws";
 
 export class IdeWebSocketServer {
@@ -46,7 +49,15 @@ export class IdeWebSocketServer {
       this.sockets.add(socket);
       socket.on("close", () => this.sockets.delete(socket));
       socket.on("error", () => this.sockets.delete(socket));
-      socket.on("message", (raw) => this.handleMessage(socket, decodeRawData(raw)));
+      socket.on("message", (raw) => {
+        try {
+          this.handleMessage(socket, decodeRawData(raw));
+        } catch (error) {
+          logExtensionError("IDE WebSocket server message", error);
+          this.sockets.delete(socket);
+          socket.close();
+        }
+      });
     });
 
     await new Promise<void>((resolve, reject) => {
@@ -61,15 +72,28 @@ export class IdeWebSocketServer {
   }
 
   broadcast(value: unknown): void {
-    const text = JSON.stringify(value);
-    for (const socket of this.openSockets) socket.send(text);
+    let text: string;
+    try {
+      text = JSON.stringify(value);
+    } catch (error) {
+      logExtensionError("IDE WebSocket server broadcast serialization", error);
+      return;
+    }
+
+    for (const socket of this.openSockets) this.sendText(socket, text, "broadcast");
   }
 
   sendToFirstClient(value: unknown): boolean {
     const [socket] = this.openSockets;
     if (!socket) return false;
-    socket.send(JSON.stringify(value));
-    return true;
+    let text: string;
+    try {
+      text = JSON.stringify(value);
+    } catch (error) {
+      logExtensionError("IDE WebSocket server send serialization", error);
+      return false;
+    }
+    return this.sendText(socket, text, "targeted send");
   }
 
   async stop(): Promise<void> {
@@ -102,11 +126,12 @@ export class IdeWebSocketServer {
       },
     };
 
-    socket.send(JSON.stringify({ jsonrpc: "2.0", id: parsed.id, result }));
+    this.sendValue(socket, { jsonrpc: "2.0", id: parsed.id, result }, "initialize response");
 
     const snapshot = this.getInitialSelection?.();
-    socket.send(
-      JSON.stringify({
+    this.sendValue(
+      socket,
+      {
         jsonrpc: "2.0",
         method: snapshot ? "selection_changed" : "selection_cleared",
         params: snapshot
@@ -119,8 +144,37 @@ export class IdeWebSocketServer {
               reason: "no-active-editor",
               receivedAt: Date.now(),
             },
-      }),
+      },
+      "initial selection",
     );
+  }
+
+  private sendValue(socket: WebSocket, value: unknown, label: string): boolean {
+    let text: string;
+    try {
+      text = JSON.stringify(value);
+    } catch (error) {
+      logExtensionError(`IDE WebSocket server ${label} serialization`, error);
+      return false;
+    }
+    return this.sendText(socket, text, label);
+  }
+
+  private sendText(socket: WebSocket, text: string, label: string): boolean {
+    try {
+      socket.send(text, (error) => {
+        if (!error) return;
+        logExtensionError(`IDE WebSocket server ${label}`, error);
+        this.sockets.delete(socket);
+        socket.close();
+      });
+      return true;
+    } catch (error) {
+      logExtensionError(`IDE WebSocket server ${label}`, error);
+      this.sockets.delete(socket);
+      socket.close();
+      return false;
+    }
   }
 
   private get openSockets(): WebSocket[] {
