@@ -1,7 +1,6 @@
 import type { EditorSelectionSnapshot, SelectionRange } from "./protocol";
 import { toRelativeDisplayPath } from "./paths";
 
-export type RangeFormat = "comma" | "dash";
 export const SYSTEM_REMINDER_TAG = "system-reminder";
 
 export function rangeToLineSpan(range: SelectionRange): { startLine: number; endLine: number } {
@@ -11,19 +10,20 @@ export function rangeToLineSpan(range: SelectionRange): { startLine: number; end
   };
 }
 
-export function formatLineSpan(range: SelectionRange, format: RangeFormat = "comma"): string {
+// Line-only range token, dash separated: `L9` for a single line, `L9-L20` for a span.
+export function formatLineRange(range: SelectionRange): string {
   const { startLine, endLine } = rangeToLineSpan(range);
-  if (startLine === endLine) return `#L${startLine}`;
-  return format === "dash" ? `#L${startLine}-L${endLine}` : `#L${startLine},${endLine}`;
+  return startLine === endLine ? `L${startLine}` : `L${startLine}-L${endLine}`;
 }
 
-export function formatRangeMention(
-  snapshot: EditorSelectionSnapshot,
-  options: { cwd?: string; format?: RangeFormat } = {},
-): string {
+export function formatLineSpan(range: SelectionRange): string {
+  return `#${formatLineRange(range)}`;
+}
+
+export function formatRangeMention(snapshot: EditorSelectionSnapshot, options: { cwd?: string } = {}): string {
   const rel = toRelativeDisplayPath(snapshot.filePath, snapshot.workspaceFolder, options.cwd);
   const first = snapshot.ranges[0];
-  return first ? `@${rel}${formatLineSpan(first, options.format)}` : `@${rel}`;
+  return first ? `@${rel}${formatLineSpan(first)}` : `@${rel}`;
 }
 
 export interface ParsedRangeMention {
@@ -32,20 +32,22 @@ export interface ParsedRangeMention {
   endLine?: number;
 }
 
+// Parses the dash line-range form: `#L<line>(-L<line>)?`, e.g. `#L10`, `#L10-L20`.
 export function parseRangeMention(input: string): ParsedRangeMention | undefined {
-  const match = input.trim().match(/^@(.+?)(?:#L(\d+)(?:(?:,|-L?)(\d+))?)?$/);
+  const match = input.trim().match(/^@(.+?)(?:#L(\d+)(?:-L(\d+))?)?$/);
   if (!match) return undefined;
   const startLine = match[2] ? Number(match[2]) : undefined;
   const endLine = match[3] ? Number(match[3]) : startLine;
-  if (startLine !== undefined && (!Number.isInteger(startLine) || startLine < 1)) return undefined;
-  if (endLine !== undefined && (!Number.isInteger(endLine) || endLine < 1)) return undefined;
+  for (const value of [startLine, endLine]) {
+    if (value !== undefined && (!Number.isInteger(value) || value < 1)) return undefined;
+  }
   return { path: match[1], startLine, endLine };
 }
 
-export function describeRanges(ranges: SelectionRange[], format: RangeFormat = "comma"): string {
+export function describeRanges(ranges: SelectionRange[]): string {
   if (ranges.length === 0) return "open file";
-  if (ranges.length === 1) return formatLineSpan(ranges[0], format);
-  return ranges.map((range, index) => `${index + 1}:${formatLineSpan(range, format)}`).join(" ");
+  if (ranges.length === 1) return formatLineSpan(ranges[0]);
+  return ranges.map((range, index) => `${index + 1}:${formatLineSpan(range)}`).join(" ");
 }
 
 export function snapshotKey(snapshot: EditorSelectionSnapshot): string {
@@ -74,7 +76,6 @@ export function formatEditorContext(snapshot: EditorSelectionSnapshot, options: 
   let truncated = false;
 
   for (const [index, range] of snapshot.ranges.entries()) {
-    const { startLine, endLine } = rangeToLineSpan(range);
     const label = snapshot.ranges.length === 1 ? "The user selected" : `Selection ${index + 1}`;
     let text = range.text;
     if (text.length > remaining) {
@@ -83,13 +84,8 @@ export function formatEditorContext(snapshot: EditorSelectionSnapshot, options: 
     }
     remaining -= text.length;
 
-    if (startLine === endLine) {
-      sections.push(`${label} line ${startLine} from \`${filePath}\` in ${snapshot.source}:\n\`\`\`\n${text}\n\`\`\``);
-    } else {
-      sections.push(
-        `${label} lines ${startLine}-${endLine} from \`${filePath}\` in ${snapshot.source}:\n\`\`\`\n${text}\n\`\`\``,
-      );
-    }
+    const rangeStr = formatLineRange(range);
+    sections.push(`${label} ${rangeStr} from \`${filePath}\` in ${snapshot.source}:\n\`\`\`\n${text}\n\`\`\``);
 
     if (remaining <= 0) break;
   }

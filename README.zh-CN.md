@@ -94,10 +94,10 @@ Pi 自动加载 `pi-x-ide` 并连接 IDE。TUI 底部应显示 `IDE: vscode ✓`
 在 IDE 中打开文件并选中文本，widget 应实时更新：
 
 ```text
-IDE: vscode ✓ src/foo.ts#L10,20 pending
+IDE: vscode ✓ src/foo.ts#L10-L20 pending
 ```
 
-可以从任一侧附加选区：在 VS Code 系列 IDE 中按 `Ctrl+Alt+K`（Linux/Windows）或 `Cmd+Alt+K`（macOS），或聚焦 Pi TUI 后按 `Ctrl+Alt+K` / 运行 `/ide attach`。Pi 输入框应插入 `@src/foo.ts#L10,20`。
+可以从任一侧附加选区：在 VS Code 系列 IDE 中按 `Ctrl+Alt+K`（Linux/Windows）或 `Cmd+Alt+K`（macOS），或聚焦 Pi TUI 后按 `Ctrl+Alt+K` / 运行 `/ide attach`。Pi 输入框应插入 `@src/foo.ts#L10-L20`。
 
 在 Pi 中输入对话提示并提交，选中文本会作为 LLM 上下文注入（不写入 session 历史）。提交后 widget 显示 `sent`。
 
@@ -129,7 +129,6 @@ Pi 默认也会在 TUI 中注册 `Ctrl+Alt+K`，作为 `/ide attach` 的快捷�
 
 | 键                   | 类型                  | 默认值    | 说明                                                                                    |
 | -------------------- | --------------------- | --------- | --------------------------------------------------------------------------------------- |
-| `piXIde.rangeFormat` | `"comma"` \| `"dash"` | `"comma"` | 手动快捷键生成的文件引用格式                                                            |
 | `piXIde.useTmux`     | `boolean`             | `false`   | 通过终端图标用 `tmux` 打开 Pi。每次点击都会创建一个新 session，终端 detach 后自动销毁。 |
 
 #### Zed
@@ -153,7 +152,6 @@ Pi 默认也会在 TUI 中注册 `Ctrl+Alt+K`，作为 `/ide attach` 的快捷�
 require("pi_x_ide").setup({
   enabled = true,
   keymap = "<C-A-k>",
-  range_format = "comma", -- 或 "dash"
   debounce_ms = 150,
   -- sidecar_cmd = { "node", "/absolute/path/to/pi-x-ide-nvim-sidecar.cjs" },
   -- （默认使用平台二进制文件；找不到时降级到 node + cjs）
@@ -171,7 +169,7 @@ require("pi_x_ide").setup({
 | `:PiXIdeStart`  | 启动 Neovim sidecar 并写入 lock file                 |
 | `:PiXIdeStop`   | 停止 sidecar 并移除 lock file                        |
 | `:PiXIdeStatus` | 显示 sidecar 是否正在运行                            |
-| `:PiXIdeAttach` | 将当前文件或选区作为 `@relative/path#Lx,y` 附加到 Pi |
+| `:PiXIdeAttach` | 将当前文件或选区作为 `@relative/path#Lx-Ly` 附加到 Pi |
 
 #### Pi 侧环境变量
 

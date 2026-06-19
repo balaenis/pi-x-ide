@@ -13,7 +13,6 @@ local defaults = {
   enabled = true,
   sidecar_cmd = nil,
   debounce_ms = 150,
-  range_format = "comma",
   keymap = nil,
   workspace_folders = nil,
 }
@@ -460,9 +459,6 @@ end
 
 local function normalize_config(opts)
   local config = vim.tbl_deep_extend("force", defaults, opts or {})
-  if config.range_format ~= "dash" then
-    config.range_format = "comma"
-  end
   return config
 end
 
@@ -675,10 +671,7 @@ local function line_span(range)
   if start_line == end_line then
     return "#L" .. start_line
   end
-  if state.config and state.config.range_format == "dash" then
-    return "#L" .. start_line .. "-L" .. end_line
-  end
-  return "#L" .. start_line .. "," .. end_line
+  return "#L" .. start_line .. "-L" .. end_line
 end
 
 function M.format_range_mention(snapshot)

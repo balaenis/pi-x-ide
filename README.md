@@ -95,10 +95,10 @@ Pi auto-loads `pi-x-ide` and connects to your IDE. The TUI should display `IDE: 
 Open a file in your IDE and select some text. The widget should update in real time:
 
 ```
-IDE: vscode ✓ src/foo.ts#L10,20 pending
+IDE: vscode ✓ src/foo.ts#L10-L20 pending
 ```
 
-Attach the selection from either side: press `Ctrl+Alt+K` (Linux/Windows) or `Cmd+Alt+K` (macOS) in a VS Code-family IDE, or focus the Pi TUI and press `Ctrl+Alt+K` / run `/ide attach`. The Pi input box should insert `@src/foo.ts#L10,20`.
+Attach the selection from either side: press `Ctrl+Alt+K` (Linux/Windows) or `Cmd+Alt+K` (macOS) in a VS Code-family IDE, or focus the Pi TUI and press `Ctrl+Alt+K` / run `/ide attach`. The Pi input box should insert `@src/foo.ts#L10-L20`.
 
 Type a chat prompt in Pi and submit it. The selected text is injected as LLM context (does not persist in session history). After submission, the widget shows `sent`.
 
@@ -130,7 +130,6 @@ Pi also registers `Ctrl+Alt+K` in the TUI as a shortcut for `/ide attach` by def
 
 | Key                  | Type                  | Default   | Description                                                                                                                   |
 | -------------------- | --------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `piXIde.rangeFormat` | `"comma"` \| `"dash"` | `"comma"` | File reference format for the manual shortcut                                                                                 |
 | `piXIde.useTmux`     | `boolean`             | `false`   | Open Pi through `tmux` from the terminal icon. Each click creates a new session that is destroyed when the terminal detaches. |
 
 #### Zed
@@ -154,7 +153,6 @@ When Pi runs in WSL and Zed runs as a Windows app, pi-x-ide normalizes Windows p
 require("pi_x_ide").setup({
   enabled = true,
   keymap = "<C-A-k>",
-  range_format = "comma", -- or "dash"
   debounce_ms = 150,
   -- sidecar_cmd = { "node", "/absolute/path/to/pi-x-ide-nvim-sidecar.cjs" },
   -- (defaults to the platform binary; falls back to node + cjs if no binary found)
@@ -173,7 +171,7 @@ when no binary matches.
 | `:PiXIdeStart`  | Start the Neovim sidecar and write the lock file                    |
 | `:PiXIdeStop`   | Stop the sidecar and remove the lock file                           |
 | `:PiXIdeStatus` | Show whether the sidecar is running                                 |
-| `:PiXIdeAttach` | Attach the current file or selection to Pi as `@relative/path#Lx,y` |
+| `:PiXIdeAttach` | Attach the current file or selection to Pi as `@relative/path#Lx-Ly` |
 
 #### Pi-side Environment Variables
 

@@ -30,7 +30,6 @@ For diagnostics, connect Pi first, then place the cursor on an error or warning 
 
 ## Settings
 
-| Key                  | Default   | Description                                           |
-| -------------------- | --------- | ----------------------------------------------------- |
-| `piXIde.rangeFormat` | `"comma"` | Line range format used for manual `@file` references. |
-| `piXIde.useTmux`     | `false`   | Open `Pi Tui` with `tmux` when opening the terminal.  |
+| Key              | Default | Description                                          |
+| ---------------- | ------- | ---------------------------------------------------- |
+| `piXIde.useTmux` | `false` | Open `Pi Tui` with `tmux` when opening the terminal. |

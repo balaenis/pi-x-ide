@@ -11,7 +11,7 @@ import {
   writeIdeLockFile,
 } from "./lock-file";
 import { IdeWebSocketServer } from "./server";
-import { getActiveSelectionSnapshot, getConfiguredRangeFormat } from "./selection";
+import { getActiveSelectionSnapshot } from "./selection";
 
 const PI_TERMINAL_NAME = "pi";
 const CONFIG_SECTION = "piXIde";
@@ -139,7 +139,7 @@ function attachSelection(): void {
     return;
   }
 
-  const rangeText = formatRangeMention(snapshot, { format: getConfiguredRangeFormat() });
+  const rangeText = formatRangeMention(snapshot);
   server.broadcast({
     jsonrpc: "2.0",
     method: "at_mentioned",

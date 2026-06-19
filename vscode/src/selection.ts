@@ -1,14 +1,8 @@
 import * as vscode from "vscode";
 import type { EditorSelectionSnapshot, SelectionRange } from "../../src/shared/protocol";
-import type { RangeFormat } from "../../src/shared/format";
 import { formatRangeMention } from "../../src/shared/format";
 
 let cachedSelectionSnapshot: EditorSelectionSnapshot | undefined;
-
-export function getConfiguredRangeFormat(): RangeFormat {
-  const value = vscode.workspace.getConfiguration("piXIde").get<string>("rangeFormat", "comma");
-  return value === "dash" ? "dash" : "comma";
-}
 
 export function getActiveSelectionSnapshot(): EditorSelectionSnapshot | undefined {
   const snapshot = createSelectionSnapshot(vscode.window.activeTextEditor);
@@ -89,5 +83,5 @@ function uriMatchesFilePath(uri: vscode.Uri, filePath: string): boolean {
 export function getActiveRangeMention(): string | undefined {
   const snapshot = getActiveSelectionSnapshot();
   if (!snapshot) return undefined;
-  return formatRangeMention(snapshot, { format: getConfiguredRangeFormat() });
+  return formatRangeMention(snapshot);
 }

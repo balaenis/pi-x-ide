@@ -28,16 +28,29 @@ const snapshot: EditorSelectionSnapshot = {
 };
 
 void test("formats and parses range mentions", () => {
-  assert.equal(formatRangeMention(snapshot), "@src/main.ts#L10,20");
-  assert.deepEqual(parseRangeMention("@src/main.ts#L10,20"), { path: "src/main.ts", startLine: 10, endLine: 20 });
-  assert.deepEqual(parseRangeMention("@src/main.ts#L10-L20"), { path: "src/main.ts", startLine: 10, endLine: 20 });
-  assert.deepEqual(parseRangeMention("@src/main.ts#L10"), { path: "src/main.ts", startLine: 10, endLine: 10 });
+  assert.equal(formatRangeMention(snapshot), "@src/main.ts#L10-L20");
+  assert.deepEqual(parseRangeMention("@src/main.ts#L10-L20"), {
+    path: "src/main.ts",
+    startLine: 10,
+    endLine: 20,
+  });
+  assert.deepEqual(parseRangeMention("@src/main.ts#L10"), {
+    path: "src/main.ts",
+    startLine: 10,
+    endLine: 10,
+  });
+  // The legacy comma separator is no longer a range; it stays part of the path.
+  assert.deepEqual(parseRangeMention("@src/main.ts#L10,20"), {
+    path: "src/main.ts#L10,20",
+    startLine: undefined,
+    endLine: undefined,
+  });
 });
 
 void test("formats bounded editor context", () => {
   const context = formatEditorContext(snapshot, { maxChars: 6 });
   assert.match(context, /src\/main\.ts/);
-  assert.match(context, /lines 10-20/);
+  assert.match(context, /L10-L20/);
   assert.match(context, /truncated/i);
 });
 

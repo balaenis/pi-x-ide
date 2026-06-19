@@ -60,7 +60,7 @@ COMMANDS                                               *pi-x-ide-commands*
 
 :PiXIdeAttach
     Attach the current file or selection to connected Pi clients. In Pi this
-    inserts an `@relative/path#Lx,y` reference, matching the VS Code attach flow.
+    inserts an `@relative/path#Lx-Ly` reference, matching the VS Code attach flow.
 
 ===============================================================================
 OPTIONS                                                 *pi-x-ide-options*
@@ -77,9 +77,6 @@ Pass options to `require("pi_x_ide").setup({ ... })`.
 
 `debounce_ms` (number, default 150)
     Delay for high-frequency cursor and text-change updates.
-
-`range_format` ("comma"|"dash", default "comma")
-    Format for manual attach references: `#L10,20` or `#L10-L20`.
 
 `keymap` (string|nil)
     Optional normal/visual mode mapping for `:PiXIdeAttach` behavior.
