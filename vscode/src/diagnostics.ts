@@ -1,3 +1,5 @@
+// ABOUTME: Builds VS Code diagnostic quick fixes that send problem context to Pi.
+// ABOUTME: Normalizes diagnostics into the pi-x-ide protocol with bounded text payloads.
 import * as vscode from "vscode";
 import type {
   DiagnosticContextLine,
@@ -7,6 +9,7 @@ import type {
   IdeDiagnosticRelatedInformation,
   Position,
 } from "../../src/shared/protocol";
+import { errorMessage, logExtensionError, safeRun } from "../../src/shared/errors";
 import type { IdeWebSocketServer } from "./server";
 
 export const FIX_WITH_PI_COMMAND = "pi-x-ide.fixWithPiSuggest";
@@ -26,12 +29,23 @@ export function registerDiagnosticQuickFixes(
       providedCodeActionKinds: [vscode.CodeActionKind.QuickFix],
     }),
     vscode.commands.registerCommand(FIX_WITH_PI_COMMAND, (payload: DiagnosticFixRequestedParams) =>
-      sendDiagnosticRequest(getServer(), { ...payload, action: "fix" }, FIX_WITH_PI_TITLE),
+      runDiagnosticCommand(FIX_WITH_PI_TITLE, () =>
+        sendDiagnosticRequest(getServer(), { ...payload, action: "fix" }, FIX_WITH_PI_TITLE),
+      ),
     ),
     vscode.commands.registerCommand(SEND_DIAGNOSTIC_COMMAND, (payload: DiagnosticFixRequestedParams) =>
-      sendDiagnosticRequest(getServer(), { ...payload, action: "send-diagnostic" }, SEND_DIAGNOSTIC_TITLE),
+      runDiagnosticCommand(SEND_DIAGNOSTIC_TITLE, () =>
+        sendDiagnosticRequest(getServer(), { ...payload, action: "send-diagnostic" }, SEND_DIAGNOSTIC_TITLE),
+      ),
     ),
   );
+}
+
+function runDiagnosticCommand(title: string, action: () => void): void {
+  safeRun(`VS Code diagnostic command ${title}`, action, (error) => {
+    logExtensionError(`VS Code diagnostic command ${title}`, error);
+    void vscode.window.showWarningMessage(`Pi x IDE: ${title} failed: ${errorMessage(error)}`);
+  });
 }
 
 class PiDiagnosticCodeActionProvider implements vscode.CodeActionProvider<vscode.CodeAction> {
@@ -42,18 +56,28 @@ class PiDiagnosticCodeActionProvider implements vscode.CodeActionProvider<vscode
     range: vscode.Range | vscode.Selection,
     context: vscode.CodeActionContext,
   ): vscode.CodeAction[] {
-    if (context.only && !context.only.contains(vscode.CodeActionKind.QuickFix)) return [];
-    if (document.uri.scheme !== "file") return [];
-    if (!this.hasConnectedPiClient()) return [];
+    return (
+      safeRun(
+        "VS Code diagnostic code actions",
+        () => {
+          if (context.only && !context.only.contains(vscode.CodeActionKind.QuickFix)) return [];
+          if (document.uri.scheme !== "file") return [];
+          if (!this.hasConnectedPiClient()) return [];
 
-    const diagnostics = context.diagnostics.filter(isFixableDiagnostic);
-    if (diagnostics.length === 0) return [];
+          const diagnostics = context.diagnostics.filter(isFixableDiagnostic);
+          if (diagnostics.length === 0) return [];
 
-    const payload = createDiagnosticFixPayload(document, range, diagnostics);
-    return [
-      createDiagnosticAction(FIX_WITH_PI_TITLE, FIX_WITH_PI_COMMAND, payload, diagnostics),
-      createDiagnosticAction(SEND_DIAGNOSTIC_TITLE, SEND_DIAGNOSTIC_COMMAND, payload, diagnostics),
-    ];
+          const payload = createDiagnosticFixPayload(document, range, diagnostics);
+          return [
+            createDiagnosticAction(FIX_WITH_PI_TITLE, FIX_WITH_PI_COMMAND, payload, diagnostics),
+            createDiagnosticAction(SEND_DIAGNOSTIC_TITLE, SEND_DIAGNOSTIC_COMMAND, payload, diagnostics),
+          ];
+        },
+        (error) => {
+          logExtensionError("VS Code diagnostic code actions", error);
+        },
+      ) ?? []
+    );
   }
 
   private hasConnectedPiClient(): boolean {
