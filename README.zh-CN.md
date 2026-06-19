@@ -14,8 +14,6 @@
 pi install npm:pi-x-ide
 ```
 
-将 `pi-x-ide` 安装为全局 Pi 扩展，Pi 启动时自动加载，无需额外参数。
-
 ### 安装 IDE 扩展
 
 #### VS Code / Cursor / Windsurf

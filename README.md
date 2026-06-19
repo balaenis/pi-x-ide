@@ -14,8 +14,6 @@ Automatically attaches the currently opened or selected file and text range from
 pi install npm:pi-x-ide
 ```
 
-This installs `pi-x-ide` as a global Pi extension. Pi loads it automatically on startup — no flags needed.
-
 ### Install the IDE Extension
 
 #### VS Code / Cursor / Windsurf
