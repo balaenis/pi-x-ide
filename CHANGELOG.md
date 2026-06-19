@@ -2,10 +2,9 @@
 
 ## [1.12.0](https://github.com/balaenis/pi-x-ide/compare/v1.11.1...v1.12.0) (2026-06-16)
 
-
 ### Features
 
-* **ui:** add animated spinner for connecting state ([ae82969](https://github.com/balaenis/pi-x-ide/commit/ae82969223f79c6ce28315337e846888738649aa))
+- **ui:** add animated spinner for connecting state ([ae82969](https://github.com/balaenis/pi-x-ide/commit/ae82969223f79c6ce28315337e846888738649aa))
 
 ## [1.11.1](https://github.com/balaenis/pi-x-ide/compare/v1.11.0...v1.11.1) (2026-06-15)
 

@@ -1,13 +1,11 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
-import { formatEditorContext, snapshotKey } from "../shared/format";
+import { formatEditorContext, snapshotKey, SYSTEM_REMINDER_TAG } from "../shared/format";
 import type { EditorSelectionSnapshot } from "../shared/protocol";
 import { DIAGNOSTIC_CONTEXT_MARKER } from "./diagnostics";
 import type { PiIdeRuntime } from "./state";
 import { updateIdeUi } from "./ui";
-
-const CONTEXT_MARKER = "pi-x-ide/editor-context";
 
 export function registerContextHandlers(pi: ExtensionAPI, runtime: PiIdeRuntime): void {
   pi.on("before_agent_start", (_event, ctx) => {
@@ -30,7 +28,7 @@ export function registerContextHandlers(pi: ExtensionAPI, runtime: PiIdeRuntime)
       return;
     }
 
-    const text = `${formatEditorContext(runtime.turnSelection)}\n<!-- ${CONTEXT_MARKER} -->\n`;
+    const text = `${formatEditorContext(runtime.turnSelection)}\n`;
     const message = mergeIntoUserMessage(event.message, text);
     runtime.attachState = "sent";
     runtime.turnSelection = undefined;
@@ -83,5 +81,5 @@ function normalizeUserContent(content: MergeableUserMessage["content"]): UserCon
 
 function messageContainsMarker(message: MergeableUserMessage): boolean {
   const serialized = JSON.stringify(message);
-  return serialized.includes(CONTEXT_MARKER) || serialized.includes(DIAGNOSTIC_CONTEXT_MARKER);
+  return serialized.includes(`<${SYSTEM_REMINDER_TAG}>`) || serialized.includes(DIAGNOSTIC_CONTEXT_MARKER);
 }

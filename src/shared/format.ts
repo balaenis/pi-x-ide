@@ -2,6 +2,7 @@ import type { EditorSelectionSnapshot, SelectionRange } from "./protocol";
 import { toRelativeDisplayPath } from "./paths";
 
 export type RangeFormat = "comma" | "dash";
+export const SYSTEM_REMINDER_TAG = "system-reminder";
 
 export function rangeToLineSpan(range: SelectionRange): { startLine: number; endLine: number } {
   return {
@@ -65,7 +66,7 @@ export function formatEditorContext(snapshot: EditorSelectionSnapshot, options: 
   const maxChars = options.maxChars ?? 24_000;
 
   if (snapshot.ranges.length === 0) {
-    return `<system-reminder>\nThe user currently has \`${filePath}\` open in ${snapshot.source}. This may or may not be relevant.\n</system-reminder>`;
+    return `<${SYSTEM_REMINDER_TAG}>\nThe user currently has \`${filePath}\` open in ${snapshot.source}. This may or may not be relevant.\n</${SYSTEM_REMINDER_TAG}>\n`;
   }
 
   const sections: string[] = [];
@@ -81,12 +82,18 @@ export function formatEditorContext(snapshot: EditorSelectionSnapshot, options: 
       truncated = true;
     }
     remaining -= text.length;
-    sections.push(
-      `${label} lines ${startLine}-${endLine} from \`${filePath}\` in ${snapshot.source}:\n\n\`\`\`\n${text}\n\`\`\``,
-    );
+
+    if (startLine === endLine) {
+      sections.push(`${label} line ${startLine} from \`${filePath}\` in ${snapshot.source}:\n\`\`\`\n${text}\n\`\`\``);
+    } else {
+      sections.push(
+        `${label} lines ${startLine}-${endLine} from \`${filePath}\` in ${snapshot.source}:\n\`\`\`\n${text}\n\`\`\``,
+      );
+    }
+
     if (remaining <= 0) break;
   }
 
-  const suffix = truncated ? "\n\n[Selection text truncated to keep the prompt size bounded.]" : "";
-  return `<system-reminder>\n${sections.join("\n\n")}\n\nThis may or may not be relevant.${suffix}\n</system-reminder>`;
+  const suffix = truncated ? "\n[Selection text truncated to keep the prompt size bounded.]" : "";
+  return `<${SYSTEM_REMINDER_TAG}>\n${sections.join("\n")}\nThis may or may not be relevant.${suffix}\n</${SYSTEM_REMINDER_TAG}>\n`;
 }
