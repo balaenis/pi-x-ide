@@ -128,9 +128,9 @@ Pi also registers `Ctrl+Alt+K` in the TUI as a shortcut for `/ide attach` by def
 
 #### VS Code
 
-| Key                  | Type                  | Default   | Description                                                                                                                   |
-| -------------------- | --------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `piXIde.useTmux`     | `boolean`             | `false`   | Open Pi through `tmux` from the terminal icon. Each click creates a new session that is destroyed when the terminal detaches. |
+| Key              | Type      | Default | Description                                                                                                                   |
+| ---------------- | --------- | ------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `piXIde.useTmux` | `boolean` | `false` | Open Pi through `tmux` from the terminal icon. Each click creates a new session that is destroyed when the terminal detaches. |
 
 #### Zed
 
@@ -166,11 +166,11 @@ when no binary matches.
 
 **Commands:**
 
-| Command         | Behavior                                                            |
-| --------------- | ------------------------------------------------------------------- |
-| `:PiXIdeStart`  | Start the Neovim sidecar and write the lock file                    |
-| `:PiXIdeStop`   | Stop the sidecar and remove the lock file                           |
-| `:PiXIdeStatus` | Show whether the sidecar is running                                 |
+| Command         | Behavior                                                             |
+| --------------- | -------------------------------------------------------------------- |
+| `:PiXIdeStart`  | Start the Neovim sidecar and write the lock file                     |
+| `:PiXIdeStop`   | Stop the sidecar and remove the lock file                            |
+| `:PiXIdeStatus` | Show whether the sidecar is running                                  |
 | `:PiXIdeAttach` | Attach the current file or selection to Pi as `@relative/path#Lx-Ly` |
 
 #### Pi-side Environment Variables

@@ -127,9 +127,9 @@ Pi 默认也会在 TUI 中注册 `Ctrl+Alt+K`，作为 `/ide attach` 的快捷�
 
 #### VS Code
 
-| 键                   | 类型                  | 默认值    | 说明                                                                                    |
-| -------------------- | --------------------- | --------- | --------------------------------------------------------------------------------------- |
-| `piXIde.useTmux`     | `boolean`             | `false`   | 通过终端图标用 `tmux` 打开 Pi。每次点击都会创建一个新 session，终端 detach 后自动销毁。 |
+| 键               | 类型      | 默认值  | 说明                                                                                    |
+| ---------------- | --------- | ------- | --------------------------------------------------------------------------------------- |
+| `piXIde.useTmux` | `boolean` | `false` | 通过终端图标用 `tmux` 打开 Pi。每次点击都会创建一个新 session，终端 detach 后自动销毁。 |
 
 #### Zed
 
@@ -164,11 +164,11 @@ require("pi_x_ide").setup({
 
 **命令：**
 
-| 命令            | 行为                                                 |
-| --------------- | ---------------------------------------------------- |
-| `:PiXIdeStart`  | 启动 Neovim sidecar 并写入 lock file                 |
-| `:PiXIdeStop`   | 停止 sidecar 并移除 lock file                        |
-| `:PiXIdeStatus` | 显示 sidecar 是否正在运行                            |
+| 命令            | 行为                                                  |
+| --------------- | ----------------------------------------------------- |
+| `:PiXIdeStart`  | 启动 Neovim sidecar 并写入 lock file                  |
+| `:PiXIdeStop`   | 停止 sidecar 并移除 lock file                         |
+| `:PiXIdeStatus` | 显示 sidecar 是否正在运行                             |
 | `:PiXIdeAttach` | 将当前文件或选区作为 `@relative/path#Lx-Ly` 附加到 Pi |
 
 #### Pi 侧环境变量
