@@ -218,5 +218,9 @@ function openPiTerminal(context: vscode.ExtensionContext): void {
 function buildTmuxPiCommand(): string {
   tmuxSessionCounter += 1;
   const sessionName = `pi-${Date.now().toString(36)}-${tmuxSessionCounter.toString(36)}`;
-  return `tmux new-session -d -s ${sessionName} "pi" \\; set-option -t ${sessionName} destroy-unattached on \\; attach-session -t ${sessionName}`;
+  // Run `pi` through a login + interactive shell so shell init files
+  // (e.g. ~/.zshrc, ~/.zprofile) are loaded just like a normal terminal.
+  // tmux exec's the command directly otherwise, skipping shell startup.
+  const piCommand = '"${SHELL:-/bin/sh}" -lic pi';
+  return `tmux new-session -d -s ${sessionName} ${piCommand} \\; set-option -t ${sessionName} destroy-unattached on \\; attach-session -t ${sessionName}`;
 }
