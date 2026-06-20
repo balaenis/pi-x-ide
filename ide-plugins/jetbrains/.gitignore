@@ -1,0 +1,9 @@
+.gradle/
+build/
+out/
+.idea/
+run/
+sandbox/
+
+.kotlin/
+.intellijPlatform/

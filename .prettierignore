@@ -3,6 +3,12 @@ schemas/config.json
 ide-plugins/nvim/bin/
 ide-plugins/vscode/out/
 ide-plugins/vscode/dist/
+ide-plugins/jetbrains/.gradle/
+ide-plugins/jetbrains/.intellijPlatform/
+ide-plugins/jetbrains/build/
+ide-plugins/jetbrains/out/
+ide-plugins/jetbrains/run/
+ide-plugins/jetbrains/sandbox/
 node_modules/
 .pnpm-store/
 .pi/

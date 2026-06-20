@@ -1,0 +1,35 @@
+<idea-plugin>
+  <id>balaenis.pi-x-ide</id>
+  <name>Pi x IDE</name>
+  <vendor email="support@balaenis.com" url="https://github.com/balaenis/pi-x-ide">Balaenis</vendor>
+
+  <description><![CDATA[
+    Connects JetBrains IDEs to Pi through local active-file, selection, and attach context.
+  ]]></description>
+
+  <depends>com.intellij.modules.platform</depends>
+  <depends>org.jetbrains.plugins.terminal</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <projectService serviceImplementation="com.balaenis.pixide.PiXIdeProjectService" />
+    <postStartupActivity implementation="com.balaenis.pixide.PiXIdeStartupActivity" />
+    <statusBarWidgetFactory id="pi-x-ide" implementation="com.balaenis.pixide.ui.PiXIdeStatusBarWidgetFactory" />
+    <notificationGroup id="Pi x IDE Notifications" displayType="BALLOON" />
+  </extensions>
+
+  <actions>
+    <action id="PiXIde.AttachSelection"
+            class="com.balaenis.pixide.actions.PiXIdeAttachSelectionAction"
+            text="Pi x IDE: Attach Selection"
+            description="Attach the active JetBrains file or selection to Pi">
+      <keyboard-shortcut first-keystroke="ctrl alt K" keymap="$default" />
+      <add-to-group group-id="ToolsMenu" anchor="last" />
+    </action>
+    <action id="PiXIde.OpenTerminal"
+            class="com.balaenis.pixide.actions.PiXIdeOpenTerminalAction"
+            text="Pi x IDE: Open Pi Terminal"
+            description="Open an embedded terminal and run Pi">
+      <add-to-group group-id="ToolsMenu" anchor="last" />
+    </action>
+  </actions>
+</idea-plugin>

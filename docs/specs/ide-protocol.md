@@ -8,7 +8,7 @@ Directory: `~/.pi/pi-x-ide/lock`.
 
 Example file: `vscode-12345-48123.lock`
 
-Neovim uses the same protocol version and writes files named `nvim-<pid>-<port>.lock`.
+Neovim uses the same protocol version and writes files named `nvim-<pid>-<port>.lock`. JetBrains IDEs use the same protocol version and write files named `jetbrains-<pid>-<port>.lock`.
 
 ```json
 {
@@ -105,11 +105,13 @@ Sent whenever the active editor or selection changes.
 }
 ```
 
-`source` is one of `vscode`, `zed`, `nvim`, or `unknown`. `line` and `character` are zero-based, matching VS Code/LSP. Neovim converts byte columns to UTF-16 character offsets before sending snapshots.
+`source` is one of `vscode`, `zed`, `nvim`, `jetbrains`, or `unknown`. `line` and `character` are zero-based, matching VS Code/LSP. Neovim converts byte columns to UTF-16 character offsets before sending snapshots. JetBrains derives `character` from document offsets and line-start offsets, which are UTF-16 code-unit counts.
+
+JetBrains sends `selection_changed` both for non-empty selections and for an active local file with no selected text (`ranges: []`). It sends `selection_cleared` when there is no active local text editor.
 
 ### `at_mentioned`
 
-Sent when the user invokes an IDE attach-selection command, such as VS Code's command or Neovim's `:PiXIdeAttach`.
+Sent when the user invokes an IDE attach-selection command, such as VS Code's command, Neovim's `:PiXIdeAttach`, or the JetBrains **Pi x IDE: Attach Selection** action.
 
 ```json
 {
@@ -119,7 +121,7 @@ Sent when the user invokes an IDE attach-selection command, such as VS Code's co
     "source": "vscode",
     "filePath": "/home/user/project/src/main.ts",
     "workspaceFolder": "/home/user/project",
-    "rangeText": "@src/main.ts#L10,20",
+    "rangeText": "@src/main.ts#L10-L20",
     "ranges": [
       {
         "text": "selected text",
@@ -133,7 +135,7 @@ Sent when the user invokes an IDE attach-selection command, such as VS Code's co
 }
 ```
 
-Pi inserts `rangeText` into the TUI editor and caches the corresponding selection text for context injection.
+Pi inserts `rangeText` into the TUI editor and caches the corresponding selection text for context injection. JetBrains sends selection and attach notifications in the MVP; it does not send diagnostic Quick Fix notifications.
 
 ### `diagnostic_fix_requested`
 

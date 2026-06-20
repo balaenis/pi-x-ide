@@ -56,14 +56,29 @@ description = "Build the VS Code extension for local debugging"
 depends = ["setup"]
 run = "bun run compile:vsix"
 
+[tasks."compile:jetbrains"]
+description = "Build and test the JetBrains plugin for local debugging"
+depends = ["setup"]
+run = "bun run compile:jetbrains"
+
 [tasks."compile:all"]
 description = "Compile all IDE extensions for local debugging"
-depends = ["setup", "compile", "compile:vsix"]
+depends = ["setup", "compile", "compile:vsix", "compile:jetbrains"]
 
 [tasks."package:vsix"]
 description = "Build the production VS Code VSIX package"
 depends = ["setup"]
 run = "bun run package:vsix"
+
+[tasks."package:jetbrains"]
+description = "Build the production JetBrains plugin ZIP"
+depends = ["setup"]
+run = "bun run package:jetbrains"
+
+[tasks."verify:jetbrains"]
+description = "Verify the JetBrains plugin against supported IDE builds"
+depends = ["setup"]
+run = "bun run verify:jetbrains"
 
 [tasks."package:nvim-sidecar"]
 description = "Build the nvim sidecar binary"

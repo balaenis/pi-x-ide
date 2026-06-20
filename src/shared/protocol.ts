@@ -1,8 +1,10 @@
+// ABOUTME: Defines the JSON-RPC protocol contracts shared by Pi and IDE plugins.
+// ABOUTME: Keeps lock-file, editor snapshot, diagnostics, and attach message types in sync.
 export const PROTOCOL_VERSION = 1;
 export const AUTH_HEADER = "x-pi-x-ide-authorization";
 export const LOCK_FILE_EXTENSION = ".lock";
 
-export type IdeSource = "vscode" | "zed" | "nvim" | "unknown";
+export type IdeSource = "vscode" | "zed" | "nvim" | "jetbrains" | "unknown";
 export type Transport = "ws";
 
 export interface IdeLockFile {

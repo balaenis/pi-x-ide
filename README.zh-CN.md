@@ -2,7 +2,7 @@
 
 > 用于 IDE 选择上下文集成的 Pi 扩展包。
 
-自动将 VS Code、Zed 和 Neovim 中当前打开或选中的文件与文本范围附加到 Pi TUI，并作为对话上下文提交给 LLM。
+自动将 VS Code、Zed、Neovim 和 JetBrains IDE 中当前打开或选中的文件与文本范围附加到 Pi TUI，并作为对话上下文提交给 LLM。
 
 ---
 
@@ -83,6 +83,28 @@ lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
 
 完整配置选项、命令和故障排查见 [配置参考](#neovim-2)。
 
+#### JetBrains IDE
+
+JetBrains 支持由 `ide-plugins/jetbrains` 下的插件项目提供。MVP 需要手动安装：可以构建本地 ZIP 后从 IDE 安装，也可以在开发用 sandbox IDE 中运行。
+
+运行 sandbox IDE：
+
+```bash
+cd ide-plugins/jetbrains
+./gradlew runIde
+```
+
+构建用于手动安装的插件 ZIP：
+
+```bash
+cd ide-plugins/jetbrains
+./gradlew buildPlugin
+```
+
+ZIP 会输出到 `ide-plugins/jetbrains/build/distributions/`。在 JetBrains IDE 中通过 **Settings | Plugins | ⚙ | Install Plugin from Disk...** 安装。
+
+JetBrains MVP 支持实时活跃文件追踪、实时选区追踪、`Ctrl+Alt+K` / **Pi x IDE: Attach Selection**、Pi 侧 `/ide auto`，以及 **Pi x IDE: Open Pi Terminal**。诊断 Quick Fix 和 Pi 侧自动安装 JetBrains 插件不属于 MVP 范围。
+
 ### 连接 Pi 并验证
 
 在 IDE workspace **同一项目目录** 启动 Pi：
@@ -91,7 +113,7 @@ lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
 pi
 ```
 
-Pi 自动加载 `pi-x-ide` 并连接 IDE。TUI 底部应显示 `IDE: vscode ✓`，输入框下方 widget 显示 IDE 名称、workspace、当前文件和选区范围。
+Pi 自动加载 `pi-x-ide` 并连接 IDE。TUI 底部应显示类似 `IDE: vscode ✓` 或 `IDE: jetbrains ✓` 的已连接 IDE source，输入框下方 widget 显示 IDE 名称、workspace、当前文件和选区范围。
 
 **验证是否正常：**
 
@@ -101,11 +123,11 @@ Pi 自动加载 `pi-x-ide` 并连接 IDE。TUI 底部应显示 `IDE: vscode ✓`
 IDE: vscode ✓ src/foo.ts#L10-L20 pending
 ```
 
-可以从任一侧附加选区：在 VS Code 系列 IDE 中按 `Ctrl+Alt+K`（Linux/Windows）或 `Cmd+Alt+K`（macOS），或聚焦 Pi TUI 后按 `Ctrl+Alt+K` / 运行 `/ide attach`。Pi 输入框应插入 `@src/foo.ts#L10-L20`。
+可以从任一侧附加选区：在 VS Code 系列 IDE 中按 `Ctrl+Alt+K`（Linux/Windows）或 `Cmd+Alt+K`（macOS），在 JetBrains 中按 `Ctrl+Alt+K` 或运行 **Pi x IDE: Attach Selection**，在 Neovim 中使用 `:PiXIdeAttach`，或聚焦 Pi TUI 后按 `Ctrl+Alt+K` / 运行 `/ide attach`。Pi 输入框应插入 `@src/foo.ts#L10-L20`。
 
 在 Pi 中输入对话提示并提交，选中文本会作为 LLM 上下文注入（不写入 session 历史）。提交后 widget 显示 `sent`。
 
-对于 VS Code 系列 IDE 中的诊断信息，先连接 Pi，再把光标放在 error 或 warning 上并打开 Quick Fix。只有至少一个 Pi 客户端已连接时，才会显示 **Pi: Fix it** 和 **Pi: Send diagnostic**。**Pi: Fix it** 会把诊断消息、源码范围、附近上下文行和 related information 发送给一个已连接的 Pi 客户端，并用可自定义的 prompt 模板自动开始诊断分析（参见 [`fix_prompt`](#pi-侧配置)）。**Pi: Send diagnostic** 会把相同上下文发送给一个已连接的 Pi 客户端并粘贴到 Pi 输入框，不会自动开始一轮对话。
+对于 VS Code 系列 IDE 中的诊断信息，先连接 Pi，再把光标放在 error 或 warning 上并打开 Quick Fix。只有至少一个 Pi 客户端已连接时，才会显示 **Pi: Fix it** 和 **Pi: Send diagnostic**。**Pi: Fix it** 会把诊断消息、源码范围、附近上下文行和 related information 发送给一个已连接的 Pi 客户端，并用可自定义的 prompt 模板自动开始诊断分析（参见 [`fix_prompt`](#pi-侧配置)）。**Pi: Send diagnostic** 会把相同上下文发送给一个已连接的 Pi 客户端并粘贴到 Pi 输入框，不会自动开始一轮对话。JetBrains MVP 不提供诊断 Quick Fix。
 
 **如果连接未出现：**
 
@@ -196,14 +218,16 @@ Pi 侧变量可设为真实环境变量或写入 `~/.pi/pi-x-ide/config.json` �
 
 ### 功能对比
 
-| 功能                                             | VS Code              | Zed         | Neovim                   |
-| ------------------------------------------------ | -------------------- | ----------- | ------------------------ |
-| 实时文件追踪                                     | ✅ 实时推送          | ✅ 1 秒轮询 | ✅ 通过 sidecar 实时推送 |
-| 实时选区追踪                                     | ✅ 实时推送          | ✅ 1 秒轮询 | ✅ 通过 sidecar 实时推送 |
-| IDE 上下文 attach 快捷键                         | ✅ 默认 `Ctrl+Alt+K` | ❌          | ✅ 自定义快捷键 keymap   |
-| Pi TUI 上下文 attach 快捷键（默认 `Ctrl+Alt+K`） | ✅                   | ✅          | ✅                       |
-| LLM 上下文注入                                   | ✅                   | ✅          | ✅                       |
-| `/ide auto`                                      | ✅                   | ✅          | ✅                       |
+| 功能                                             | VS Code              | Zed         | Neovim                   | JetBrains            |
+| ------------------------------------------------ | -------------------- | ----------- | ------------------------ | -------------------- |
+| 实时文件追踪                                     | ✅ 实时推送          | ✅ 1 秒轮询 | ✅ 通过 sidecar 实时推送 | ✅ 实时推送          |
+| 实时选区追踪                                     | ✅ 实时推送          | ✅ 1 秒轮询 | ✅ 通过 sidecar 实时推送 | ✅ 实时推送          |
+| IDE 上下文 attach 快捷键                         | ✅ 默认 `Ctrl+Alt+K` | ❌          | ✅ 自定义快捷键 keymap   | ✅ 默认 `Ctrl+Alt+K` |
+| Pi TUI 上下文 attach 快捷键（默认 `Ctrl+Alt+K`） | ✅                   | ✅          | ✅                       | ✅                   |
+| LLM 上下文注入                                   | ✅                   | ✅          | ✅                       | ✅                   |
+| `/ide auto`                                      | ✅                   | ✅          | ✅                       | ✅                   |
+| 诊断 Quick Fix                                   | ✅                   | ❌          | ❌                       | ❌                   |
+| 自动安装                                         | ✅ 仅 VS Code 系列   | N/A         | ❌                       | ❌                   |
 
 ### Lock File 协议
 
@@ -223,6 +247,7 @@ Pi 通过 `ctx.cwd` 与 lock file 中的 `workspaceFolders` 做最长路径匹�
 - bun ≥ 1.3（`packageManager` 声明为 `bun@1.3.14`）
 - VS Code ≥ 1.120.0（仅 VS Code 扩展需要）
 - Neovim ≥ 0.9（仅 Neovim 插件需要）
+- JDK 21（仅 JetBrains 插件需要；Gradle 可自动下载 toolchain）
 
 ### 安装与构建
 
@@ -249,6 +274,9 @@ pi -e ./src/pi/index.ts
 | `bun run typecheck`           | 类型检查（不产出文件）                                                                                                  |
 | `bun run test`                | 编译 + 运行单元测试                                                                                                     |
 | `bun run package:vsix`        | 打包 VS Code 扩展为 VSIX                                                                                                |
+| `bun run compile:jetbrains`   | 用 Gradle 编译并测试 JetBrains 插件                                                                                     |
+| `bun run package:jetbrains`   | 将 JetBrains 插件打包为 `ide-plugins/jetbrains/build/distributions/` 下的 ZIP                                           |
+| `bun run verify:jetbrains`    | 对配置的目标 IDE 运行 IntelliJ Plugin Verifier                                                                          |
 | `bun run check:config-schema` | 验证 `schemas/config.json` 与配置注册表是否同步                                                                         |
 
 ### 本地测试 VS Code 扩展
@@ -278,6 +306,23 @@ ls -l ~/.pi/pi-x-ide/lock
 ```
 
 应看到类似 `vscode-12345-48123.lock` 的文件。如果没有，在 VS Code 中执行 **Developer: Reload Window**。
+
+### 本地测试 JetBrains 插件
+
+运行 sandbox IDE：
+
+```bash
+cd ide-plugins/jetbrains
+./gradlew runIde
+```
+
+构建可安装的插件 ZIP：
+
+```bash
+bun run package:jetbrains
+```
+
+ZIP 会输出到 `ide-plugins/jetbrains/build/distributions/`。Smoke test：在 sandbox IDE 中打开本仓库，从同一目录启动 `pi`，打开并选择一个本地文件中的文本，然后按 `Ctrl+Alt+K` 或运行 **Pi x IDE: Attach Selection**。Pi 应收到 `@relative/path#Lx-Ly` mention。
 
 ### 发布
 

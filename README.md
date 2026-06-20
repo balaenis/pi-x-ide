@@ -2,7 +2,7 @@
 
 > Pi extension package for IDE selection context integration.
 
-Automatically attaches the currently opened or selected file and text range from VS Code, Zed, and Neovim to the Pi TUI, submitting them as conversation context to the LLM.
+Automatically attaches the currently opened or selected file and text range from VS Code, Zed, Neovim, and JetBrains IDEs to the Pi TUI, submitting them as conversation context to the LLM.
 
 ---
 
@@ -91,6 +91,28 @@ lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
 
 See [Configuration Reference](#neovim-2) for full setup options, commands, and troubleshooting.
 
+#### JetBrains IDEs
+
+JetBrains support is provided by the plugin project under `ide-plugins/jetbrains`. The MVP is installed manually: build a local ZIP and install it through the IDE, or run it in a sandbox IDE for development.
+
+Run a sandbox IDE:
+
+```bash
+cd ide-plugins/jetbrains
+./gradlew runIde
+```
+
+Build a plugin ZIP for manual installation:
+
+```bash
+cd ide-plugins/jetbrains
+./gradlew buildPlugin
+```
+
+The ZIP is written to `ide-plugins/jetbrains/build/distributions/`. Install it from **Settings | Plugins | ⚙ | Install Plugin from Disk...**.
+
+JetBrains MVP support includes live active-file tracking, live selection tracking, `Ctrl+Alt+K` / **Pi x IDE: Attach Selection**, Pi-side `/ide auto`, and **Pi x IDE: Open Pi Terminal**. Diagnostic Quick Fix actions and Pi-side automatic JetBrains plugin installation are not part of the MVP.
+
 ### Connect Pi & Verify
 
 Start Pi in the **same project directory** as your IDE workspace:
@@ -99,7 +121,7 @@ Start Pi in the **same project directory** as your IDE workspace:
 pi
 ```
 
-Pi auto-loads `pi-x-ide` and connects to your IDE. The TUI should display `IDE: vscode ✓` in the footer and a widget showing the IDE name, workspace, current file, and selection range.
+Pi auto-loads `pi-x-ide` and connects to your IDE. The TUI should display a connected IDE source such as `IDE: vscode ✓` or `IDE: jetbrains ✓` in the footer and a widget showing the IDE name, workspace, current file, and selection range.
 
 **Verify it works:**
 
@@ -109,11 +131,11 @@ Open a file in your IDE and select some text. The widget should update in real t
 IDE: vscode ✓ src/foo.ts#L10-L20 pending
 ```
 
-Attach the selection from either side: press `Ctrl+Alt+K` (Linux/Windows) or `Cmd+Alt+K` (macOS) in a VS Code-family IDE, or focus the Pi TUI and press `Ctrl+Alt+K` / run `/ide attach`. The Pi input box should insert `@src/foo.ts#L10-L20`.
+Attach the selection from either side: press `Ctrl+Alt+K` (Linux/Windows) or `Cmd+Alt+K` (macOS) in a VS Code-family IDE, press `Ctrl+Alt+K` or run **Pi x IDE: Attach Selection** in JetBrains, use `:PiXIdeAttach` in Neovim, or focus the Pi TUI and press `Ctrl+Alt+K` / run `/ide attach`. The Pi input box should insert `@src/foo.ts#L10-L20`.
 
 Type a chat prompt in Pi and submit it. The selected text is injected as LLM context (does not persist in session history). After submission, the widget shows `sent`.
 
-For diagnostics in VS Code-family IDEs, connect Pi first, then place the cursor on an error or warning and open Quick Fix. The **Pi: Fix it** and **Pi: Send diagnostic** actions are shown only while at least one Pi client is connected. **Pi: Fix it** sends the diagnostic message, source range, nearby context lines, and related information to one connected Pi client and starts a diagnostic-analysis turn with a configurable prompt template (see [`fix_prompt`](#pi-side-configuration)). **Pi: Send diagnostic** sends the same context to one connected Pi client and pastes it into Pi's input box without starting a turn.
+For diagnostics in VS Code-family IDEs, connect Pi first, then place the cursor on an error or warning and open Quick Fix. The **Pi: Fix it** and **Pi: Send diagnostic** actions are shown only while at least one Pi client is connected. **Pi: Fix it** sends the diagnostic message, source range, nearby context lines, and related information to one connected Pi client and starts a diagnostic-analysis turn with a configurable prompt template (see [`fix_prompt`](#pi-side-configuration)). **Pi: Send diagnostic** sends the same context to one connected Pi client and pastes it into Pi's input box without starting a turn. JetBrains does not provide diagnostic Quick Fix actions in the MVP.
 
 **If the connection doesn't appear:**
 
@@ -205,14 +227,16 @@ See [schemas/config.json](schemas/config.json) for editor schema guidance. A [co
 
 ### Feature Parity
 
-| Feature                                              | VS Code                 | Zed        | Neovim                        |
-| ---------------------------------------------------- | ----------------------- | ---------- | ----------------------------- |
-| Live file tracking                                   | ✅ Real-time push       | ✅ polling | ✅ Real-time push via sidecar |
-| Live selection tracking                              | ✅ Real-time push       | ✅ polling | ✅ Real-time push via sidecar |
-| IDE context attach shortcut                          | ✅ Default `Ctrl+Alt+K` | ❌         | ✅ Custom configured keymap   |
-| Pi TUI context attach shortcut(default `Ctrl+Alt+K`) | ✅                      | ✅         | ✅                            |
-| LLM context injection                                | ✅                      | ✅         | ✅                            |
-| `/ide auto`                                          | ✅                      | ✅         | ✅                            |
+| Feature                                              | VS Code                 | Zed        | Neovim                        | JetBrains               |
+| ---------------------------------------------------- | ----------------------- | ---------- | ----------------------------- | ----------------------- |
+| Live file tracking                                   | ✅ Real-time push       | ✅ polling | ✅ Real-time push via sidecar | ✅ Real-time push       |
+| Live selection tracking                              | ✅ Real-time push       | ✅ polling | ✅ Real-time push via sidecar | ✅ Real-time push       |
+| IDE context attach shortcut                          | ✅ Default `Ctrl+Alt+K` | ❌         | ✅ Custom configured keymap   | ✅ Default `Ctrl+Alt+K` |
+| Pi TUI context attach shortcut(default `Ctrl+Alt+K`) | ✅                      | ✅         | ✅                            | ✅                      |
+| LLM context injection                                | ✅                      | ✅         | ✅                            | ✅                      |
+| `/ide auto`                                          | ✅                      | ✅         | ✅                            | ✅                      |
+| Diagnostic Quick Fix                                 | ✅                      | ❌         | ❌                            | ❌                      |
+| Auto-install                                         | ✅ VS Code-family only  | N/A        | ❌                            | ❌                      |
 
 ### Lock File Protocol
 
@@ -232,6 +256,7 @@ See [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md) for protocol detail
 - bun ≥ 1.3 (`packageManager` declared as `bun@1.3.14`)
 - VS Code ≥ 1.120.0 (VS Code extension only)
 - Neovim ≥ 0.9 (Neovim plugin only)
+- JDK 21 (JetBrains plugin only; Gradle can download the toolchain automatically)
 
 ### Install & Build
 
@@ -258,6 +283,9 @@ All `bun run` commands have equivalent `mise run` tasks (see `mise.toml`):
 | `bun run typecheck`           | Type-check only (no output files)                                                                                          |
 | `bun run test`                | Build + run unit tests                                                                                                     |
 | `bun run package:vsix`        | Package VS Code extension as VSIX                                                                                          |
+| `bun run compile:jetbrains`   | Compile and test the JetBrains plugin with Gradle                                                                          |
+| `bun run package:jetbrains`   | Package the JetBrains plugin ZIP under `ide-plugins/jetbrains/build/distributions/`                                        |
+| `bun run verify:jetbrains`    | Run IntelliJ Plugin Verifier for the configured target IDE                                                                 |
 | `bun run check:config-schema` | Verify `schemas/config.json` is in sync with the config registry                                                           |
 
 ### Testing the VS Code Extension Locally
@@ -287,6 +315,23 @@ ls -l ~/.pi/pi-x-ide/lock
 ```
 
 You should see a file like `vscode-12345-48123.lock`. If not, run **Developer: Reload Window** in VS Code.
+
+### Testing the JetBrains Plugin Locally
+
+Run a sandbox IDE:
+
+```bash
+cd ide-plugins/jetbrains
+./gradlew runIde
+```
+
+Build the installable plugin ZIP:
+
+```bash
+bun run package:jetbrains
+```
+
+The ZIP is written under `ide-plugins/jetbrains/build/distributions/`. For a smoke test, open this repository in the sandbox IDE, start `pi` from the same directory, open and select text in a local file, then press `Ctrl+Alt+K` or run **Pi x IDE: Attach Selection**. Pi should receive an `@relative/path#Lx-Ly` mention.
 
 ### Release
 

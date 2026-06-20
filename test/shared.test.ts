@@ -235,13 +235,54 @@ void test("validates lock file content", () => {
     ide: "nvim",
     name: "Neovim",
   });
+  assert.deepEqual(parseLockFileContent(JSON.stringify({ ...lock, ide: "jetbrains", name: "Pi x IDE" })), {
+    ...lock,
+    ide: "jetbrains",
+    name: "Pi x IDE",
+  });
   assert.equal(parseLockFileContent(JSON.stringify({ ...lock, ide: "helix" })), undefined);
   assert.equal(parseLockFileContent(JSON.stringify({ ...lock, port: 99999 })), undefined);
+});
+
+void test("validates jetbrains lock file content", () => {
+  const lock: IdeLockFile = {
+    version: 1,
+    ide: "jetbrains",
+    name: "Pi x IDE",
+    transport: "ws",
+    host: "127.0.0.1",
+    port: 48123,
+    authToken: "a".repeat(64),
+    workspaceFolders: ["/repo"],
+    pid: 12345,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  assert.deepEqual(parseLockFileContent(JSON.stringify(lock)), lock);
+  // An unsupported JetBrains-adjacent source string is still rejected.
+  assert.equal(parseLockFileContent(JSON.stringify({ ...lock, ide: "intellij" })), undefined);
 });
 
 void test("validates nvim editor selection snapshots", () => {
   assert.equal(isEditorSelectionSnapshot({ ...snapshot, source: "nvim" }), true);
   assert.equal(isEditorSelectionSnapshot({ ...snapshot, source: "helix" }), false);
+});
+
+void test("validates jetbrains editor selection snapshots", () => {
+  // Non-empty ranges from a local file are accepted.
+  assert.equal(isEditorSelectionSnapshot({ ...snapshot, source: "jetbrains" }), true);
+  // An active file with no selection (empty ranges) is also a valid snapshot.
+  assert.equal(
+    isEditorSelectionSnapshot({
+      source: "jetbrains",
+      filePath: "/repo/src/main.ts",
+      workspaceFolder: "/repo",
+      ranges: [],
+    }),
+    true,
+  );
+  // An unsupported source string is still rejected.
+  assert.equal(isEditorSelectionSnapshot({ ...snapshot, source: "intellij" }), false);
 });
 
 void test("matches workspace relationship", () => {

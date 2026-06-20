@@ -1,3 +1,5 @@
+// ABOUTME: Validates shared Pi x IDE JSON payloads at runtime.
+// ABOUTME: Guards lock files, editor snapshots, diagnostics, and JSON-RPC messages from malformed data.
 import type {
   AtMentionedParams,
   DiagnosticFixRequestedParams,
@@ -28,7 +30,7 @@ function isFiniteNumber(value: unknown): value is number {
 }
 
 function isIdeSource(value: unknown): value is IdeSource {
-  return value === "vscode" || value === "zed" || value === "nvim" || value === "unknown";
+  return value === "vscode" || value === "zed" || value === "nvim" || value === "jetbrains" || value === "unknown";
 }
 
 export function isIdeLockFile(value: unknown): value is IdeLockFile {

@@ -14,7 +14,10 @@
     "vscode",
     "zed",
     "neovim",
-    "nvim"
+    "nvim",
+    "jetbrains",
+    "intellij",
+    "idea"
   ],
   "license": "Apache-2.0",
   "repository": {
@@ -45,12 +48,15 @@
     "format:check": "prettier --check .",
     "compile": "tsc -p tsconfig.json",
     "compile:vsix": "bun run --filter './ide-plugins/vscode' compile",
+    "compile:jetbrains": "cd ide-plugins/jetbrains && ./gradlew test",
     "sync:vsix-assets": "bun run --filter './ide-plugins/vscode' sync:assets",
     "package:vsix": "bun run --filter './ide-plugins/vscode' package",
+    "package:jetbrains": "cd ide-plugins/jetbrains && ./gradlew buildPlugin",
+    "verify:jetbrains": "cd ide-plugins/jetbrains && ./gradlew verifyPlugin",
     "package:nvim-sidecar": "bun run scripts/build-nvim-sidecar.mjs --production",
     "package:nvim-sidecar:all": "bun run scripts/build-nvim-sidecar.mjs --production --target=all",
     "build": "bun run compile && bun run compile:vsix && bun run package:nvim-sidecar",
-    "build:all": "bun run compile && bun run compile:vsix && bun run package:nvim-sidecar:all"
+    "build:all": "bun run compile && bun run compile:vsix && bun run package:nvim-sidecar:all && bun run package:jetbrains"
   },
   "dependencies": {
     "ws": "^8.21.0"
