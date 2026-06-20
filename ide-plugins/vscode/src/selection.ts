@@ -1,8 +1,8 @@
 // ABOUTME: Converts VS Code editor selections into Pi IDE context snapshots.
 // ABOUTME: Tracks active editor state and publishes selection changes to connected clients.
 import * as vscode from "vscode";
-import type { EditorSelectionSnapshot, SelectionRange } from "../../../src/shared/protocol";
-import { formatRangeMention } from "../../../src/shared/format";
+import type { EditorSelectionSnapshot, SelectionRange } from "@shared/protocol";
+import { formatRangeMention } from "@shared/format";
 
 let cachedSelectionSnapshot: EditorSelectionSnapshot | undefined;
 

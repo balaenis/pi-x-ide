@@ -8,8 +8,8 @@ import type {
   IdeDiagnosticCode,
   IdeDiagnosticRelatedInformation,
   Position,
-} from "../../../src/shared/protocol";
-import { errorMessage, logExtensionError, safeRun } from "../../../src/shared/errors";
+} from "@shared/protocol";
+import { errorMessage, logExtensionError, safeRun } from "@shared/errors";
 import type { IdeWebSocketServer } from "./server";
 
 export const FIX_WITH_PI_COMMAND = "pi-x-ide.fixWithPiSuggest";

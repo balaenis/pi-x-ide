@@ -1,7 +1,7 @@
 // ABOUTME: Adapts shared lock-file helpers for the VS Code extension runtime.
 // ABOUTME: Collects workspace folders and writes connection metadata for Pi discovery.
 import * as vscode from "vscode";
-import type { IdeLockFile } from "../../../src/shared/protocol";
+import type { IdeLockFile } from "@shared/protocol";
 import {
   createAuthToken,
   createIdeLockFile,
@@ -9,7 +9,7 @@ import {
   refreshIdeLockFile,
   removeIdeLockFile,
   writeIdeLockFile,
-} from "../../../src/shared/lock-file";
+} from "@shared/lock-file";
 
 export { createAuthToken, removeIdeLockFile, writeIdeLockFile };
 

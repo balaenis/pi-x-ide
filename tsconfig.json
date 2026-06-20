@@ -3,6 +3,9 @@
     "target": "ES2022",
     "module": "Node16",
     "moduleResolution": "node16",
+    "paths": {
+      "@shared/*": ["./src/shared/*"]
+    },
     "lib": ["ES2022"],
     "rootDir": ".",
     "outDir": "dist",

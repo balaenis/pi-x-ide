@@ -1,9 +1,9 @@
 // ABOUTME: Starts the VS Code-side pi-x-ide WebSocket bridge and lock-file lifecycle.
 // ABOUTME: Publishes editor selections to Pi while containing extension-host callback failures.
 import * as vscode from "vscode";
-import { PROTOCOL_VERSION } from "../../../src/shared/protocol";
-import { formatRangeMention } from "../../../src/shared/format";
-import { errorMessage, logExtensionError, safeRun, safeRunAsync } from "../../../src/shared/errors";
+import { PROTOCOL_VERSION } from "@shared/protocol";
+import { formatRangeMention } from "@shared/format";
+import { errorMessage, logExtensionError, safeRun, safeRunAsync } from "@shared/errors";
 import { registerDiagnosticQuickFixes } from "./diagnostics";
 import {
   createAuthToken,
