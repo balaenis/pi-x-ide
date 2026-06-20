@@ -1,8 +1,5 @@
 node_modules/
 dist/
-ide-plugins/vscode/out/
-ide-plugins/vscode/dist/
-ide-plugins/vscode/assets/icons/
 *.vsix
 .DS_Store
 .pi*
@@ -12,8 +9,3 @@ nul
 .claude
 CLAUDE.md
 docs/drafts/
-
-# nvim sidecar platform binaries (built by bun build --compile)
-ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-linux-*
-ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-darwin-*
-ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-windows-*
