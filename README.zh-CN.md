@@ -48,14 +48,18 @@ x64 或 arm64），并在写入缓存前用 release asset 的 SHA-256 digest 做
 或校验失败、或无匹配二进制时，插件降级到内置的 Node.js sidecar — 此时需要
 PATH 中有 Node.js。
 
-二进制文件缓存在 `stdpath("cache")/pi-x-ide/` 目录，后续启动直接复用。插件
-更新后会触发一次重新下载。
+下载的二进制文件缓存在 `stdpath("cache")/pi-x-ide/` 目录，后续启动直接复用。可选的
+lazy.nvim build 钩子会优先使用插件包内的 bundled binary；如果不存在，则在安装和更新时检查 release digest，仅在缓存二进制缺失或过期时下载。
 
 **lazy.nvim：**
 
 ```lua
 {
   "balaenis/pi-x-ide",
+  build = function(plugin)
+    vim.opt.rtp:prepend(plugin.dir .. "/ide-plugins/nvim")
+    require("pi_x_ide.download").run({ refresh = true })
+  end,
   init = function(plugin)
     vim.opt.rtp:prepend(plugin.dir .. "/ide-plugins/nvim")
   end,
@@ -67,6 +71,8 @@ PATH 中有 Node.js。
 ```
 
 > **注意：** `init` 块手动将 `ide-plugins/nvim/` 子目录加入 runtime path，以规避部分版本 lazy.nvim 的 Lua 模块解析兼容性问题。插件选项通过 lazy.nvim 推荐的 `opts` 字段传入。
+>
+> 可选的 `build` 钩子会优先使用插件包内的 bundled sidecar 二进制；如果不存在，则在安装/更新时检查 GitHub Release asset digest（用 `:Lazy build pi-x-ide` 可重新触发），仅在缓存二进制缺失或过期时下载。该钩子可以省略：插件仍会在首次启动时按需下载二进制，下载不可用时回退到 Node.js sidecar。
 
 **原生 package：**
 

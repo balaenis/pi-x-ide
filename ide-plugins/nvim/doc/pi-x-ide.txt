@@ -15,6 +15,10 @@ With lazy.nvim:
 >
   {
     "balaenis/pi-x-ide",
+    build = function(plugin)
+        vim.opt.rtp:prepend(plugin.dir .. "/ide-plugins/nvim")
+        require("pi_x_ide.download").run({ refresh = true })
+    end,
     init = function(plugin)
         vim.opt.rtp:prepend(plugin.dir .. "/ide-plugins/nvim")
     end,
@@ -28,7 +32,9 @@ With lazy.nvim:
 Note: The `init` block manually adds the `ide-plugins/nvim/` subdirectory to the runtime
 path. This avoids a Lua module resolution issue with lazy.nvim's `rtp` option
 on some versions. Plugin options are passed through lazy.nvim's recommended
-`opts` field.
+`opts` field. The optional `build` hook uses the bundled sidecar binary when
+present; otherwise it checks the GitHub Release asset digest on install/update
+and downloads only when the cached binary is missing or stale.
 
 With native packages, clone the repository into a `pack/*/start` directory and
 add the `ide-plugins/nvim` subdirectory to your runtime path before setup:
@@ -43,8 +49,10 @@ Windows, x64 or arm64).  If the download fails, or no binary matches your
 platform, the plugin falls back to `node <plugin-root>/bin/pi-x-ide-nvim-
 sidecar.cjs`, which requires Node.js on PATH.
 
-The binary is cached under `stdpath("cache")/pi-x-ide/` and reused on subsequent
-starts.  Plugin updates trigger a one-time re-download.
+Downloaded binaries are cached under `stdpath("cache")/pi-x-ide/` and reused on
+subsequent starts.  The optional lazy.nvim build hook uses the bundled binary
+when present; otherwise it checks the release digest on install and update,
+downloading only when the cached binary is missing or stale.
 
 ===============================================================================
 COMMANDS                                               *pi-x-ide-commands*
