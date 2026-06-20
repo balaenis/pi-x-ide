@@ -111,7 +111,7 @@ If you have version numbers in other files beyond `package.json`, configure them
     },
     {
       "type": "json",
-      "path": "vscode/package.json",
+      "path": "ide-plugins/vscode/package.json",
       "jsonpath": "$.version"
     }
   ]

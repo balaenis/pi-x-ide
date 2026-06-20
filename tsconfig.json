@@ -14,5 +14,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts", "test/**/*.ts"],
-  "exclude": ["node_modules", "dist", "vscode/out"]
+  "exclude": ["node_modules", "dist", "ide-plugins/vscode/out"]
 }

@@ -1,10 +1,12 @@
+// ABOUTME: Synchronizes shared repository icons into the VS Code extension package.
+// ABOUTME: Keeps marketplace assets aligned with the root project branding files.
 import { mkdirSync, copyFileSync, existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const extensionDir = dirname(scriptDir);
-const repoRoot = dirname(extensionDir);
+const repoRoot = dirname(dirname(extensionDir));
 
 /** @type {Array<{ source: string; destination: string }>} */
 const assets = [

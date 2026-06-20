@@ -1,3 +1,5 @@
+-- ABOUTME: Provides lightweight Neovim plugin-loader commands for Pi x IDE.
+-- ABOUTME: Defers full plugin setup until users call setup or start commands.
 if vim.g.loaded_pi_x_ide == 1 then
   return
 end

@@ -62,7 +62,7 @@ jobs:
         run: |
           TAG_VERSION="${TAG_NAME#v}"
           ROOT_VERSION="$(node -p "require('./package.json').version")"
-          VSCODE_VERSION="$(node -p "require('./vscode/package.json').version")"
+          VSCODE_VERSION="$(node -p "require('./ide-plugins/vscode/package.json').version")"
 
           if [ "$ROOT_VERSION" != "$TAG_VERSION" ]; then
             echo "::error::Root package version ($ROOT_VERSION) does not match release tag ($TAG_NAME)."
@@ -81,7 +81,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.process.outputs.tag_name }}
-          files: vscode/dist/*.vsix
+          files: ide-plugins/vscode/dist/*.vsix
 
       - name: Azure login
         uses: azure/login@v3
@@ -92,7 +92,7 @@ jobs:
 
       - name: Publish to VS Code Marketplace
         run: |
-          VSIX_FILE=$(ls vscode/dist/*.vsix | head -1)
+          VSIX_FILE=$(ls ide-plugins/vscode/dist/*.vsix | head -1)
           echo "Publishing $VSIX_FILE to VS Code Marketplace..."
           npx @vscode/vsce publish --azure-credential --packagePath "$VSIX_FILE"
 
@@ -119,8 +119,8 @@ jobs:
         with:
           tag_name: ${{ needs.process.outputs.tag_name }}
           files: |
-            nvim/bin/pi-x-ide-nvim-sidecar-linux-x64
-            nvim/bin/pi-x-ide-nvim-sidecar-linux-arm64
-            nvim/bin/pi-x-ide-nvim-sidecar-darwin-x64
-            nvim/bin/pi-x-ide-nvim-sidecar-darwin-arm64
-            nvim/bin/pi-x-ide-nvim-sidecar-windows-x64.exe
+            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-linux-x64
+            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-linux-arm64
+            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-darwin-x64
+            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-darwin-arm64
+            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-windows-x64.exe

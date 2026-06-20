@@ -1,3 +1,5 @@
+-- ABOUTME: Implements the Neovim plugin bridge that sends editor context to Pi.
+-- ABOUTME: Manages sidecar startup, selection snapshots, commands, and keymaps.
 local M = {}
 
 local state = {

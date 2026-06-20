@@ -1,10 +1,12 @@
+// ABOUTME: Builds the Neovim sidecar bundle and standalone binaries.
+// ABOUTME: Writes generated artifacts into the Neovim IDE plugin directory.
 import { chmod, mkdir } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import * as esbuild from "esbuild";
 
 const production = process.argv.includes("--production");
-const cjsOutfile = "nvim/bin/pi-x-ide-nvim-sidecar.cjs";
-const outdir = "nvim/bin";
+const cjsOutfile = "ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar.cjs";
+const outdir = "ide-plugins/nvim/bin";
 /** TypeScript entry point (used for both CJS bundle and direct binary compilation). */
 const entryPoint = "src/nvim/sidecar.ts";
 
@@ -17,6 +19,9 @@ await mkdir(outdir, { recursive: true });
 
 await esbuild.build({
   entryPoints: [entryPoint],
+  banner: {
+    js: "// ABOUTME: Bundles the Neovim sidecar runtime for plugin-managed execution.\n// ABOUTME: Bridges Neovim stdin messages to Pi through the shared IDE protocol.",
+  },
   bundle: true,
   platform: "node",
   format: "cjs",

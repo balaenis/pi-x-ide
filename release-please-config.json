@@ -1,11 +1,11 @@
 {
   "packages": {
     ".": {
-      "exclude-paths": ["nvim"],
+      "exclude-paths": ["ide-plugins/nvim"],
       "extra-files": [
         {
           "type": "json",
-          "path": "vscode/package.json",
+          "path": "ide-plugins/vscode/package.json",
           "jsonpath": "$.version"
         }
       ]

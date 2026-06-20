@@ -58,7 +58,7 @@ starts. Plugin updates trigger a one-time re-download.
 {
   "balaenis/pi-x-ide",
   init = function(plugin)
-    vim.opt.rtp:prepend(plugin.dir .. "/nvim")
+    vim.opt.rtp:prepend(plugin.dir .. "/ide-plugins/nvim")
   end,
   main = "pi_x_ide",
   opts = {
@@ -67,12 +67,12 @@ starts. Plugin updates trigger a one-time re-download.
 }
 ```
 
-> **Note:** The `init` block manually adds the `nvim/` subdirectory to the runtime path to avoid a Lua module resolution issue with some lazy.nvim versions. The plugin options are passed through lazy.nvim's recommended `opts` field.
+> **Note:** The `init` block manually adds the `ide-plugins/nvim/` subdirectory to the runtime path to avoid a Lua module resolution issue with some lazy.nvim versions. The plugin options are passed through lazy.nvim's recommended `opts` field.
 
 **Native package:**
 
 ```vim
-set runtimepath+=/path/to/pi-x-ide/nvim
+set runtimepath+=/path/to/pi-x-ide/ide-plugins/nvim
 lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
 ```
 
@@ -239,13 +239,13 @@ pi -e ./src/pi/index.ts
 
 All `bun run` commands have equivalent `mise run` tasks (see `mise.toml`):
 
-| Command                       | Description                                                                                        |
-| ----------------------------- | -------------------------------------------------------------------------------------------------- |
-| `bun run build`               | Build Pi-side TypeScript → `dist/` + Neovim sidecar → `nvim/bin/` + VS Code bundle → `vscode/out/` |
-| `bun run typecheck`           | Type-check only (no output files)                                                                  |
-| `bun run test`                | Build + run unit tests                                                                             |
-| `bun run package:vsix`        | Package VS Code extension as VSIX                                                                  |
-| `bun run check:config-schema` | Verify `schemas/config.json` is in sync with the config registry                                   |
+| Command                       | Description                                                                                                                |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `bun run build`               | Build Pi-side TypeScript → `dist/` + Neovim sidecar → `ide-plugins/nvim/bin/` + VS Code bundle → `ide-plugins/vscode/out/` |
+| `bun run typecheck`           | Type-check only (no output files)                                                                                          |
+| `bun run test`                | Build + run unit tests                                                                                                     |
+| `bun run package:vsix`        | Package VS Code extension as VSIX                                                                                          |
+| `bun run check:config-schema` | Verify `schemas/config.json` is in sync with the config registry                                                           |
 
 ### Testing the VS Code Extension Locally
 
@@ -262,7 +262,7 @@ All `bun run` commands have equivalent `mise run` tasks (see `mise.toml`):
 
 ```bash
 bun run package:vsix
-cd vscode && code --install-extension dist/pi-x-ide-$(node -p "require('./package.json').version").vsix
+cd ide-plugins/vscode && code --install-extension dist/pi-x-ide-$(node -p "require('./package.json').version").vsix
 ```
 
 The extension installed this way runs in all VS Code windows, independent of the F5 Extension Host.

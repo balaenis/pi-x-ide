@@ -1,12 +1,12 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "..",
+    "rootDir": "../..",
     "outDir": "out",
     "declaration": false,
     "sourceMap": true,
     "types": ["node", "vscode"]
   },
-  "include": ["src/**/*.ts", "../src/shared/**/*.ts"],
+  "include": ["src/**/*.ts", "../../src/shared/**/*.ts"],
   "exclude": ["node_modules", "out"]
 }

@@ -57,7 +57,7 @@ PATH 中有 Node.js。
 {
   "balaenis/pi-x-ide",
   init = function(plugin)
-    vim.opt.rtp:prepend(plugin.dir .. "/nvim")
+    vim.opt.rtp:prepend(plugin.dir .. "/ide-plugins/nvim")
   end,
   main = "pi_x_ide",
   opts = {
@@ -66,12 +66,12 @@ PATH 中有 Node.js。
 }
 ```
 
-> **注意：** `init` 块手动将 `nvim/` 子目录加入 runtime path，以规避部分版本 lazy.nvim 的 Lua 模块解析兼容性问题。插件选项通过 lazy.nvim 推荐的 `opts` 字段传入。
+> **注意：** `init` 块手动将 `ide-plugins/nvim/` 子目录加入 runtime path，以规避部分版本 lazy.nvim 的 Lua 模块解析兼容性问题。插件选项通过 lazy.nvim 推荐的 `opts` 字段传入。
 
 **原生 package：**
 
 ```vim
-set runtimepath+=/path/to/pi-x-ide/nvim
+set runtimepath+=/path/to/pi-x-ide/ide-plugins/nvim
 lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
 ```
 
@@ -237,13 +237,13 @@ pi -e ./src/pi/index.ts
 
 所有 `bun run` 命令都有等效的 `mise run` 任务（见 `mise.toml`）：
 
-| 命令                          | 说明                                                                                            |
-| ----------------------------- | ----------------------------------------------------------------------------------------------- |
-| `bun run build`               | 编译 Pi 侧 TypeScript → `dist/` + Neovim sidecar → `nvim/bin/` + VS Code bundle → `vscode/out/` |
-| `bun run typecheck`           | 类型检查（不产出文件）                                                                          |
-| `bun run test`                | 编译 + 运行单元测试                                                                             |
-| `bun run package:vsix`        | 打包 VS Code 扩展为 VSIX                                                                        |
-| `bun run check:config-schema` | 验证 `schemas/config.json` 与配置注册表是否同步                                                 |
+| 命令                          | 说明                                                                                                                    |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `bun run build`               | 编译 Pi 侧 TypeScript → `dist/` + Neovim sidecar → `ide-plugins/nvim/bin/` + VS Code bundle → `ide-plugins/vscode/out/` |
+| `bun run typecheck`           | 类型检查（不产出文件）                                                                                                  |
+| `bun run test`                | 编译 + 运行单元测试                                                                                                     |
+| `bun run package:vsix`        | 打包 VS Code 扩展为 VSIX                                                                                                |
+| `bun run check:config-schema` | 验证 `schemas/config.json` 与配置注册表是否同步                                                                         |
 
 ### 本地测试 VS Code 扩展
 
@@ -260,7 +260,7 @@ pi -e ./src/pi/index.ts
 
 ```bash
 bun run package:vsix
-cd vscode && code --install-extension dist/pi-x-ide-$(node -p "require('./package.json').version").vsix
+cd ide-plugins/vscode && code --install-extension dist/pi-x-ide-$(node -p "require('./package.json').version").vsix
 ```
 
 这样安装的扩展在所有 VS Code 窗口中运行，不依赖 F5 Extension Host。

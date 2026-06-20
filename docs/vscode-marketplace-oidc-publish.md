@@ -56,7 +56,7 @@ https://marketplace.visualstudio.com/manage
 
 - Publisher ID 是扩展清单里的 `publisher` 字段。
 - Publisher ID 不是展示名，不能随便填带空格的人类可读名称。
-- 创建后需要把 `vscode/package.json` 里的字段改成实际 Publisher ID：
+- 创建后需要把 `ide-plugins/vscode/package.json` 里的字段改成实际 Publisher ID：
 
 ```json
 {
@@ -265,7 +265,7 @@ permissions:
 
 - name: Publish to VS Code Marketplace
   run: |
-    VSIX_FILE=$(ls vscode/dist/*.vsix | head -1)
+    VSIX_FILE=$(ls ide-plugins/vscode/dist/*.vsix | head -1)
     echo "Publishing $VSIX_FILE to VS Code Marketplace..."
     npx @vscode/vsce publish --azure-credential --packagePath "$VSIX_FILE"
 ```
@@ -378,7 +378,7 @@ https://marketplace.visualstudio.com/
       --resource 499b84ac-1321-427f-aa17-267ca6975798 \
       --query accessToken -o tsv)"
 
-    VSIX_FILE=$(ls vscode/dist/*.vsix | head -1)
+    VSIX_FILE=$(ls ide-plugins/vscode/dist/*.vsix | head -1)
     npx @vscode/vsce publish --pat "$VSCE_TOKEN" --packagePath "$VSIX_FILE"
 ```
 
@@ -396,7 +396,7 @@ https://marketplace.visualstudio.com/
 2. `azure/login` 是否使用了正确 `AZURE_CLIENT_ID`。
 3. `profiles/me` 返回的 `id` 是否已加入 Publisher Members。
 4. 角色是否为 `Contributor`。
-5. `vscode/package.json` 里的 `publisher` 是否等于 Marketplace Publisher ID。
+5. `ide-plugins/vscode/package.json` 里的 `publisher` 是否等于 Marketplace Publisher ID。
 
 ### `Invalid publisher name`
 
@@ -445,6 +445,6 @@ https://marketplace.visualstudio.com/
 ```
 
 2. 保留 release workflow 中的正式发布步骤。
-3. 确认 `vscode/package.json` 的 `publisher` 字段已改成真实 Publisher ID。
+3. 确认 `ide-plugins/vscode/package.json` 的 `publisher` 字段已改成真实 Publisher ID。
 4. 用 `vsce verify-pat <publisher-id> --azure-credential` 验证权限。
 5. 触发一次 release，确认 `.vsix` 上传到 GitHub Release，并发布到 VS Code Marketplace。

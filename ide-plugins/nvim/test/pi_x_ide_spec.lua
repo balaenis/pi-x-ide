@@ -1,3 +1,5 @@
+-- ABOUTME: Exercises Neovim plugin selection extraction and command behavior.
+-- ABOUTME: Runs headless Lua assertions for Pi x IDE integration semantics.
 local pi = require("pi_x_ide")
 
 local function assert_equal(actual, expected, message)

@@ -1,3 +1,5 @@
+// ABOUTME: Bundles the VS Code extension entry point with esbuild.
+// ABOUTME: Produces the CommonJS extension artifact consumed by VS Code.
 import * as esbuild from "esbuild";
 
 const production = process.argv.includes("--production");

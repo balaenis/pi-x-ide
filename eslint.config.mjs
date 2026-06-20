@@ -1,3 +1,5 @@
+// ABOUTME: Configures ESLint rules for the Pi x IDE package and IDE plugins.
+// ABOUTME: Defines TypeScript, JavaScript, and generated-output lint boundaries.
 // @ts-check
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
@@ -20,8 +22,8 @@ export default defineConfig(
             "*.mjs",
             "scripts/*.cjs",
             "scripts/*.mjs",
-            "vscode/*.mjs",
-            "vscode/scripts/*.mjs",
+            "ide-plugins/vscode/*.mjs",
+            "ide-plugins/vscode/scripts/*.mjs",
           ],
           /* Node utility scripts are not under a tsconfig root, so we whitelist them explicitly */
         },
@@ -36,7 +38,7 @@ export default defineConfig(
 
   // ---- Node.js JavaScript utility scripts ----
   {
-    files: ["*.mjs", "scripts/**/*.mjs", "scripts/*.cjs", "vscode/**/*.mjs"],
+    files: ["*.mjs", "scripts/**/*.mjs", "scripts/*.cjs", "ide-plugins/vscode/**/*.mjs"],
     languageOptions: {
       globals: {
         __dirname: "readonly",
@@ -69,12 +71,12 @@ export default defineConfig(
 
   // ---- vscode workspace files ----
   {
-    files: ["vscode/src/**/*.ts"],
+    files: ["ide-plugins/vscode/src/**/*.ts"],
     languageOptions: {
       parserOptions: {
         projectService: {
           allowDefaultProject: [],
-          defaultProject: "vscode/tsconfig.json",
+          defaultProject: "ide-plugins/vscode/tsconfig.json",
         },
       },
     },
@@ -94,6 +96,13 @@ export default defineConfig(
 
   // ---- Global ignores ----
   {
-    ignores: ["dist/", "nvim/bin/", "vscode/out/", "vscode/dist/", "node_modules/", ".pi/"],
+    ignores: [
+      "dist/",
+      "ide-plugins/nvim/bin/",
+      "ide-plugins/vscode/out/",
+      "ide-plugins/vscode/dist/",
+      "node_modules/",
+      ".pi/",
+    ],
   },
 );

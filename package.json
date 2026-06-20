@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/balaenis/pi-x-ide#readme",
   "workspaces": [
-    "vscode"
+    "ide-plugins/vscode"
   ],
   "packageManager": "bun@1.3.14",
   "engines": {
@@ -35,7 +35,7 @@
   "type": "commonjs",
   "main": "./dist/src/pi/index.js",
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json --noEmit && bun run --filter './vscode' typecheck",
+    "typecheck": "tsc -p tsconfig.json --noEmit && bun run --filter './ide-plugins/vscode' typecheck",
     "generate:config-schema": "bun run scripts/generate-config-schema.cjs",
     "check:config-schema": "bun run scripts/generate-config-schema.cjs --check",
     "test": "bun run check:config-schema && bun run compile && node --test dist/test/*.test.js",
@@ -44,9 +44,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "compile": "tsc -p tsconfig.json",
-    "compile:vsix": "bun run --filter './vscode' compile",
-    "sync:vsix-assets": "bun run --filter './vscode' sync:assets",
-    "package:vsix": "bun run --filter './vscode' package",
+    "compile:vsix": "bun run --filter './ide-plugins/vscode' compile",
+    "sync:vsix-assets": "bun run --filter './ide-plugins/vscode' sync:assets",
+    "package:vsix": "bun run --filter './ide-plugins/vscode' package",
     "package:nvim-sidecar": "bun run scripts/build-nvim-sidecar.mjs --production",
     "package:nvim-sidecar:all": "bun run scripts/build-nvim-sidecar.mjs --production --target=all",
     "build": "bun run compile && bun run compile:vsix && bun run package:nvim-sidecar",

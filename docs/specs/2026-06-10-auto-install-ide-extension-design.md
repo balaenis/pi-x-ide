@@ -32,8 +32,8 @@
 ## Constraints and Assumptions
 
 - 当前仓库中 Pi 端通过 `~/.pi/pi-x-ide/*.lock` 发现已运行的 IDE 扩展；如果扩展尚未安装，则不会有 lock file 可发现。
-- `vscode/package.json` 中扩展 ID 为 `balaenis.pi-x-ide`，当前版本与根 `package.json` 版本保持一致。
-- 发布后的 Pi npm 包不应依赖 `vscode/` 源目录存在，因此目标版本应来自根包版本或构建期生成的常量，而不是运行时读取 `vscode/package.json`。
+- `ide-plugins/vscode/package.json` 中扩展 ID 为 `balaenis.pi-x-ide`，当前版本与根 `package.json` 版本保持一致。
+- 发布后的 Pi npm 包不应依赖 `ide-plugins/vscode/` 源目录存在，因此目标版本应来自根包版本或构建期生成的常量，而不是运行时读取 `ide-plugins/vscode/package.json`。
 - VS Code 官方 CLI 支持：
 
 ```bash
@@ -141,7 +141,7 @@ balaenis.pi-x-ide@1.0.5
 - 已安装版本等于或高于目标版本：跳过安装。
 - 版本无法解析：自动安装阶段保守跳过或记录 warning；手动安装阶段允许用户确认后使用 `--force`。
 
-目标版本应与发布包版本一致。实现时推荐从根包版本或构建期常量读取，避免发布包中缺少 `vscode/package.json` 导致运行时失败。
+目标版本应与发布包版本一致。实现时推荐从根包版本或构建期常量读取，避免发布包中缺少 `ide-plugins/vscode/package.json` 导致运行时失败。
 
 ### Install execution
 

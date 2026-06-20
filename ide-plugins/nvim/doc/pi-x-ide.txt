@@ -16,7 +16,7 @@ With lazy.nvim:
   {
     "balaenis/pi-x-ide",
     init = function(plugin)
-        vim.opt.rtp:prepend(plugin.dir .. "/nvim")
+        vim.opt.rtp:prepend(plugin.dir .. "/ide-plugins/nvim")
     end,
     main = "pi_x_ide",
     opts = {
@@ -25,15 +25,15 @@ With lazy.nvim:
   }
 <
 
-Note: The `init` block manually adds the `nvim/` subdirectory to the runtime
+Note: The `init` block manually adds the `ide-plugins/nvim/` subdirectory to the runtime
 path. This avoids a Lua module resolution issue with lazy.nvim's `rtp` option
 on some versions. Plugin options are passed through lazy.nvim's recommended
 `opts` field.
 
 With native packages, clone the repository into a `pack/*/start` directory and
-add the `nvim` subdirectory to your runtime path before setup:
+add the `ide-plugins/nvim` subdirectory to your runtime path before setup:
 >
-  set runtimepath+=/path/to/pi-x-ide/nvim
+  set runtimepath+=/path/to/pi-x-ide/ide-plugins/nvim
   lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
 <
 
@@ -90,7 +90,7 @@ TROUBLESHOOTING                                 *pi-x-ide-troubleshooting*
 
 No `nvim-*.lock` file appears under `~/.pi/pi-x-ide/`:
     Run `:PiXIdeStatus`.  The binary is cached at `stdpath("cache")/pi-x-ide/`
-    or bundled at `<plugin>/nvim/bin/`.  If neither is found, the plugin
+    or bundled at `<plugin>/ide-plugins/nvim/bin/`.  If neither is found, the plugin
     auto-downloads from GitHub Releases on first start (requires curl or wget).
     Use `sidecar_cmd` to set an explicit Node.js command as a fallback.
 
@@ -109,9 +109,9 @@ Selection is not attached:
 
 module 'pi_x_ide' not found with lazy.nvim:
     Some lazy.nvim versions fail to update Lua's package.path when `rtp` is
-    used. Replace `rtp = "nvim"` with an `init` block that prepends the path:
+    used. Replace `rtp = "ide-plugins/nvim"` with an `init` block that prepends the path:
 >
       init = function()
-        vim.opt.rtp:prepend(vim.fn.stdpath("data") .. "/lazy/pi-x-ide/nvim")
+        vim.opt.rtp:prepend(vim.fn.stdpath("data") .. "/lazy/pi-x-ide/ide-plugins/nvim")
       end,
 <
