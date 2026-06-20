@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1](https://github.com/balaenis/pi-x-ide/compare/v1.13.0...v1.13.1) (2026-06-20)
+
+
+### Bug Fixes
+
+* **vscode:** run pi through login shell in tmux terminal ([bee8563](https://github.com/balaenis/pi-x-ide/commit/bee8563bfde5623eb08d1db40260e50ea6ff2d94))
+
 ## [1.13.0](https://github.com/balaenis/pi-x-ide/compare/v1.12.0...v1.13.0) (2026-06-19)
 
 
