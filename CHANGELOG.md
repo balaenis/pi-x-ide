@@ -1,17 +1,21 @@
 # Changelog
 
-## [1.13.0](https://github.com/balaenis/pi-x-ide/compare/v1.12.0...v1.13.0) (2026-06-19)
-
-
-### Features
-
-* add error containment boundaries across all extension entry points ([064e725](https://github.com/balaenis/pi-x-ide/commit/064e72589f18979e57024166692627de7464edf0))
-
+## [1.13.1](https://github.com/balaenis/pi-x-ide/compare/v1.13.0...v1.13.1) (2026-06-20)
 
 ### Bug Fixes
 
-* guard stale extension context callbacks ([316b1c1](https://github.com/balaenis/pi-x-ide/commit/316b1c1cea974229c8bef94a94d105b31cc76796))
-* **pi:** guard stale connection callbacks and extension ctx errors ([094975c](https://github.com/balaenis/pi-x-ide/commit/094975c0081a48fb08ae226f4d8f64b5b38b5084))
+- **vscode:** run pi through login shell in tmux terminal ([bee8563](https://github.com/balaenis/pi-x-ide/commit/bee8563bfde5623eb08d1db40260e50ea6ff2d94))
+
+## [1.13.0](https://github.com/balaenis/pi-x-ide/compare/v1.12.0...v1.13.0) (2026-06-19)
+
+### Features
+
+- add error containment boundaries across all extension entry points ([064e725](https://github.com/balaenis/pi-x-ide/commit/064e72589f18979e57024166692627de7464edf0))
+
+### Bug Fixes
+
+- guard stale extension context callbacks ([316b1c1](https://github.com/balaenis/pi-x-ide/commit/316b1c1cea974229c8bef94a94d105b31cc76796))
+- **pi:** guard stale connection callbacks and extension ctx errors ([094975c](https://github.com/balaenis/pi-x-ide/commit/094975c0081a48fb08ae226f4d8f64b5b38b5084))
 
 ## [1.12.0](https://github.com/balaenis/pi-x-ide/compare/v1.11.1...v1.12.0) (2026-06-16)
 
