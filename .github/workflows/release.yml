@@ -124,3 +124,44 @@ jobs:
             ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-darwin-x64
             ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-darwin-arm64
             ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-windows-x64.exe
+
+  build-jetbrains-plugin:
+    needs: process
+    runs-on: ubuntu-latest
+    if: needs.process.outputs.releases_created == 'true'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.process.outputs.tag_name }}
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: jdx/mise-action@v4
+        with:
+          install: true
+          cache: true
+          experimental: true
+
+      - name: Verify JetBrains plugin version
+        env:
+          TAG_NAME: ${{ needs.process.outputs.tag_name }}
+        run: |
+          TAG_VERSION="${TAG_NAME#v}"
+          JETBRAINS_VERSION="$(sed -n 's/^pluginVersion=\([^ ]*\).*/\1/p' ide-plugins/jetbrains/gradle.properties)"
+
+          if [ "$JETBRAINS_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::JetBrains plugin version ($JETBRAINS_VERSION) does not match release tag ($TAG_NAME)."
+            exit 1
+          fi
+
+      - name: Build JetBrains plugin ZIP
+        run: mise run package:jetbrains
+
+      - name: Upload JetBrains plugin to release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.process.outputs.tag_name }}
+          files: ide-plugins/jetbrains/build/distributions/*.zip

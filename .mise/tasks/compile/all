@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Compile all IDE extensions for local debugging"
+#MISE depends=["setup"]
+set -euo pipefail
+
+mise run --skip-deps compile
+mise run --skip-deps compile:vsix
+mise run --skip-deps compile:jetbrains

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Lint the project"
+#MISE depends=["setup"]
+set -euo pipefail
+
+bunx eslint .

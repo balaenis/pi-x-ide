@@ -279,8 +279,8 @@ Clone the repository, then build:
 ```bash
 git clone https://github.com/balaenis/pi-x-ide.git
 cd pi-x-ide
-bun install
-bun run build
+mise run setup
+mise run build
 ```
 
 To load the local build without installing globally:
@@ -289,18 +289,18 @@ To load the local build without installing globally:
 pi -e ./src/pi/index.ts
 ```
 
-All `bun run` commands have equivalent `mise run` tasks (see `mise.toml`):
+All build and check commands are defined as `mise run` tasks (see `.mise/tasks/`):
 
-| Command                       | Description                                                                                                                |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `bun run build`               | Build Pi-side TypeScript → `dist/` + Neovim sidecar → `ide-plugins/nvim/bin/` + VS Code bundle → `ide-plugins/vscode/out/` |
-| `bun run typecheck`           | Type-check only (no output files)                                                                                          |
-| `bun run test`                | Build + run unit tests                                                                                                     |
-| `bun run package:vsix`        | Package VS Code extension as VSIX                                                                                          |
-| `bun run compile:jetbrains`   | Compile and test the JetBrains plugin with Gradle                                                                          |
-| `bun run package:jetbrains`   | Package the JetBrains plugin ZIP under `ide-plugins/jetbrains/build/distributions/`                                        |
-| `bun run verify:jetbrains`    | Run IntelliJ Plugin Verifier for the configured target IDE                                                                 |
-| `bun run check:config-schema` | Verify `schemas/config.json` is in sync with the config registry                                                           |
+| Command                        | Description                                                                                                                |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `mise run build`               | Build Pi-side TypeScript → `dist/` + Neovim sidecar → `ide-plugins/nvim/bin/` + VS Code bundle → `ide-plugins/vscode/out/` |
+| `mise run typecheck`           | Type-check only (no output files)                                                                                          |
+| `mise run test`                | Build + run unit tests                                                                                                     |
+| `mise run package:vsix`        | Package VS Code extension as VSIX                                                                                          |
+| `mise run compile:jetbrains`   | Compile and test the JetBrains plugin with Gradle                                                                          |
+| `mise run package:jetbrains`   | Package the JetBrains plugin ZIP under `ide-plugins/jetbrains/build/distributions/`                                        |
+| `mise run verify:jetbrains`    | Run IntelliJ Plugin Verifier for the configured target IDE                                                                 |
+| `mise run check:config-schema` | Verify `schemas/config.json` is in sync with the config registry                                                           |
 
 ### Testing the VS Code Extension Locally
 
@@ -310,13 +310,13 @@ All `bun run` commands have equivalent `mise run` tasks (see `mise.toml`):
 2. Go to the **Run and Debug** panel (`Ctrl+Shift+D`).
 3. Select **Run Pi x IDE VS Code Extension**.
 4. Press **F5**:
-   - The `preLaunchTask` automatically runs `bun run build`.
+   - The `preLaunchTask` automatically runs `mise run build`.
    - A new VS Code window titled `[Extension Development Host]` opens.
 
 #### Option 2: Package VSIX and Install
 
 ```bash
-bun run package:vsix
+mise run package:vsix
 cd ide-plugins/vscode && code --install-extension dist/pi-x-ide-$(node -p "require('./package.json').version").vsix
 ```
 
@@ -342,7 +342,7 @@ cd ide-plugins/jetbrains
 Build the installable plugin ZIP:
 
 ```bash
-bun run package:jetbrains
+mise run package:jetbrains
 ```
 
 The ZIP is written under `ide-plugins/jetbrains/build/distributions/`. For a smoke test, open this repository in the sandbox IDE, start `pi` from the same directory, open and select text in a local file, then press `Ctrl+Alt+K` or run **Pi x IDE: Attach Selection**. Pi should receive an `@relative/path#Lx-Ly` mention.

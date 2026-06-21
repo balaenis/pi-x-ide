@@ -17,7 +17,7 @@ const content = `${JSON.stringify(schema, null, 2)}\n`;
 if (check) {
   const current = readFileSync(schemaPath, "utf8");
   if (current !== content) {
-    console.error(`${relativeToRoot(schemaPath)} is out of date. Run bun run generate:config-schema.`);
+    console.error(`${relativeToRoot(schemaPath)} is out of date. Run mise run generate:config-schema.`);
     process.exitCode = 1;
   }
 } else {

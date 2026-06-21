@@ -32,7 +32,7 @@ Why:
 
 2. Run `bunx npm login` to authenticate with npm.
 
-3. Run `bun run build` to build the package.
+3. Run `mise run build` to build the package.
 
 4. Run `bun publish --access public` to publish the first version.
 

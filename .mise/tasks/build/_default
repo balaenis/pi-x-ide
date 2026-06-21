@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Build the pi extension package (TypeScript + IDE extension)"
+#MISE depends=["setup"]
+set -euo pipefail
+
+mise run --skip-deps compile
+mise run --skip-deps compile:vsix
+mise run --skip-deps package:nvim-sidecar
