@@ -7,3 +7,8 @@ sandbox/
 
 .kotlin/
 .intellijPlatform/
+
+# Signing key material — never commit private keys or certificates.
+*.pem
+*.crt
+*.key

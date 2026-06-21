@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+#MISE description="Verify the signature of the JetBrains plugin ZIP"
+#MISE depends=["setup"]
+#
+# Validates the plugin archive signature with the Marketplace ZIP Signer
+# library (Gradle's `verifyPluginSignature` task). It depends on `signPlugin`,
+# so it will sign first if needed — no need to run package:jetbrains:sign first.
+#
+# Signing material (same layout as package:jetbrains:sign):
+#   - Certificate chain and private key are read from files in the signing dir.
+#   - The private key password is read from the PRIVATE_KEY_PASSWORD env var.
+#
+# Signing directory (override with JETBRAINS_SIGNING_DIR):
+#   ${JETBRAINS_SIGNING_DIR:-~/.pi-toolset/pi-x-ide/jetbrains}/
+#     chain.crt              -> certificate chain (public)
+#     private_encrypted.pem  -> encrypted private key
+#
+# Usage:
+#   export PRIVATE_KEY_PASSWORD='your-key-password'
+#   mise run package:jetbrains:verify-signature
+#
+#   # custom signing dir:
+#   JETBRAINS_SIGNING_DIR=/path/to/keys mise run package:jetbrains:verify-signature
+#
+# Arguments after `--` are forwarded to Gradle's `verifyPluginSignature` task, e.g.:
+#   mise run package:jetbrains:verify-signature -- --info --stacktrace
+set -euo pipefail
+
+SIGNING_DIR="${JETBRAINS_SIGNING_DIR:-$HOME/.pi-toolset/pi-x-ide/jetbrains}"
+CHAIN_FILE="$SIGNING_DIR/chain.crt"
+KEY_FILE="$SIGNING_DIR/private_encrypted.pem"
+
+fail() {
+  echo "::error::$1" >&2
+  exit 1
+}
+
+[ -f "$CHAIN_FILE" ] || fail "Certificate chain not found: $CHAIN_FILE (set JETBRAINS_SIGNING_DIR or create the file)."
+[ -f "$KEY_FILE" ] || fail "Private key not found: $KEY_FILE (set JETBRAINS_SIGNING_DIR or create the file)."
+[ -n "${PRIVATE_KEY_PASSWORD:-}" ] || fail "PRIVATE_KEY_PASSWORD is not set. Export it before running: export PRIVATE_KEY_PASSWORD='...'."
+
+# Map the signing material onto the env vars that build.gradle.kts reads.
+CERTIFICATE_CHAIN="$(cat "$CHAIN_FILE")"
+CERTIFICATE_CHAIN_FILE="$CHAIN_FILE"
+PRIVATE_KEY="$(cat "$KEY_FILE")"
+export CERTIFICATE_CHAIN CERTIFICATE_CHAIN_FILE PRIVATE_KEY PRIVATE_KEY_PASSWORD
+
+# --no-configuration-cache: the script-level verifyPluginSignature task config
+# (which wires certificateChainFile to CERTIFICATE_CHAIN_FILE) can't be serialized
+# by Gradle's configuration cache. Verification is an occasional manual step, so
+# skipping the cache has negligible cost.
+cd ide-plugins/jetbrains && ./gradlew verifyPluginSignature --no-configuration-cache "$@"
+
+echo "Plugin signature verified."

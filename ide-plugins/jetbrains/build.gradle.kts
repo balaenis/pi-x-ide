@@ -43,6 +43,10 @@ dependencies {
         }
         bundledPlugin("org.jetbrains.plugins.terminal")
         testFramework(TestFrameworkType.Platform)
+
+        // Marketplace ZIP Signer CLI used by the `signPlugin` task. In the IntelliJ Platform
+        // Gradle Plugin 2.x this must be declared explicitly; it is no longer bundled automatically.
+        zipSigner()
     }
 }
 
@@ -58,6 +62,23 @@ intellijPlatform {
         }
     }
 
+    // Plugin signing credentials are read from environment variables so the private key never
+    // lives in the repository. The `signPlugin` task is skipped automatically when they are absent,
+    // so local builds and the GitHub-release-only path keep working without secrets configured.
+    signing {
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+    }
+
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+        // Route pre-release versions to a matching custom channel and stable versions to `default`.
+        // Example: 1.14.0-alpha.1 -> "alpha" channel, 1.13.1 -> "default" channel.
+        channels = providers.gradleProperty("pluginVersion")
+            .map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
+    }
+
     pluginVerification {
         ides {
             current()
@@ -65,8 +86,23 @@ intellijPlatform {
     }
 }
 
+// Workaround: verifyPluginSignature in intellij-platform-gradle-plugin 2.16.0
+// has a bug where `certificateChain` content is leaked as an extra CLI positional
+// argument, causing the ZIP Signer to print Usage and fail. Using
+// `certificateChainFile` (file path) avoids this code path.
+// CERTIFICATE_CHAIN_FILE env var must point to the absolute path of chain.crt.
+// Note: this script-level task config can't be serialized by the configuration
+// cache, so run with --no-configuration-cache (the mise task does this).
+val certChainFileProvider = providers.environmentVariable("CERTIFICATE_CHAIN_FILE")
+    .map { layout.projectDirectory.file(it) }
+
 tasks {
     test {
         useJUnitPlatform()
+    }
+
+    verifyPluginSignature {
+        certificateChain.convention(null as String?)
+        certificateChainFile.convention(certChainFileProvider)
     }
 }

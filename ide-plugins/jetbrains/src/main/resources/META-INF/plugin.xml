@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>balaenis.pi-x-ide</id>
   <name>Pi x IDE</name>
-  <vendor email="support@balaenis.com" url="https://github.com/balaenis/pi-x-ide">Balaenis</vendor>
+  <vendor email="devjulianc@gmail.com" url="https://github.com/balaenis/pi-x-ide">Balaenis</vendor>
 
   <description><![CDATA[
     Connects JetBrains IDEs to Pi through local active-file, selection, and attach context.
