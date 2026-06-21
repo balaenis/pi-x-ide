@@ -7,7 +7,7 @@ JetBrains plugin for Pi x IDE. It exposes the active file, selected text ranges,
 - JDK 21 (the Gradle build uses a Java 21 toolchain and can download it automatically through Foojay)
 - Gradle wrapper (`./gradlew`, included in this directory)
 - IntelliJ IDEA 2026.1.3 target downloaded by the IntelliJ Platform Gradle Plugin
-- `pi` available on `PATH` if you use **Pi x IDE: Open Pi Terminal**
+- `pi` available on `PATH` if you use **Pi x IDE: Open Pi Terminal**. Native Linux/macOS projects run `pi` through your login shell, and Windows WSL UNC projects run it through the target WSL distro login shell.
 
 The build downloads the configured IntelliJ IDEA target automatically. To reuse an existing local IDE, pass `-PlocalIdePath=/path/to/idea` or set `ORG_GRADLE_PROJECT_localIdePath=/path/to/idea`.
 
@@ -74,7 +74,7 @@ Install it manually from JetBrains IDEs via **Settings | Plugins | ⚙ | Install
 5. Run `/ide list`; the JetBrains candidate should appear from the Windows-side lock directory.
 6. Run `/ide auto`; Pi should connect through the WSL default gateway or through `PI_X_IDE_HOST_OVERRIDE` if your network requires it.
 7. Select text in JetBrains and press `Ctrl+Alt+K` or run **Tools | Pi x IDE: Attach Selection**. Pi should insert a Linux-style `@relative/path#Lx-Ly` mention.
-8. Click the Pi x IDE icon in the New UI main toolbar, or run **Tools | Pi x IDE: Open Pi Terminal**. For WSL UNC projects on Windows, the terminal command should be `wsl.exe -d <distro> --cd <linux-path> pi` instead of starting in the UNC path directly.
+8. Click the Pi x IDE icon in the New UI main toolbar, or run **Tools | Pi x IDE: Open Pi Terminal**. For WSL UNC projects on Windows, the terminal command should enter the target distro with `wsl.exe -d <distro> --cd <linux-path>` and then run `pi` through the distro user's login shell instead of starting in the UNC path directly.
 
 ## MVP Scope
 
