@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#MISE description="Full build including all platform ide extension binaries"
+#MISE depends=["setup"]
+set -euo pipefail
+
+mise run --skip-deps compile
+mise run --skip-deps compile:vsix
+mise run --skip-deps package:nvim-sidecar:all
+mise run --skip-deps package:jetbrains

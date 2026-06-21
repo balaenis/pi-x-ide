@@ -109,6 +109,7 @@ export default defineConfig(
       "ide-plugins/jetbrains/sandbox/",
       "node_modules/",
       ".pi/",
+      ".worktrees/",
     ],
   },
 );

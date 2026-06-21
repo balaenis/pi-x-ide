@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#MISE description="Build and test the JetBrains plugin for local debugging"
+#MISE depends=["setup"]
+#
+# Arguments after `--` are forwarded to Gradle's `test` task.
+# Common examples:
+#   mise run compile:jetbrains -- -PlocalIdePath=$HOME/.cache/pi-x-ide/idea-2026.1.3
+#   mise run compile:jetbrains -- --tests com.balaenis.pixide.util.PiXIdeWslPathTest
+#   mise run compile:jetbrains -- --info --stacktrace
+# Supported argument classes:
+#   - Gradle project properties: -P<name>=<value> (for example -PlocalIdePath=...)
+#   - Gradle test filters: --tests <class-or-pattern>
+#   - Gradle execution flags: --dry-run, --info, --debug, --stacktrace, --scan
+set -euo pipefail
+
+cd ide-plugins/jetbrains && ./gradlew test "$@"

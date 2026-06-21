@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Publish the pi extension package to npm"
+#MISE depends=["setup"]
+set -euo pipefail
+
+mise run --skip-deps compile
+npm publish --provenance --access public --tag "${NPM_TAG:-latest}"

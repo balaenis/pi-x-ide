@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Sync shared assets into the VS Code extension"
+#MISE depends=["setup"]
+set -euo pipefail
+
+bun run --filter './ide-plugins/vscode' sync:assets

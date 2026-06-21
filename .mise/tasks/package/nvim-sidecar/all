@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Build all nvim sidecar binaries"
+#MISE depends=["setup"]
+set -euo pipefail
+
+bun run scripts/build-nvim-sidecar.mjs --production --target=all

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+#MISE description="Verify the JetBrains plugin against supported IDE builds"
+#MISE depends=["setup"]
+#
+# Arguments after `--` are forwarded to Gradle's `verifyPlugin` task.
+# Common examples:
+#   mise run verify:jetbrains -- -PlocalIdePath=$HOME/.cache/pi-x-ide/idea-2026.1.3
+#   mise run verify:jetbrains -- --dry-run
+#   mise run verify:jetbrains -- --info --stacktrace
+# Supported argument classes:
+#   - Gradle project properties: -P<name>=<value> (for example -PlocalIdePath=...)
+#   - Gradle execution flags: --dry-run, --info, --debug, --stacktrace, --scan
+set -euo pipefail
+
+cd ide-plugins/jetbrains && ./gradlew verifyPlugin "$@"

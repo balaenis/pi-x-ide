@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Type-check TypeScript and IDE extension"
+#MISE depends=["setup"]
+set -euo pipefail
+
+bunx tsc -p tsconfig.json --noEmit
+bun run --filter './ide-plugins/vscode' typecheck

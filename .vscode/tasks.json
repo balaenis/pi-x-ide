@@ -2,16 +2,16 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "bun: build",
+      "label": "mise: build",
       "type": "shell",
-      "command": "bun run build",
+      "command": "mise run build",
       "group": "build",
       "problemMatcher": "$tsc"
     },
     {
-      "label": "bun: package:vscode",
+      "label": "mise: package:vsix",
       "type": "shell",
-      "command": "bun run package:vscode",
+      "command": "mise run package:vsix",
       "group": "build",
       "problemMatcher": []
     }

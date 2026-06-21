@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Compile the TypeScript code"
+#MISE depends=["setup"]
+set -euo pipefail
+
+bunx tsc -p tsconfig.json

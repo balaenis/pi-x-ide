@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Format the project with prettier"
+#MISE depends=["setup"]
+set -euo pipefail
+
+bunx prettier --write .
