@@ -20,8 +20,11 @@ export function formatLineSpan(range: SelectionRange): string {
   return `#${formatLineRange(range)}`;
 }
 
-export function formatRangeMention(snapshot: EditorSelectionSnapshot, options: { cwd?: string } = {}): string {
-  const rel = toRelativeDisplayPath(snapshot.filePath, snapshot.workspaceFolder, options.cwd);
+export function formatRangeMention(
+  snapshot: EditorSelectionSnapshot,
+  options: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
+): string {
+  const rel = toRelativeDisplayPath(snapshot.filePath, snapshot.workspaceFolder, options.cwd, options.env);
   const first = snapshot.ranges[0];
   return first ? `@${rel}${formatLineSpan(first)}` : `@${rel}`;
 }
@@ -63,8 +66,11 @@ export function snapshotKey(snapshot: EditorSelectionSnapshot): string {
   });
 }
 
-export function formatEditorContext(snapshot: EditorSelectionSnapshot, options: { maxChars?: number } = {}): string {
-  const filePath = snapshot.filePath;
+export function formatEditorContext(
+  snapshot: EditorSelectionSnapshot,
+  options: { maxChars?: number; env?: NodeJS.ProcessEnv } = {},
+): string {
+  const filePath = toRelativeDisplayPath(snapshot.filePath, undefined, undefined, options.env);
   const maxChars = options.maxChars ?? 24_000;
 
   if (snapshot.ranges.length === 0) {

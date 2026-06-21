@@ -27,6 +27,11 @@ export const CONFIG_ENV_OPTIONS = {
     default: "ctrl+alt+k",
     description: "Pi TUI shortcut for attaching the latest IDE selection. Set to off, none, false, or 0 to disable.",
   },
+  PI_X_IDE_HOST_OVERRIDE: {
+    type: ["string"],
+    description:
+      "Override the host Pi uses to connect to IDE WebSocket lock files. Useful for WSL2 or custom networking.",
+  },
   PI_X_IDE_ZED_DB: {
     type: ["string"],
     description: "Override path to Zed's SQLite database.",

@@ -21,6 +21,7 @@ Neovim uses the same protocol version and writes files named `nvim-<pid>-<port>.
   "authToken": "random-hex-token",
   "workspaceFolders": ["/home/user/project"],
   "pid": 12345,
+  "runningInWindows": false,
   "createdAt": "2026-06-09T00:00:00.000Z",
   "updatedAt": "2026-06-09T00:00:00.000Z"
 }
@@ -31,7 +32,22 @@ Rules:
 - Lock directory should be mode `0700`.
 - Lock files should be mode `0600`.
 - Writers should write a temp file and rename it into place.
-- Pi ignores malformed, stale, unmatched, and dead-process lock files.
+- `host` remains required for compatibility, but Pi may resolve a different connection host before opening the WebSocket.
+- `runningInWindows` is optional and backward-compatible. When present and `true`, it declares that the IDE server process is running on native Windows.
+- Pi ignores malformed, stale, unmatched, and dead-process lock files. When Pi runs in WSL and sees `runningInWindows: true`, it does not delete the lock file merely because the Windows PID is not visible from Linux.
+
+## WSL2 discovery and host resolution
+
+The primary lock directory is always `~/.pi/pi-x-ide/lock`. When Pi runs inside WSL, it also scans Windows user lock directories such as `/mnt/c/Users/<user>/.pi/pi-x-ide/lock`, skipping Windows system profiles.
+
+For connection hosts, Pi resolves in this order:
+
+1. `PI_X_IDE_HOST_OVERRIDE`, either from the real environment or `~/.pi/pi-x-ide/config.json` `env`.
+2. If Pi runs in WSL and the lock has `runningInWindows: true`, parse the WSL default gateway from `ip route show` and use it only if a short TCP probe to `<gateway>:<port>` succeeds.
+3. The lock file `host` value.
+4. `127.0.0.1` if `host` is empty.
+
+Incoming editor paths are normalized to the Pi host before workspace matching, UI display, `@file#Lx-Ly` mention formatting, and prompt context formatting. Matching WSL UNC paths such as `\\wsl.localhost\Ubuntu\home\user\project` become `/home/user/project` when Pi is running in the `Ubuntu` distro.
 
 ## Authentication
 

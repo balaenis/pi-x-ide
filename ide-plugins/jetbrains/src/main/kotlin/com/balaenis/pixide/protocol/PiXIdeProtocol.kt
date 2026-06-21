@@ -77,6 +77,7 @@ data class IdeLockFile(
     val authToken: String,
     val workspaceFolders: List<String>,
     val pid: Long,
+    val runningInWindows: Boolean,
     val createdAt: String,
     val updatedAt: String,
 )

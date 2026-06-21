@@ -135,6 +135,19 @@ IDE: vscode ✓ src/foo.ts#L10-L20 pending
 - 如果 IDE 在 Pi 之后启动，reload IDE 窗口后再次运行 `/ide auto`
 - 运行 `/ide` 手动从列表中选择连接
 
+### WSL2 IDE 发现
+
+VS Code Remote WSL 的行为等同于同主机连接：扩展宿主运行在 WSL 内部，在 Linux 侧的 `~/.pi/pi-x-ide/lock` 写入 lock file，并在 WSL 网络命名空间中绑定 WebSocket server。
+
+当 Pi 运行在 WSL2 中，而原生 Windows IDE 插件运行在 Windows 侧时，Pi 也会扫描 Windows 用户 lock 目录，例如 `/mnt/c/Users/<user>/.pi/pi-x-ide/lock`。新的 Windows 侧 lock file 会包含 `runningInWindows: true`；Pi 会使用该元数据优先尝试 WSL 默认网关，再回退到 lock file 中的 `host`。Windows 路径和 WSL UNC 路径会在 workspace 匹配以及格式化 `@file#Lx-Ly` mention 前规范化。
+
+如果你的 WSL 网络模式、防火墙或终端安全策略阻止默认网关访问，可设置 `PI_X_IDE_HOST_OVERRIDE`：
+
+```bash
+PI_X_IDE_HOST_OVERRIDE=127.0.0.1 pi
+PI_X_IDE_HOST_OVERRIDE=<windows-host-ip> pi
+```
+
 ### `/ide` 命令参考
 
 | 命令           | 行为                                              |
@@ -205,6 +218,7 @@ Pi 侧变量可设为真实环境变量或写入 `~/.pi/pi-x-ide/config.json` �
 | ------------------------------- | ------------ | ------------------------------------------------------------------------- |
 | `PI_X_IDE_AUTO_INSTALL`         | `1`          | Pi 启动时自动安装 VS Code 扩展                                            |
 | `PI_X_IDE_ATTACH_SHORTCUT`      | `ctrl+alt+k` | Pi TUI 的 `/ide attach` 快捷键；设为 `off`、`none`、`false` 或 `0` 可禁用 |
+| `PI_X_IDE_HOST_OVERRIDE`        | （未设置）   | 覆盖 Pi 连接 IDE WebSocket lock file 时使用的 host；适用于 WSL2 网络场景  |
 | `PI_X_IDE_ZED_DB`               | （自动检测） | 覆盖 Zed SQLite 数据库路径                                                |
 | `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`       | Zed SQLite 轮询间隔，会被限制在 100-2000 ms 范围                          |
 

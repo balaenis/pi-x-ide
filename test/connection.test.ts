@@ -5,6 +5,7 @@ import { createServer, type AddressInfo, type Socket } from "node:net";
 import test from "node:test";
 import { WebSocketServer } from "ws";
 import { IdeConnection, IdeConnectionTimeoutError } from "../src/pi/connection";
+import { PI_X_IDE_HOST_OVERRIDE_ENV, parseDefaultGateway, resolveIdeHost } from "../src/pi/ide-host";
 import {
   formatReconnectLimitMessage,
   MAX_RECONNECT_ATTEMPTS,
@@ -15,7 +16,9 @@ import { createRuntime } from "../src/pi/state";
 import {
   AUTH_HEADER,
   PROTOCOL_VERSION,
+  type AtMentionedParams,
   type DiagnosticFixRequestedParams,
+  type EditorSelectionSnapshot,
   type LockFileCandidate,
 } from "../src/shared/protocol";
 import { decodeRawData } from "../src/shared/ws";
@@ -35,6 +38,73 @@ void test("caps reconnect attempts at three per candidate", () => {
 
   resetReconnectState(runtime);
   assert.equal(recordReconnectAttempt(runtime, candidate), 1);
+});
+
+void test("resolves IDE hosts from override, WSL gateway, and lock fallback", async () => {
+  const lock = createCandidate({ host: "127.0.0.1", runningInWindows: true }).lock;
+  const runCommand = () => Promise.resolve({ stdout: "default via 172.30.96.1 dev eth0 proto kernel\n" });
+
+  assert.equal(parseDefaultGateway("default via 172.30.96.1 dev eth0\n"), "172.30.96.1");
+  assert.equal(
+    await resolveIdeHost(lock, {
+      env: { [PI_X_IDE_HOST_OVERRIDE_ENV]: "10.0.0.12", WSL_DISTRO_NAME: "Ubuntu" },
+      runCommand,
+      tcpProbe: () => Promise.resolve(true),
+    }),
+    "10.0.0.12",
+  );
+  assert.equal(
+    await resolveIdeHost(lock, {
+      env: { WSL_DISTRO_NAME: "Ubuntu" },
+      runCommand,
+      tcpProbe: (host, port, timeoutMs) =>
+        Promise.resolve(host === "172.30.96.1" && port === lock.port && timeoutMs === 500),
+    }),
+    "172.30.96.1",
+  );
+  assert.equal(
+    await resolveIdeHost(lock, {
+      env: { WSL_DISTRO_NAME: "Ubuntu" },
+      runCommand,
+      tcpProbe: () => Promise.resolve(false),
+    }),
+    "127.0.0.1",
+  );
+  assert.equal(
+    await resolveIdeHost({ ...lock, runningInWindows: false }, { env: { WSL_DISTRO_NAME: "Ubuntu" } }),
+    "127.0.0.1",
+  );
+});
+
+void test("connects using resolved host while keeping WebSocket auth", async () => {
+  const server = new WebSocketServer({ host: "127.0.0.1", port: 0 });
+  const connected = new Promise<void>((resolve, reject) => {
+    server.once("connection", (socket, request) => {
+      try {
+        assert.equal(request.headers[AUTH_HEADER], "token");
+        socket.close();
+        resolve();
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error(String(error)));
+      }
+    });
+  });
+  await new Promise<void>((resolve) => server.once("listening", resolve));
+
+  try {
+    const address = server.address() as AddressInfo;
+    const connection = new IdeConnection(
+      createCandidate({ host: "192.0.2.1", port: address.port }),
+      "/repo",
+      {},
+      { resolveHost: () => Promise.resolve("127.0.0.1") },
+    );
+    await connection.connect();
+    await connected;
+    connection.disconnect();
+  } finally {
+    await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  }
 });
 
 void test("times out stalled websocket handshakes", async () => {
@@ -70,6 +140,74 @@ void test("times out stalled websocket handshakes", async () => {
     await new Promise<void>((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
     });
+  }
+});
+
+void test("normalizes selection notifications before callbacks", async () => {
+  const payload: EditorSelectionSnapshot = {
+    source: "jetbrains",
+    filePath: "\\\\wsl.localhost\\Ubuntu\\home\\julian\\repo\\src\\a.ts",
+    workspaceFolder: "\\\\wsl.localhost\\Ubuntu\\home\\julian\\repo",
+    ranges: [
+      {
+        text: "hello",
+        selection: { start: { line: 0, character: 0 }, end: { line: 0, character: 5 } },
+      },
+    ],
+  };
+  const wss = new WebSocketServer({ host: "127.0.0.1", port: 0 });
+  await new Promise<void>((resolve) => wss.once("listening", resolve));
+  let connection: IdeConnection | undefined;
+
+  try {
+    wss.on("connection", (socket) => {
+      socket.on("message", (raw) => {
+        const request = JSON.parse(decodeRawData(raw)) as { id: number | string };
+        socket.send(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            id: request.id,
+            result: { protocolVersion: PROTOCOL_VERSION, server: { name: "Test IDE", ide: "jetbrains" } },
+          }),
+        );
+        socket.send(JSON.stringify({ jsonrpc: "2.0", method: "selection_changed", params: payload }));
+        socket.send(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            method: "at_mentioned",
+            params: { ...payload, rangeText: "@\\\\wsl.localhost\\Ubuntu\\home\\julian\\repo\\src\\a.ts#L1" },
+          }),
+        );
+      });
+    });
+
+    const address = wss.address() as AddressInfo;
+    let selectionResolve!: (snapshot: EditorSelectionSnapshot) => void;
+    const selection = new Promise<EditorSelectionSnapshot>((resolve) => {
+      selectionResolve = resolve;
+    });
+    let mentionResolve!: (params: AtMentionedParams) => void;
+    const mention = new Promise<AtMentionedParams>((resolve) => {
+      mentionResolve = resolve;
+    });
+    connection = new IdeConnection(
+      createCandidate({ ide: "jetbrains", port: address.port }),
+      "/home/julian/repo",
+      { onAtMentioned: mentionResolve, onSelectionChanged: selectionResolve },
+      { env: { WSL_DISTRO_NAME: "Ubuntu" } },
+    );
+
+    await connection.connect();
+    const snapshot = await withTimeout(selection, 500, "timed out waiting for selection notification");
+    assert.equal(snapshot.filePath, "/home/julian/repo/src/a.ts");
+    assert.equal(snapshot.workspaceFolder, "/home/julian/repo");
+    const atMentioned = await withTimeout(mention, 500, "timed out waiting for at mentioned notification");
+    assert.equal(atMentioned.filePath, "/home/julian/repo/src/a.ts");
+    assert.equal(atMentioned.workspaceFolder, "/home/julian/repo");
+    assert.equal(atMentioned.rangeText, "@src/a.ts#L1");
+  } finally {
+    connection?.disconnect();
+    await new Promise<void>((resolve) => wss.close(() => resolve()));
   }
 });
 

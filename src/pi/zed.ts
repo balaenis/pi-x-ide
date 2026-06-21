@@ -8,13 +8,16 @@ import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
 import type { EditorSelectionSnapshot, SelectionRange } from "../shared/protocol";
-import { resolvePiConfigEnv, isProcessEnvOrPiConfigOverlay } from "../shared/config";
+import { resolvePiConfigEnv } from "../shared/config";
+import { isWsl, normalizePathForHost } from "../shared/platform";
 import { snapshotKey } from "../shared/format";
 import { isPathInsideOrEqual } from "../shared/paths";
 import { setLatestSelection, clearLatestSelection } from "./context";
 import type { PiIdeRuntime } from "./state";
 import { containPiError } from "./safety";
 import { updateIdeUi } from "./ui";
+
+export { isWsl };
 
 export const PI_X_IDE_ZED_DB_ENV = "PI_X_IDE_ZED_DB";
 export const PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV = "PI_X_IDE_ZED_POLL_INTERVAL_MS";
@@ -29,39 +32,10 @@ export function isZedTerminal(env: NodeJS.ProcessEnv = process.env): boolean {
   return configuredEnv.ZED_TERM === "true" || configuredEnv.TERM_PROGRAM?.toLowerCase() === "zed";
 }
 
-export function isWsl(env: NodeJS.ProcessEnv = process.env): boolean {
-  const configuredEnv = resolvePiConfigEnv(env);
-  if (configuredEnv.WSL_DISTRO_NAME || configuredEnv.WSL_INTEROP) return true;
-  if (!isProcessEnvOrPiConfigOverlay(configuredEnv)) return false;
-  try {
-    return /microsoft|wsl/i.test(readFileSync("/proc/version", "utf8"));
-  } catch {
-    return false;
-  }
-}
-
+// Backward-compatible wrapper: Zed callers and tests import this name, while the
+// implementation now lives in the shared platform helper.
 export function normalizeZedPathForHost(input: string, env: NodeJS.ProcessEnv = process.env): string {
-  const configuredEnv = resolvePiConfigEnv(env);
-  if (!input || !isWsl(configuredEnv)) return input;
-
-  const driveMatch = input.match(/^([a-zA-Z]):[\\/](.*)$/);
-  if (driveMatch) {
-    const drive = driveMatch[1].toLowerCase();
-    const rest = driveMatch[2].replaceAll("\\", "/");
-    return `/mnt/${drive}/${rest}`;
-  }
-
-  const uncMatch = input.match(/^\\\\(?:wsl\$|wsl\.localhost)\\([^\\]+)\\(.*)$/i);
-  if (uncMatch) {
-    const distro = uncMatch[1];
-    const rest = uncMatch[2].replaceAll("\\", "/");
-    const currentDistro = configuredEnv.WSL_DISTRO_NAME;
-    if (!currentDistro || distro.toLowerCase() === currentDistro.toLowerCase()) {
-      return `/${rest}`;
-    }
-  }
-
-  return input;
+  return normalizePathForHost(input, env);
 }
 
 // ── DB path resolution ─────────────────────────────────────────

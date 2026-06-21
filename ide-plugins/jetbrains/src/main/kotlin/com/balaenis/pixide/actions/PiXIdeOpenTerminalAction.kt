@@ -2,6 +2,8 @@
 // ABOUTME: Provides the IDE-side entry point for starting a Pi session from JetBrains.
 package com.balaenis.pixide.actions
 
+import com.balaenis.pixide.util.terminalCommandForProject
+import com.balaenis.pixide.util.terminalWorkingDirectoryForProject
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
@@ -18,13 +20,13 @@ class PiXIdeOpenTerminalAction : DumbAwareAction() {
         val project = event.project ?: return
         ApplicationManager.getApplication().invokeLater {
             try {
-                val workingDirectory = project.basePath ?: System.getProperty("user.home")
+                val workingDirectory = terminalWorkingDirectoryForProject(project.basePath)
                 TerminalToolWindowTabsManager.getInstance(project)
                     .createTabBuilder()
                     .workingDirectory(workingDirectory)
                     .tabName("Pi")
                     .requestFocus(true)
-                    .shellCommand(listOf("pi"))
+                    .shellCommand(terminalCommandForProject(project.basePath))
                     .createTab()
                 ToolWindowManager.getInstance(project).getToolWindow("Terminal")?.activate(null)
             } catch (error: Throwable) {

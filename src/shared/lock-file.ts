@@ -19,6 +19,7 @@ export interface CreateIdeLockFileOptions {
   authToken: string;
   workspaceFolders: string[];
   pid?: number;
+  runningInWindows?: boolean;
   now?: Date;
 }
 
@@ -34,6 +35,7 @@ export function createIdeLockFile(options: CreateIdeLockFileOptions): IdeLockFil
     authToken: options.authToken,
     workspaceFolders: options.workspaceFolders,
     pid: options.pid ?? process.pid,
+    runningInWindows: options.runningInWindows ?? process.platform === "win32",
     createdAt: now,
     updatedAt: now,
   };

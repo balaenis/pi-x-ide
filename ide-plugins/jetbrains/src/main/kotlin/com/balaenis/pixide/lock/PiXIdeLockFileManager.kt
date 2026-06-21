@@ -24,6 +24,7 @@ class PiXIdeLockFileManager(
     private val lockDir: Path = defaultLockDir(),
     private val processId: Long = ProcessHandle.current().pid(),
     private val clock: Clock = Clock.systemUTC(),
+    private val runningInWindows: Boolean = detectRunningInWindows(),
 ) {
     var currentPath: Path? = null
         private set
@@ -43,6 +44,7 @@ class PiXIdeLockFileManager(
             authToken = authToken,
             workspaceFolders = workspaceFolders.distinct(),
             pid = processId,
+            runningInWindows = runningInWindows,
             createdAt = now,
             updatedAt = now,
         )
@@ -95,6 +97,9 @@ class PiXIdeLockFileManager(
         private val secureRandom = SecureRandom()
 
         fun defaultLockDir(): Path = Path.of(System.getProperty("user.home"), ".pi", "pi-x-ide", "lock")
+
+        fun detectRunningInWindows(): Boolean =
+            System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
 
         fun createAuthToken(): String {
             val bytes = ByteArray(32)

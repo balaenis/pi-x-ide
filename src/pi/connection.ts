@@ -19,13 +19,19 @@ import {
   isSelectionClearedParams,
 } from "../shared/schema";
 import { toError, logExtensionError } from "../shared/errors";
+import { formatRangeMention } from "../shared/format";
+import { normalizeEditorSelectionSnapshotForHost } from "../shared/platform";
 import { decodeRawData } from "../shared/ws";
+import { resolveIdeHost } from "./ide-host";
 
 export const IDE_CONNECT_TIMEOUT_MS = 5_000;
 
 export class IdeConnectionTimeoutError extends Error {
-  constructor(readonly candidate: LockFileCandidate) {
-    super(`Timed out connecting to ${candidate.lock.name} at ${candidate.lock.host}:${candidate.lock.port}`);
+  constructor(
+    readonly candidate: LockFileCandidate,
+    readonly host: string = candidate.lock.host,
+  ) {
+    super(`Timed out connecting to ${candidate.lock.name} at ${host}:${candidate.lock.port}`);
     this.name = "IdeConnectionTimeoutError";
   }
 }
@@ -40,6 +46,11 @@ export interface IdeConnectionCallbacks {
   onError?: (error: Error) => void;
 }
 
+export interface IdeConnectionOptions {
+  resolveHost?: (lock: LockFileCandidate["lock"]) => Promise<string>;
+  env?: NodeJS.ProcessEnv;
+}
+
 export class IdeConnection {
   private socket?: WebSocket;
   private nextId = 1;
@@ -49,6 +60,7 @@ export class IdeConnection {
     readonly candidate: LockFileCandidate,
     private readonly cwd: string,
     private readonly callbacks: IdeConnectionCallbacks,
+    private readonly options: IdeConnectionOptions = {},
   ) {}
 
   get isOpen(): boolean {
@@ -58,7 +70,8 @@ export class IdeConnection {
   async connect(timeoutMs = IDE_CONNECT_TIMEOUT_MS): Promise<void> {
     this.closedByUser = false;
     const { lock } = this.candidate;
-    const socket = new WebSocket(`ws://${lock.host}:${lock.port}`, {
+    const resolvedHost = await (this.options.resolveHost ?? resolveIdeHost)(lock);
+    const socket = new WebSocket(`ws://${resolvedHost}:${lock.port}`, {
       handshakeTimeout: timeoutMs + 1_000,
       headers: {
         [AUTH_HEADER]: lock.authToken,
@@ -85,7 +98,7 @@ export class IdeConnection {
         cleanup();
         if (this.socket === socket) this.socket = undefined;
         socket.terminate();
-        reject(new IdeConnectionTimeoutError(this.candidate));
+        reject(new IdeConnectionTimeoutError(this.candidate, resolvedHost));
       }, timeoutMs);
       const onOpen = () => {
         cleanup();
@@ -144,13 +157,14 @@ export class IdeConnection {
 
     if (!isNotification(parsed)) return;
     if (parsed.method === "selection_changed" && isSelectionChangedParams(parsed.params)) {
-      const params = withReceivedAt(parsed.params);
+      const params = normalizeEditorSelectionSnapshotForHost(withReceivedAt(parsed.params), this.options.env);
       this.emitCallback("selection changed callback", () => this.callbacks.onSelectionChanged?.(params));
     } else if (parsed.method === "selection_cleared" && isSelectionClearedParams(parsed.params)) {
       const params = withReceivedAt(parsed.params);
       this.emitCallback("selection cleared callback", () => this.callbacks.onSelectionCleared?.(params));
     } else if (parsed.method === "at_mentioned" && isAtMentionedParams(parsed.params)) {
-      const params = withReceivedAt(parsed.params);
+      const snapshot = normalizeEditorSelectionSnapshotForHost(withReceivedAt(parsed.params), this.options.env);
+      const params = { ...snapshot, rangeText: formatRangeMention(snapshot, { cwd: this.cwd, env: this.options.env }) };
       this.emitCallback("at mentioned callback", () => this.callbacks.onAtMentioned?.(params));
     } else if (parsed.method === "diagnostic_fix_requested" && isDiagnosticFixRequestedParams(parsed.params)) {
       const params = withReceivedAt(parsed.params);

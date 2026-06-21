@@ -48,6 +48,7 @@ export function isIdeLockFile(value: unknown): value is IdeLockFile {
     Array.isArray(value.workspaceFolders) &&
     value.workspaceFolders.every(isString) &&
     (value.pid === undefined || isFiniteNumber(value.pid)) &&
+    (value.runningInWindows === undefined || typeof value.runningInWindows === "boolean") &&
     isString(value.createdAt) &&
     isString(value.updatedAt)
   );

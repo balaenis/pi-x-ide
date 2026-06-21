@@ -17,6 +17,7 @@ export interface IdeLockFile {
   authToken: string;
   workspaceFolders: string[];
   pid?: number;
+  runningInWindows?: boolean;
   createdAt: string;
   updatedAt: string;
 }

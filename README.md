@@ -143,6 +143,19 @@ For diagnostics in VS Code-family IDEs, connect Pi first, then place the cursor 
 - If the IDE was started after Pi, reload the IDE window and run `/ide auto` again.
 - Run `/ide` to manually select a connection from the list.
 
+### WSL2 IDE Discovery
+
+VS Code Remote WSL works like a same-host setup: the extension host runs inside WSL, writes Linux-side lock files under `~/.pi/pi-x-ide/lock`, and binds the WebSocket server inside the WSL network namespace.
+
+When Pi runs inside WSL2 and a native Windows IDE plugin is running on the Windows side, Pi also scans Windows user lock directories such as `/mnt/c/Users/<user>/.pi/pi-x-ide/lock`. New Windows-side lock files include `runningInWindows: true`; Pi uses that metadata to try the WSL default gateway before falling back to the lock file's `host` value. Windows and WSL UNC paths are normalized before workspace matching and before formatting `@file#Lx-Ly` mentions.
+
+If your WSL networking mode, firewall, or endpoint security blocks the default gateway, set `PI_X_IDE_HOST_OVERRIDE`:
+
+```bash
+PI_X_IDE_HOST_OVERRIDE=127.0.0.1 pi
+PI_X_IDE_HOST_OVERRIDE=<windows-host-ip> pi
+```
+
 ### `/ide` Command Reference
 
 | Command        | Behavior                                                          |
@@ -214,6 +227,7 @@ Pi-side variables can be set as real environment variables or in `~/.pi/pi-x-ide
 | ------------------------------- | ------------- | ----------------------------------------------------------------------------------- |
 | `PI_X_IDE_AUTO_INSTALL`         | `1`           | Auto-install VS Code extension on Pi startup                                        |
 | `PI_X_IDE_ATTACH_SHORTCUT`      | `ctrl+alt+k`  | Pi TUI shortcut for `/ide attach`; set to `off`, `none`, `false`, or `0` to disable |
+| `PI_X_IDE_HOST_OVERRIDE`        | (unset)       | Override the host Pi uses for IDE WebSocket lock files; useful for WSL2 networking  |
 | `PI_X_IDE_ZED_DB`               | (auto-detect) | Override path to Zed SQLite database                                                |
 | `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`        | Zed SQLite polling interval, clamped to 100-2000 ms                                 |
 

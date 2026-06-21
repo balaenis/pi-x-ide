@@ -44,6 +44,7 @@ class PiXIdeLockFileManagerTest {
         assertEquals("a".repeat(64), root.get("authToken").asString)
         assertEquals(1, root.getAsJsonArray("workspaceFolders").size())
         assertEquals("/repo", root.getAsJsonArray("workspaceFolders")[0].asString)
+        assertFalse(root.get("runningInWindows").asBoolean)
 
         manager.refresh(listOf("/repo", "/repo/pkg"))
         val refreshed = JsonParser.parseString(Files.readString(path)).asJsonObject
@@ -52,6 +53,32 @@ class PiXIdeLockFileManagerTest {
 
         manager.cleanup()
         assertFalse(Files.exists(path))
+        manager.cleanup()
+    }
+
+    @Test
+    fun setsRunningInWindowsWhenSeededAsWindows() {
+        val dir = Files.createTempDirectory("pi-x-ide-lock-test-")
+        val manager = PiXIdeLockFileManager(lockDir = dir, processId = 12345, runningInWindows = true)
+        manager.write(48124, "b".repeat(64), listOf("/repo"))
+        val path = manager.currentPath
+        assertNotNull(path)
+
+        val root = JsonParser.parseString(Files.readString(path)).asJsonObject
+        assertTrue(root.get("runningInWindows").asBoolean)
+        manager.cleanup()
+    }
+
+    @Test
+    fun setsRunningInWindowsFalseWhenSeededAsNonWindows() {
+        val dir = Files.createTempDirectory("pi-x-ide-lock-test-")
+        val manager = PiXIdeLockFileManager(lockDir = dir, processId = 12345, runningInWindows = false)
+        manager.write(48125, "c".repeat(64), listOf("/repo"))
+        val path = manager.currentPath
+        assertNotNull(path)
+
+        val root = JsonParser.parseString(Files.readString(path)).asJsonObject
+        assertFalse(root.get("runningInWindows").asBoolean)
         manager.cleanup()
     }
 }
