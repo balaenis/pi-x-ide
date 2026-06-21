@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+#MISE description="Sign the JetBrains plugin ZIP with the Marketplace signing key"
+#MISE depends=["setup"]
+#
+# Produces a signed plugin ZIP for manual Marketplace upload. The `signPlugin`
+# Gradle task depends on `buildPlugin`, so this also compiles and packages the
+# plugin — no need to run `package:jetbrains` first.
+#
+# Signing material:
+#   - Certificate chain and private key are read from files in the signing dir.
+#   - The private key password is read from the PRIVATE_KEY_PASSWORD env var.
+#
+# Signing directory (override with JETBRAINS_SIGNING_DIR):
+#   ${JETBRAINS_SIGNING_DIR:-~/.pi/jetbrains-signing}/
+#     chain.crt     -> certificate chain (public)
+#     private.pem   -> encrypted private key
+#
+# Usage:
+#   export PRIVATE_KEY_PASSWORD='your-key-password'
+#   mise run package:jetbrains:sign
+#
+#   # custom signing dir:
+#   JETBRAINS_SIGNING_DIR=/path/to/keys mise run package:jetbrains:sign
+#
+# Arguments after `--` are forwarded to Gradle's `signPlugin` task, e.g.:
+#   mise run package:jetbrains:sign -- --info --stacktrace
+set -euo pipefail
+
+SIGNING_DIR="${JETBRAINS_SIGNING_DIR:-$HOME/.pi-toolset/pi-x-ide/jetbrains}"
+CHAIN_FILE="$SIGNING_DIR/chain.crt"
+KEY_FILE="$SIGNING_DIR/private_encrypted.pem"
+
+fail() {
+  echo "::error::$1" >&2
+  exit 1
+}
+
+[ -f "$CHAIN_FILE" ] || fail "Certificate chain not found: $CHAIN_FILE (set JETBRAINS_SIGNING_DIR or create the file)."
+[ -f "$KEY_FILE" ] || fail "Private key not found: $KEY_FILE (set JETBRAINS_SIGNING_DIR or create the file)."
+[ -n "${PRIVATE_KEY_PASSWORD:-}" ] || fail "PRIVATE_KEY_PASSWORD is not set. Export it before running: export PRIVATE_KEY_PASSWORD='...'."
+
+# Map the signing material onto the env vars that build.gradle.kts reads.
+CERTIFICATE_CHAIN="$(cat "$CHAIN_FILE")"
+CERTIFICATE_CHAIN_FILE="$CHAIN_FILE"
+PRIVATE_KEY="$(cat "$KEY_FILE")"
+export CERTIFICATE_CHAIN CERTIFICATE_CHAIN_FILE PRIVATE_KEY PRIVATE_KEY_PASSWORD
+
+cd ide-plugins/jetbrains && ./gradlew signPlugin "$@"
+
+echo "Signed plugin written to: ide-plugins/jetbrains/build/distributions/"

@@ -158,6 +158,12 @@ jobs:
           fi
 
       - name: Build JetBrains plugin ZIP
+        env:
+          # Signing secrets are optional: when absent, `signPlugin` is skipped and an unsigned
+          # archive is produced. When present, the uploaded Release zip is already signed.
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
         run: mise run package:jetbrains
 
       - name: Upload JetBrains plugin to release
@@ -165,3 +171,17 @@ jobs:
         with:
           tag_name: ${{ needs.process.outputs.tag_name }}
           files: ide-plugins/jetbrains/build/distributions/*.zip
+
+      - name: Publish to JetBrains Marketplace
+        env:
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$PUBLISH_TOKEN" ] || [ -z "$PRIVATE_KEY" ] || [ -z "$CERTIFICATE_CHAIN" ]; then
+            echo "::notice::Marketplace publish secrets not fully configured — skipping publish. GitHub Release upload completed."
+            exit 0
+          fi
+
+          cd ide-plugins/jetbrains && ./gradlew publishPlugin
