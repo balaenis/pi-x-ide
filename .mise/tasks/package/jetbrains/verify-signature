@@ -3,8 +3,10 @@
 #MISE depends=["setup"]
 #
 # Validates the plugin archive signature with the Marketplace ZIP Signer
-# library (Gradle's `verifyPluginSignature` task). It depends on `signPlugin`,
-# so it will sign first if needed — no need to run package:jetbrains:sign first.
+# library (Gradle's `verifyPluginSignature` task). It does NOT trigger signing
+# itself — if the signed ZIP is missing, the task is skipped (NO-SOURCE) and
+# still reports BUILD SUCCESSFUL without actually verifying anything. Run
+# `package:jetbrains:sign` first to produce the signed ZIP.
 #
 # Signing material (same layout as package:jetbrains:sign):
 #   - Certificate chain and private key are read from files in the signing dir.
@@ -40,10 +42,20 @@ fail() {
 [ -n "${PRIVATE_KEY_PASSWORD:-}" ] || fail "PRIVATE_KEY_PASSWORD is not set. Export it before running: export PRIVATE_KEY_PASSWORD='...'."
 
 # Map the signing material onto the env vars that build.gradle.kts reads.
-CERTIFICATE_CHAIN="$(cat "$CHAIN_FILE")"
 CERTIFICATE_CHAIN_FILE="$CHAIN_FILE"
 PRIVATE_KEY="$(cat "$KEY_FILE")"
-export CERTIFICATE_CHAIN CERTIFICATE_CHAIN_FILE PRIVATE_KEY PRIVATE_KEY_PASSWORD
+export CERTIFICATE_CHAIN_FILE PRIVATE_KEY PRIVATE_KEY_PASSWORD
+
+# Pre-flight check: verifyPluginSignature uses @SkipWhenEmpty, so if the signed
+# zip is missing it silently NO-SOURCEs and reports BUILD SUCCESSFUL without
+# actually verifying anything. Fail loudly instead.
+SIGNED_ZIP_GLOB="ide-plugins/jetbrains/build/distributions/*-signed.zip"
+shopt -s nullglob
+SIGNED_ZIPS=( $SIGNED_ZIP_GLOB )
+shopt -u nullglob
+if [ ${#SIGNED_ZIPS[@]} -eq 0 ]; then
+  fail "No signed plugin found at $SIGNED_ZIP_GLOB. Run 'mise run package:jetbrains:sign' first."
+fi
 
 # --no-configuration-cache: the script-level verifyPluginSignature task config
 # (which wires certificateChainFile to CERTIFICATE_CHAIN_FILE) can't be serialized
@@ -51,4 +63,4 @@ export CERTIFICATE_CHAIN CERTIFICATE_CHAIN_FILE PRIVATE_KEY PRIVATE_KEY_PASSWORD
 # skipping the cache has negligible cost.
 cd ide-plugins/jetbrains && ./gradlew verifyPluginSignature --no-configuration-cache "$@"
 
-echo "Plugin signature verified."
+echo "Plugin signature verified: ${SIGNED_ZIPS[*]}"

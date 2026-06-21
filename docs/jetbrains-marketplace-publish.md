@@ -136,9 +136,12 @@ mise run package:jetbrains:verify-signature
 ```
 
 - 签名有效 → `BUILD SUCCESSFUL`
-- 签名无效 / 未签名 → 报错退出
+- 签名 zip 存在但签名无效 → 报错退出
+- 签名 zip 不存在 → task 前置检查抦下，报错退出并提示先跑 `package:jetbrains:sign`
 
-这个 task 与 `package:jetbrains:sign` 读取相同的签名目录（`~/.pi-toolset/pi-x-ide/jetbrains/`，可用 `JETBRAINS_SIGNING_DIR` 覆盖），且依赖 `signPlugin`，所以会按需先签名再校验。
+这个 task 与 `package:jetbrains:sign` 读取相同的签名目录（`~/.pi-toolset/pi-x-ide/jetbrains/`，可用 `JETBRAINS_SIGNING_DIR` 覆盖）。
+
+> **重要：verify-signature 不会自动签名**。`verifyPluginSignature` 只检查现有的 `<name>-<version>-signed.zip`，不依赖 `signPlugin`。Gradle 层面，签名 zip 不存在时 `verifyPluginSignature` 会被标记为 `NO-SOURCE` 静默跳过并谎报 `BUILD SUCCESSFUL` —— 为防此误导，mise task 在调 gradle 前会检查签名 zip 是否存在，缺失则明确 fail。正确顺序是先跑 `package:jetbrains:sign` 生成签名 zip，再跑 `package:jetbrains:verify-signature` 验证。
 
 > task 内部已处理 `verifyPluginSignature` 在 intellij-platform-gradle-plugin 2.16.0 的一个 bug（证书内容被当作多余 CLI 参数传递），通过 `certificateChainFile` + `--no-configuration-cache` 绕过。直接跑 `./gradlew verifyPluginSignature` 会踩到这个 bug，见「常见错误」。
 
