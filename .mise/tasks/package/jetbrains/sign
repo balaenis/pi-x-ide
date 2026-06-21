@@ -45,6 +45,6 @@ CERTIFICATE_CHAIN_FILE="$CHAIN_FILE"
 PRIVATE_KEY="$(cat "$KEY_FILE")"
 export CERTIFICATE_CHAIN CERTIFICATE_CHAIN_FILE PRIVATE_KEY PRIVATE_KEY_PASSWORD
 
-cd ide-plugins/jetbrains && ./gradlew signPlugin "$@"
+mise run package:jetbrains
 
 echo "Signed plugin written to: ide-plugins/jetbrains/build/distributions/"

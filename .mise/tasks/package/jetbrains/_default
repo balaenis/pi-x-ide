@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-#MISE description="Build the production JetBrains plugin ZIP"
+#MISE description="Package the JetBrains plugin ZIP (signs automatically when signing env vars are set)"
 #MISE depends=["setup"]
 #
-# Arguments after `--` are forwarded to Gradle's `buildPlugin` task.
-# Common examples:
+# Behavior:
+#   - If CERTIFICATE_CHAIN, PRIVATE_KEY, and PRIVATE_KEY_PASSWORD are ALL set,
+#     runs `signPlugin` and produces `<name>-<version>-signed.zip`.
+#   - If any of them is missing/empty, runs `buildPlugin` and produces an
+#     unsigned `<name>-<version>.zip`.
+#
+# Arguments after `--` are forwarded to the selected Gradle task. Common examples:
 #   mise run package:jetbrains -- -PlocalIdePath=$HOME/.cache/pi-x-ide/idea-2026.1.3
 #   mise run package:jetbrains -- --dry-run
 #   mise run package:jetbrains -- --info --stacktrace
@@ -12,4 +17,12 @@
 #   - Gradle execution flags: --dry-run, --info, --debug, --stacktrace, --scan
 set -euo pipefail
 
-cd ide-plugins/jetbrains && ./gradlew buildPlugin "$@"
+if [ -n "${CERTIFICATE_CHAIN:-}" ] && [ -n "${PRIVATE_KEY:-}" ] && [ -n "${PRIVATE_KEY_PASSWORD:-}" ]; then
+  GRADLE_TASK="signPlugin"
+  echo "All signing env vars present — running ${GRADLE_TASK} (produces signed zip)."
+else
+  GRADLE_TASK="buildPlugin"
+  echo "Signing env vars not fully set — running ${GRADLE_TASK} (produces unsigned zip)."
+fi
+
+cd ide-plugins/jetbrains && ./gradlew "${GRADLE_TASK}" "$@"
