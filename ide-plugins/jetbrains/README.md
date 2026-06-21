@@ -55,7 +55,7 @@ Install it manually from JetBrains IDEs via **Settings | Plugins | ⚙ | Install
 4. Open a local file in the sandbox IDE. Pi should connect automatically through `/ide auto` behavior and show JetBrains as the IDE source.
 5. Select text. Pi should update its widget with the file and line span.
 6. Press `Ctrl+Alt+K` or run **Tools | Pi x IDE: Attach Selection**. Pi should receive an `@relative/path#Lx-Ly` mention.
-7. Run **Tools | Pi x IDE: Open Pi Terminal**. The embedded terminal should start in the project directory and execute `pi`.
+7. Click the Pi x IDE icon in the New UI main toolbar, or run **Tools | Pi x IDE: Open Pi Terminal**. The embedded terminal should start in the project directory and execute `pi`.
 
 ## Windows JetBrains + WSL2 Smoke Test
 
@@ -74,7 +74,7 @@ Install it manually from JetBrains IDEs via **Settings | Plugins | ⚙ | Install
 5. Run `/ide list`; the JetBrains candidate should appear from the Windows-side lock directory.
 6. Run `/ide auto`; Pi should connect through the WSL default gateway or through `PI_X_IDE_HOST_OVERRIDE` if your network requires it.
 7. Select text in JetBrains and press `Ctrl+Alt+K` or run **Tools | Pi x IDE: Attach Selection**. Pi should insert a Linux-style `@relative/path#Lx-Ly` mention.
-8. Run **Tools | Pi x IDE: Open Pi Terminal**. For WSL UNC projects on Windows, the terminal command should be `wsl.exe -d <distro> --cd <linux-path> pi` instead of starting in the UNC path directly.
+8. Click the Pi x IDE icon in the New UI main toolbar, or run **Tools | Pi x IDE: Open Pi Terminal**. For WSL UNC projects on Windows, the terminal command should be `wsl.exe -d <distro> --cd <linux-path> pi` instead of starting in the UNC path directly.
 
 ## MVP Scope
 

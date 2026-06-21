@@ -21,15 +21,18 @@
     <action id="PiXIde.AttachSelection"
             class="com.balaenis.pixide.actions.PiXIdeAttachSelectionAction"
             text="Pi x IDE: Attach Selection"
-            description="Attach the active JetBrains file or selection to Pi">
+            description="Attach the active JetBrains file or selection to Pi"
+            icon="/icons/pi-x-ide.svg">
       <keyboard-shortcut first-keystroke="ctrl alt K" keymap="$default" />
       <add-to-group group-id="ToolsMenu" anchor="last" />
     </action>
     <action id="PiXIde.OpenTerminal"
             class="com.balaenis.pixide.actions.PiXIdeOpenTerminalAction"
             text="Pi x IDE: Open Pi Terminal"
-            description="Open an embedded terminal and run Pi">
+            description="Open an embedded terminal and run Pi"
+            icon="/icons/pi-x-ide.svg">
       <add-to-group group-id="ToolsMenu" anchor="last" />
+      <add-to-group group-id="MainToolbarRight" anchor="last" />
     </action>
   </actions>
 </idea-plugin>
