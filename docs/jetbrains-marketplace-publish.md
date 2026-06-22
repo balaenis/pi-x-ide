@@ -11,13 +11,13 @@ group      = com.balaenis.pixide    # Gradle 项目坐标，与 plugin id 无关
 
 `plugin id` 和 `group` 是两个独立概念，设置在不同文件：
 
-| 字段 | 设置位置 | 说明 |
-| --- | --- | --- |
-| **plugin id** | `src/main/resources/META-INF/plugin.xml` 的 `<id>`（权威来源） | IDE 与 Marketplace 实际读取的唯一标识，**发布后不可更改**，改了会被当成另一个插件 |
-| **plugin id** | `build.gradle.kts` 的 `intellijPlatform.pluginConfiguration.id` | 构建期配置，必须与 `plugin.xml` 的 `<id>` 一致 |
-| **group** | `gradle.properties` 的 `pluginGroup` | Gradle/Maven 坐标命名空间，`build.gradle.kts` 通过 `providers.gradleProperty("pluginGroup")` 读取 |
-| name | `plugin.xml` 的 `<name>` + `gradle.properties` 的 `pluginName` | 展示名 |
-| vendor | `plugin.xml` 的 `<vendor>` | Marketplace 页面展示的作者信息 |
+| 字段          | 设置位置                                                        | 说明                                                                                              |
+| ------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **plugin id** | `src/main/resources/META-INF/plugin.xml` 的 `<id>`（权威来源）  | IDE 与 Marketplace 实际读取的唯一标识，**发布后不可更改**，改了会被当成另一个插件                 |
+| **plugin id** | `build.gradle.kts` 的 `intellijPlatform.pluginConfiguration.id` | 构建期配置，必须与 `plugin.xml` 的 `<id>` 一致                                                    |
+| **group**     | `gradle.properties` 的 `pluginGroup`                            | Gradle/Maven 坐标命名空间，`build.gradle.kts` 通过 `providers.gradleProperty("pluginGroup")` 读取 |
+| name          | `plugin.xml` 的 `<name>` + `gradle.properties` 的 `pluginName`  | 展示名                                                                                            |
+| vendor        | `plugin.xml` 的 `<vendor>`                                      | Marketplace 页面展示的作者信息                                                                    |
 
 > 修改 plugin id 时，`plugin.xml` 的 `<id>` 和 `build.gradle.kts` 的 `pluginConfiguration.id` 必须同步改；但插件一旦在 Marketplace 上架，**不要再改 id**。
 
@@ -212,12 +212,12 @@ Settings -> Secrets and variables -> Actions -> New repository secret
 
 添加 4 个 secret（名字必须与下面完全一致，CI 直接按这些名字读）：
 
-| Secret 名 | 内容 |
-| --- | --- |
-| `PUBLISH_TOKEN` | 第 4 步生成的 `perm:...` token |
-| `CERTIFICATE_CHAIN` | `chain.crt` 的完整内容 |
-| `PRIVATE_KEY` | `private_encrypted.pem` 的完整内容 |
-| `PRIVATE_KEY_PASSWORD` | 生成私钥时设的密码 |
+| Secret 名              | 内容                               |
+| ---------------------- | ---------------------------------- |
+| `PUBLISH_TOKEN`        | 第 4 步生成的 `perm:...` token     |
+| `CERTIFICATE_CHAIN`    | `chain.crt` 的完整内容             |
+| `PRIVATE_KEY`          | `private_encrypted.pem` 的完整内容 |
+| `PRIVATE_KEY_PASSWORD` | 生成私钥时设的密码                 |
 
 > `CERTIFICATE_CHAIN` 和 `PRIVATE_KEY` 是多行内容，直接把整个文件内容粘进 secret 输入框即可（含 `-----BEGIN ...-----` / `-----END ...-----` 行）。
 
@@ -285,11 +285,11 @@ publishing {
 
 分流规则：
 
-| 版本号 | 发布渠道 | 用户可见性 |
-| --- | --- | --- |
-| `1.13.1` | `default` | 主渠道，所有人默认可见 |
-| `1.14.0-alpha.1` | `alpha` | 自定义渠道，需手动添加该渠道才能装到 |
-| `1.14.0-beta.2` | `beta` | 自定义渠道 |
+| 版本号           | 发布渠道  | 用户可见性                           |
+| ---------------- | --------- | ------------------------------------ |
+| `1.13.1`         | `default` | 主渠道，所有人默认可见               |
+| `1.14.0-alpha.1` | `alpha`   | 自定义渠道，需手动添加该渠道才能装到 |
+| `1.14.0-beta.2`  | `beta`    | 自定义渠道                           |
 
 本项目 `release-please-config.json` 配了 `"prerelease": true`，版本号会带 `-next.N` / `-alpha` 等后缀，因此预发布版本会进对应的自定义渠道，稳定版才进 `default`。这正是期望行为。
 
