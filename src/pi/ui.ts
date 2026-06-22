@@ -5,6 +5,7 @@ import type { ExtensionContext, ThemeColor } from "@earendil-works/pi-coding-age
 };
 import { logExtensionError } from "../shared/errors";
 import { describeRanges } from "../shared/format";
+import { basename } from "node:path";
 import { toRelativeDisplayPath } from "../shared/paths";
 import type { PiIdeRuntime } from "./state";
 
@@ -147,17 +148,17 @@ export function buildStatusSegments(
         { text: "✕", color: "error" },
       ];
     case "connected":
-      return buildConnectedSegments(runtime, cwd);
+      return buildConnectedSegments(runtime);
     default:
       return [];
   }
 }
 
-function buildConnectedSegments(runtime: PiIdeRuntime, cwd?: string): StatusSegment[] {
+function buildConnectedSegments(runtime: PiIdeRuntime): StatusSegment[] {
   const selection = runtime.latestSelection;
   if (!selection) return [{ text: `${IDE_ICON} ✓`, color: "dim" }];
 
-  const rel = toRelativeDisplayPath(selection.filePath, selection.workspaceFolder, cwd);
+  const rel = basename(selection.filePath);
   const range = describeRanges(selection.ranges);
   // Pending selections are still queued for the next prompt (⇡, success); sent ones are attached (✓, dim).
   const pending = runtime.attachState === "pending";
