@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.14.0](https://github.com/balaenis/pi-x-ide/compare/v1.13.1...v1.14.0) (2026-06-22)
+
+
+### Features
+
+* **jetbrains:** add JetBrains IDE plugin with lock-file, selection-tracking, and WebSocket server ([401e65d](https://github.com/balaenis/pi-x-ide/commit/401e65d50ed00f2803324c954560551f9ebe5c70)), closes [#47](https://github.com/balaenis/pi-x-ide/issues/47)
+* **jetbrains:** add plugin icons, toolbar group, and icon references to actions ([ab5b0c4](https://github.com/balaenis/pi-x-ide/commit/ab5b0c483d004b2cc1d5950acbbdab9af8b9d9b6))
+* **jetbrains:** add signing and publishPlugin support for JetBrains Marketplace ([d86f5e0](https://github.com/balaenis/pi-x-ide/commit/d86f5e0ec2769eeaec5a90b4c117c40d08e4df4e))
+* **jetbrains:** run pi through login shell for proper PATH setup on native Unix and WSL ([7bf2924](https://github.com/balaenis/pi-x-ide/commit/7bf2924918692481c80a78fffd3ccffa67b166d3))
+* **wsl:** add WSL-aware IDE discovery and cross-platform host resolution ([d8bd2e4](https://github.com/balaenis/pi-x-ide/commit/d8bd2e42687a79022a47337149169f03f1034b21))
+
 ## [1.13.1](https://github.com/balaenis/pi-x-ide/compare/v1.13.0...v1.13.1) (2026-06-20)
 
 ### Bug Fixes
