@@ -93,25 +93,7 @@ See [Configuration Reference](#neovim-2) for full setup options, commands, and t
 
 #### JetBrains IDEs
 
-JetBrains support is provided by the plugin project under `ide-plugins/jetbrains`. The MVP is installed manually: build a local ZIP and install it through the IDE, or run it in a sandbox IDE for development.
-
-Run a sandbox IDE:
-
-```bash
-cd ide-plugins/jetbrains
-./gradlew runIde
-```
-
-Build a plugin ZIP for manual installation:
-
-```bash
-cd ide-plugins/jetbrains
-./gradlew buildPlugin
-```
-
-The ZIP is written to `ide-plugins/jetbrains/build/distributions/`. Install it from **Settings | Plugins | ⚙ | Install Plugin from Disk...**.
-
-JetBrains MVP support includes live active-file tracking, live selection tracking, `Ctrl+Alt+K` / **Pi x IDE: Attach Selection**, Pi-side `/ide auto`, and **Pi x IDE: Open Pi Terminal**. Diagnostic Quick Fix actions and Pi-side automatic JetBrains plugin installation are not part of the MVP.
+Download the latest JetBrains plugin ZIP from the [latest GitHub Release](https://github.com/balaenis/pi-x-ide/releases/latest), then install it in your JetBrains IDE via **Settings | Plugins | ⚙ | Install Plugin from Disk...**.
 
 ### Connect Pi & Verify
 

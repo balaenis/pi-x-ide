@@ -85,25 +85,7 @@ lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
 
 #### JetBrains IDE
 
-JetBrains 支持由 `ide-plugins/jetbrains` 下的插件项目提供。MVP 需要手动安装：可以构建本地 ZIP 后从 IDE 安装，也可以在开发用 sandbox IDE 中运行。
-
-运行 sandbox IDE：
-
-```bash
-cd ide-plugins/jetbrains
-./gradlew runIde
-```
-
-构建用于手动安装的插件 ZIP：
-
-```bash
-cd ide-plugins/jetbrains
-./gradlew buildPlugin
-```
-
-ZIP 会输出到 `ide-plugins/jetbrains/build/distributions/`。在 JetBrains IDE 中通过 **Settings | Plugins | ⚙ | Install Plugin from Disk...** 安装。
-
-JetBrains MVP 支持实时活跃文件追踪、实时选区追踪、`Ctrl+Alt+K` / **Pi x IDE: Attach Selection**、Pi 侧 `/ide auto`，以及 **Pi x IDE: Open Pi Terminal**。诊断 Quick Fix 和 Pi 侧自动安装 JetBrains 插件不属于 MVP 范围。
+从 [GitHub 最新 Release](https://github.com/balaenis/pi-x-ide/releases/latest) 下载 JetBrains 插件 ZIP，然后在 JetBrains IDE 中通过 **Settings | Plugins | ⚙ | Install Plugin from Disk...** 安装。
 
 ### 连接 Pi 并验证
 
