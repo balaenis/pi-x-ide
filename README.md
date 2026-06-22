@@ -42,17 +42,8 @@ No extension installation is needed. Pi automatically detects Zed when running i
 
 #### Neovim
 
-Neovim support uses a Lua plugin plus a sidecar process. On first start the
-plugin downloads a standalone binary for your platform (Linux / macOS / Windows,
-x64 or arm64) from GitHub Releases and verifies it against the release asset's
-SHA-256 digest before caching it. If the download or checksum verification fails,
-or no binary matches your platform, the plugin falls back to the bundled Node.js
-sidecar — Node.js is then required on PATH.
-
-Downloaded binaries are cached under `stdpath("cache")/pi-x-ide/` and reused on
-subsequent starts. The optional lazy.nvim build hook uses the bundled binary when
-present; otherwise it checks the release digest on install and update,
-downloading only when the cached binary is missing or stale.
+Neovim support uses a Lua plugin plus a sidecar process. The plugin auto-downloads
+a platform binary on first start and falls back to Node.js if unavailable.
 
 **lazy.nvim:**
 
@@ -73,14 +64,10 @@ downloading only when the cached binary is missing or stale.
 }
 ```
 
-> **Note:** The `init` block manually adds the `ide-plugins/nvim/` subdirectory to the runtime path to avoid a Lua module resolution issue with some lazy.nvim versions. The plugin options are passed through lazy.nvim's recommended `opts` field.
->
-> The optional `build` hook resolves the bundled sidecar binary when present;
-> otherwise it checks the GitHub Release asset digest at install/update time
-> (`:Lazy build pi-x-ide` to re-run) and downloads only when the cached binary is
-> missing or stale. It is safe to omit: the plugin still downloads the binary
-> lazily on first start and falls back to the Node.js sidecar if the download is
-> unavailable.
+> **Note:** The `init` block adds the plugin subdirectory to the runtime path to
+> work around a Lua module resolution issue with some lazy.nvim versions. The
+> optional `build` hook pre-downloads the sidecar binary; it is safe to omit —
+> the plugin downloads it lazily on first start.
 
 **Native package:**
 
@@ -103,21 +90,26 @@ Start Pi in the **same project directory** as your IDE workspace:
 pi
 ```
 
-Pi auto-loads `pi-x-ide` and connects to your IDE. The TUI should display a connected IDE source such as `IDE: vscode ✓` or `IDE: jetbrains ✓` in the footer and a widget showing the IDE name, workspace, current file, and selection range.
+Pi auto-loads `pi-x-ide` and connects to your IDE. The TUI shows a widget above the
+editor with the current IDE connection and selection state.
 
 **Verify it works:**
 
 Open a file in your IDE and select some text. The widget should update in real time:
 
 ```
-IDE: vscode ✓ src/foo.ts#L10-L20 pending
+⧉ ⇡ foo.ts#L10-L20
 ```
 
 Attach the selection from either side: press `Ctrl+Alt+K` (Linux/Windows) or `Cmd+Alt+K` (macOS) in a VS Code-family IDE, press `Ctrl+Alt+K` or run **Pi x IDE: Attach Selection** in JetBrains, use `:PiXIdeAttach` in Neovim, or focus the Pi TUI and press `Ctrl+Alt+K` / run `/ide attach`. The Pi input box should insert `@src/foo.ts#L10-L20`.
 
-Type a chat prompt in Pi and submit it. The selected text is injected as LLM context (does not persist in session history). After submission, the widget shows `sent`.
+Type a chat prompt in Pi and submit it. The selected text is injected as LLM context.
+After submission, the widget changes to
+`⧉ ✓ foo.ts#L10-L20`.
 
-For diagnostics in VS Code-family IDEs, connect Pi first, then place the cursor on an error or warning and open Quick Fix. The **Pi: Fix it** and **Pi: Send diagnostic** actions are shown only while at least one Pi client is connected. **Pi: Fix it** sends the diagnostic message, source range, nearby context lines, and related information to one connected Pi client and starts a diagnostic-analysis turn with a configurable prompt template (see [`fix_prompt`](#pi-side-configuration)). **Pi: Send diagnostic** sends the same context to one connected Pi client and pastes it into Pi's input box without starting a turn. JetBrains does not provide diagnostic Quick Fix actions in the MVP.
+**Diagnostic Quick Fix (VS Code only):** place the cursor on an error or warning,
+open Quick Fix, and choose **Pi: Fix it** to send the diagnostic to Pi and start an
+analysis turn, or **Pi: Send diagnostic** to paste it into the input box.
 
 **If the connection doesn't appear:**
 
@@ -125,13 +117,14 @@ For diagnostics in VS Code-family IDEs, connect Pi first, then place the cursor 
 - If the IDE was started after Pi, reload the IDE window and run `/ide auto` again.
 - Run `/ide` to manually select a connection from the list.
 
-### WSL2 IDE Discovery
+### WSL2
 
-VS Code Remote WSL works like a same-host setup: the extension host runs inside WSL, writes Linux-side lock files under `~/.pi/pi-x-ide/lock`, and binds the WebSocket server inside the WSL network namespace.
+When Pi runs inside WSL2 and your IDE runs on native Windows, Pi automatically
+discovers the IDE connection across the WSL boundary. No extra configuration is
+needed in most cases.
 
-When Pi runs inside WSL2 and a native Windows IDE plugin is running on the Windows side, Pi also scans Windows user lock directories such as `/mnt/c/Users/<user>/.pi/pi-x-ide/lock`. New Windows-side lock files include `runningInWindows: true`; Pi uses that metadata to try the WSL default gateway before falling back to the lock file's `host` value. Windows and WSL UNC paths are normalized before workspace matching and before formatting `@file#Lx-Ly` mentions.
-
-If your WSL networking mode, firewall, or endpoint security blocks the default gateway, set `PI_X_IDE_HOST_OVERRIDE`:
+If your WSL networking mode, firewall, or endpoint security blocks the automatic
+discovery, set `PI_X_IDE_HOST_OVERRIDE`:
 
 ```bash
 PI_X_IDE_HOST_OVERRIDE=127.0.0.1 pi
@@ -173,8 +166,6 @@ Default database paths:
 - **Windows:** `%LOCALAPPDATA%\Zed\db\0-stable\db.sqlite`
 - **WSL with Windows Zed:** `/mnt/c/Users/<user>/AppData/Local/Zed/db/0-stable/db.sqlite`
 
-When Pi runs in WSL and Zed runs as a Windows app, pi-x-ide normalizes Windows paths (`C:\Users\<user>\project`) to `/mnt/c/Users/<user>/project`, and matching WSL UNC paths to `/home/<user>/project`.
-
 #### Neovim
 
 ```lua
@@ -183,14 +174,12 @@ require("pi_x_ide").setup({
   keymap = "<C-A-k>",
   debounce_ms = 150,
   -- sidecar_cmd = { "node", "/absolute/path/to/pi-x-ide-nvim-sidecar.cjs" },
-  -- (defaults to the platform binary; falls back to node + cjs if no binary found)
   -- workspace_folders = { "/path/to/project" },
 })
 ```
 
 If the sidecar does not start, run `:PiXIdeStatus`, or set `sidecar_cmd` to a
-custom command. The plugin prefers the platform binary but falls back to Node.js
-when no binary matches.
+custom command.
 
 **Commands:**
 
@@ -234,13 +223,14 @@ See [schemas/config.json](schemas/config.json) for editor schema guidance. A [co
 | Diagnostic Quick Fix                                 | ✅                      | ❌         | ❌                            | ❌                      |
 | Auto-install                                         | ✅ VS Code-family only  | N/A        | ❌                            | ❌                      |
 
-### Lock File Protocol
+### How Discovery Works
 
-After the IDE WebSocket server starts, connection information is written to `~/.pi/pi-x-ide/lock/`.
+Pi discovers IDE connections via lock files under `~/.pi/pi-x-ide/lock/`. It
+auto-connects when your terminal `cwd` is inside one of the IDE's workspace
+folders. If `cwd` is only a parent directory (e.g. `~/`), run `/ide` to choose a
+connection manually.
 
-Pi uses `ctx.cwd` to find the longest path match against `workspaceFolders` in the lock files, selecting the best-matching and most recent IDE connection. Pi auto-connects only when the current `cwd` is inside or equal to one of the IDE `workspaceFolders`; if `cwd` is only a parent directory such as `~/`, run `/ide` to choose a connection manually.
-
-See [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md) for protocol details.
+See [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md) for the full protocol.
 
 ---
 

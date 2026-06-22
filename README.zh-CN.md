@@ -42,14 +42,8 @@ PI_X_IDE_AUTO_INSTALL=0
 
 #### Neovim
 
-Neovim 支持由一个 Lua 插件和一个 sidecar 进程组成。首次启动时插件会自动从
-GitHub Releases 下载适合当前平台的独立二进制文件（Linux/macOS/Windows，
-x64 或 arm64），并在写入缓存前用 release asset 的 SHA-256 digest 做校验。下载
-或校验失败、或无匹配二进制时，插件降级到内置的 Node.js sidecar — 此时需要
-PATH 中有 Node.js。
-
-下载的二进制文件缓存在 `stdpath("cache")/pi-x-ide/` 目录，后续启动直接复用。可选的
-lazy.nvim build 钩子会优先使用插件包内的 bundled binary；如果不存在，则在安装和更新时检查 release digest，仅在缓存二进制缺失或过期时下载。
+Neovim 支持由一个 Lua 插件和一个 sidecar 进程组成。插件首次启动时自动下载
+平台二进制文件，不可用时回退到 Node.js。
 
 **lazy.nvim：**
 
@@ -70,9 +64,9 @@ lazy.nvim build 钩子会优先使用插件包内的 bundled binary；如果不�
 }
 ```
 
-> **注意：** `init` 块手动将 `ide-plugins/nvim/` 子目录加入 runtime path，以规避部分版本 lazy.nvim 的 Lua 模块解析兼容性问题。插件选项通过 lazy.nvim 推荐的 `opts` 字段传入。
->
-> 可选的 `build` 钩子会优先使用插件包内的 bundled sidecar 二进制；如果不存在，则在安装/更新时检查 GitHub Release asset digest（用 `:Lazy build pi-x-ide` 可重新触发），仅在缓存二进制缺失或过期时下载。该钩子可以省略：插件仍会在首次启动时按需下载二进制，下载不可用时回退到 Node.js sidecar。
+> **注意：** `init` 块将插件子目录加入 runtime path，以规避部分版本 lazy.nvim 的
+> Lua 模块解析兼容性问题。可选的 `build` 钩子会预下载 sidecar 二进制；可以省略
+> — 插件会在首次启动时按需下载。
 
 **原生 package：**
 
@@ -95,21 +89,25 @@ lua require("pi_x_ide").setup({ keymap = "<leader>pa" })
 pi
 ```
 
-Pi 自动加载 `pi-x-ide` 并连接 IDE。TUI 底部应显示类似 `IDE: vscode ✓` 或 `IDE: jetbrains ✓` 的已连接 IDE source，输入框下方 widget 显示 IDE 名称、workspace、当前文件和选区范围。
+Pi 自动加载 `pi-x-ide` 并连接 IDE。TUI 在编辑器上方显示一个 widget，展示当前
+IDE 连接和选区状态。
 
 **验证是否正常：**
 
 在 IDE 中打开文件并选中文本，widget 应实时更新：
 
 ```text
-IDE: vscode ✓ src/foo.ts#L10-L20 pending
+⧉ ⇡ foo.ts#L10-L20
 ```
 
 可以从任一侧附加选区：在 VS Code 系列 IDE 中按 `Ctrl+Alt+K`（Linux/Windows）或 `Cmd+Alt+K`（macOS），在 JetBrains 中按 `Ctrl+Alt+K` 或运行 **Pi x IDE: Attach Selection**，在 Neovim 中使用 `:PiXIdeAttach`，或聚焦 Pi TUI 后按 `Ctrl+Alt+K` / 运行 `/ide attach`。Pi 输入框应插入 `@src/foo.ts#L10-L20`。
 
-在 Pi 中输入对话提示并提交，选中文本会作为 LLM 上下文注入（不写入 session 历史）。提交后 widget 显示 `sent`。
+在 Pi 中输入对话提示并提交，选中文本会作为 LLM 上下文注入。
+提交后 widget 变为 `⧉ ✓ foo.ts#L10-L20`。
 
-对于 VS Code 系列 IDE 中的诊断信息，先连接 Pi，再把光标放在 error 或 warning 上并打开 Quick Fix。只有至少一个 Pi 客户端已连接时，才会显示 **Pi: Fix it** 和 **Pi: Send diagnostic**。**Pi: Fix it** 会把诊断消息、源码范围、附近上下文行和 related information 发送给一个已连接的 Pi 客户端，并用可自定义的 prompt 模板自动开始诊断分析（参见 [`fix_prompt`](#pi-侧配置)）。**Pi: Send diagnostic** 会把相同上下文发送给一个已连接的 Pi 客户端并粘贴到 Pi 输入框，不会自动开始一轮对话。JetBrains MVP 不提供诊断 Quick Fix。
+**诊断 Quick Fix（仅 VS Code）：** 将光标放在 error 或 warning 上，打开 Quick Fix，
+选择 **Pi: Fix it** 将诊断信息发送给 Pi 并启动分析对话，或选择 **Pi: Send diagnostic**
+将其粘贴到输入框。
 
 **如果连接未出现：**
 
@@ -117,13 +115,13 @@ IDE: vscode ✓ src/foo.ts#L10-L20 pending
 - 如果 IDE 在 Pi 之后启动，reload IDE 窗口后再次运行 `/ide auto`
 - 运行 `/ide` 手动从列表中选择连接
 
-### WSL2 IDE 发现
+### WSL2
 
-VS Code Remote WSL 的行为等同于同主机连接：扩展宿主运行在 WSL 内部，在 Linux 侧的 `~/.pi/pi-x-ide/lock` 写入 lock file，并在 WSL 网络命名空间中绑定 WebSocket server。
+当 Pi 运行在 WSL2 中、IDE 运行在原生 Windows 上时，Pi 会自动跨 WSL 边界发现
+IDE 连接。大多数情况下无需额外配置。
 
-当 Pi 运行在 WSL2 中，而原生 Windows IDE 插件运行在 Windows 侧时，Pi 也会扫描 Windows 用户 lock 目录，例如 `/mnt/c/Users/<user>/.pi/pi-x-ide/lock`。新的 Windows 侧 lock file 会包含 `runningInWindows: true`；Pi 会使用该元数据优先尝试 WSL 默认网关，再回退到 lock file 中的 `host`。Windows 路径和 WSL UNC 路径会在 workspace 匹配以及格式化 `@file#Lx-Ly` mention 前规范化。
-
-如果你的 WSL 网络模式、防火墙或终端安全策略阻止默认网关访问，可设置 `PI_X_IDE_HOST_OVERRIDE`：
+如果你的 WSL 网络模式、防火墙或终端安全策略阻止自动发现，可设置
+`PI_X_IDE_HOST_OVERRIDE`：
 
 ```bash
 PI_X_IDE_HOST_OVERRIDE=127.0.0.1 pi
@@ -165,8 +163,6 @@ Pi 默认也会在 TUI 中注册 `Ctrl+Alt+K`，作为 `/ide attach` 的快捷�
 - **Windows：** `%LOCALAPPDATA%\Zed\db\0-stable\db.sqlite`
 - **WSL + Windows 版 Zed：** `/mnt/c/Users/<user>/AppData/Local/Zed/db/0-stable/db.sqlite`
 
-当 Pi 运行在 WSL 中而 Zed 是 Windows 应用时，pi-x-ide 会将 Windows 路径（`C:\Users\<user>\project`）规范化为 `/mnt/c/Users/<user>/project`，并将 WSL UNC 路径规范化为 `/home/<user>/project`。
-
 #### Neovim
 
 ```lua
@@ -175,13 +171,11 @@ require("pi_x_ide").setup({
   keymap = "<C-A-k>",
   debounce_ms = 150,
   -- sidecar_cmd = { "node", "/absolute/path/to/pi-x-ide-nvim-sidecar.cjs" },
-  -- （默认使用平台二进制文件；找不到时降级到 node + cjs）
   -- workspace_folders = { "/path/to/project" },
 })
 ```
 
-如果 sidecar 无法启动，请运行 `:PiXIdeStatus`，或设置 `sidecar_cmd` 为自定义
-命令。插件优先使用平台二进制文件，找不到匹配项时降级到 Node.js。
+如果 sidecar 无法启动，请运行 `:PiXIdeStatus`，或设置 `sidecar_cmd` 为自定义命令。
 
 **命令：**
 
@@ -225,13 +219,13 @@ Pi 侧变量可设为真实环境变量或写入 `~/.pi/pi-x-ide/config.json` �
 | 诊断 Quick Fix                                   | ✅                   | ❌          | ❌                       | ❌                   |
 | 自动安装                                         | ✅ 仅 VS Code 系列   | N/A         | ❌                       | ❌                   |
 
-### Lock File 协议
+### 发现机制
 
-IDE WebSocket server 启动后默认将连接信息写入 `~/.pi/pi-x-ide/lock/`。
+Pi 通过 `~/.pi/pi-x-ide/lock/` 下的 lock file 发现 IDE 连接。当终端 `cwd`
+位于某个 IDE workspace 目录内时自动连接；如果 `cwd` 只是父级目录（如 `~/`），
+请运行 `/ide` 手动选择连接。
 
-Pi 通过 `ctx.cwd` 与 lock file 中的 `workspaceFolders` 做最长路径匹配，选中最匹配且最新的 IDE 连接。只有当前 `cwd` 位于某个 IDE `workspaceFolders` 内或与其相等时，Pi 才会自动连接；如果 `cwd` 只是父级目录（例如 `~/`），请运行 `/ide` 手动选择连接。
-
-协议详情见 [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md)。
+完整协议见 [docs/specs/ide-protocol.md](docs/specs/ide-protocol.md)。
 
 ---
 
