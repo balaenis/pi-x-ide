@@ -2,6 +2,7 @@ import type { EditorSelectionSnapshot, SelectionRange } from "./protocol";
 import { toRelativeDisplayPath } from "./paths";
 
 export const SYSTEM_REMINDER_TAG = "system-reminder";
+export const SELECTED_CONTEXT_MARKER = "selected-context";
 
 export function rangeToLineSpan(range: SelectionRange): { startLine: number; endLine: number } {
   return {
@@ -74,7 +75,10 @@ export function formatEditorContext(
   const maxChars = options.maxChars ?? 24_000;
 
   if (snapshot.ranges.length === 0) {
-    return `<${SYSTEM_REMINDER_TAG}>\nThe user currently has \`${filePath}\` open in ${snapshot.source}. This may or may not be relevant.\n</${SYSTEM_REMINDER_TAG}>\n`;
+    return `<${SYSTEM_REMINDER_TAG}><${SELECTED_CONTEXT_MARKER}>
+The user currently has \`${filePath}\` open in ${snapshot.source}. This may or may not be relevant.
+</${SELECTED_CONTEXT_MARKER}></${SYSTEM_REMINDER_TAG}>
+`;
   }
 
   const sections: string[] = [];
@@ -97,5 +101,9 @@ export function formatEditorContext(
   }
 
   const suffix = truncated ? "\n[Selection text truncated to keep the prompt size bounded.]" : "";
-  return `<${SYSTEM_REMINDER_TAG}>\n${sections.join("\n")}\nThis may or may not be relevant.${suffix}\n</${SYSTEM_REMINDER_TAG}>\n`;
+  return `<${SYSTEM_REMINDER_TAG}><${SELECTED_CONTEXT_MARKER}>
+${sections.join("\n")}
+This may or may not be relevant.${suffix}
+</${SELECTED_CONTEXT_MARKER}></${SYSTEM_REMINDER_TAG}>
+`;
 }

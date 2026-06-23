@@ -3,7 +3,7 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
-import { formatEditorContext, snapshotKey, SYSTEM_REMINDER_TAG } from "../shared/format";
+import { formatEditorContext, snapshotKey, SYSTEM_REMINDER_TAG, SELECTED_CONTEXT_MARKER } from "../shared/format";
 import type { EditorSelectionSnapshot } from "../shared/protocol";
 import { DIAGNOSTIC_CONTEXT_MARKER } from "./diagnostics";
 import { runPiBoundary } from "./safety";
@@ -98,5 +98,8 @@ function normalizeUserContent(content: MergeableUserMessage["content"]): UserCon
 
 function messageContainsMarker(message: MergeableUserMessage): boolean {
   const serialized = JSON.stringify(message);
-  return serialized.includes(`<${SYSTEM_REMINDER_TAG}>`) || serialized.includes(DIAGNOSTIC_CONTEXT_MARKER);
+  return (
+    serialized.includes(`<${SYSTEM_REMINDER_TAG}><${SELECTED_CONTEXT_MARKER}>`) ||
+    serialized.includes(DIAGNOSTIC_CONTEXT_MARKER)
+  );
 }
