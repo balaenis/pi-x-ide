@@ -23,7 +23,7 @@ import {
   resolveAttachShortcut,
 } from "../src/pi/commands";
 import { createRuntime } from "../src/pi/state";
-import { resolvePiConfigEnv } from "../src/shared/config";
+import { CONFIG_DIR_NAME, resolvePiConfigEnv } from "../src/shared/config";
 
 void test("checks auto-install env gate", () => {
   assert.equal(isAutoInstallEnabled({}), true);
@@ -36,7 +36,7 @@ void test("checks auto-install env gate", () => {
 
 void test("checks auto-install env gate from pi config", async () => {
   const home = await mkdtemp(join(tmpdir(), "pi-x-ide-install-config-"));
-  const configDir = join(home, ".pi");
+  const configDir = join(home, CONFIG_DIR_NAME);
   const configPath = join(configDir, "config.json");
   await mkdir(configDir, { recursive: true });
   await writeFile(configPath, JSON.stringify({ env: { PI_X_IDE_AUTO_INSTALL: "off" } }));

@@ -2,6 +2,7 @@
 // ABOUTME: Verifies Pi receives initialize plus initial selection-cleared notifications only when authorized.
 package com.balaenis.pixide.server
 
+import com.balaenis.pixide.EXT_CONFIG_NAME
 import com.balaenis.pixide.protocol.AUTH_HEADER
 import com.google.gson.JsonParser
 import java.net.URI
@@ -81,7 +82,7 @@ class PiXIdeWebSocketServerTest {
             .get(5, TimeUnit.SECONDS)
 
     private fun initializeRequest(): String =
-        """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":1,"client":{"name":"pi-x-ide","version":"test"},"cwd":"/repo"}}"""
+        """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":1,"client":{"name":"$EXT_CONFIG_NAME","version":"test"},"cwd":"/repo"}}"""
 
     class CollectingListener : WebSocket.Listener {
         val messages = LinkedBlockingQueue<String>()

@@ -1,6 +1,7 @@
 // ABOUTME: Implements the Pi-side WebSocket client that receives IDE selection notifications.
 // ABOUTME: Contains callback dispatch boundaries so IDE messages cannot crash the Pi process.
 import WebSocket from "ws";
+import { EXT_CONFIG_NAME } from "../shared/config";
 import {
   AUTH_HEADER,
   type DiagnosticFixRequestedParams,
@@ -134,7 +135,7 @@ export class IdeConnection {
         method: "initialize",
         params: {
           protocolVersion: PROTOCOL_VERSION,
-          client: { name: "pi-x-ide", version: "0.1.0" },
+          client: { name: EXT_CONFIG_NAME, version: "0.1.0" },
           cwd: this.cwd,
         },
       }),

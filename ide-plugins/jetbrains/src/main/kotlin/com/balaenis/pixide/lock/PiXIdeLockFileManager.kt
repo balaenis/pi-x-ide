@@ -7,6 +7,7 @@ import com.balaenis.pixide.protocol.IdeLockFile
 import com.balaenis.pixide.protocol.LOCK_FILE_EXTENSION
 import com.balaenis.pixide.protocol.PiXIdeJson
 import com.balaenis.pixide.protocol.PROTOCOL_VERSION
+import com.balaenis.pixide.EXT_CONFIG_NAME
 import com.balaenis.pixide.protocol.TRANSPORT
 import java.io.IOException
 import java.nio.charset.StandardCharsets
@@ -19,6 +20,8 @@ import java.security.SecureRandom
 import java.time.Clock
 import java.time.Instant
 import java.util.Locale
+
+private const val CONFIG_DIR_NAME = ".pi"
 
 class PiXIdeLockFileManager(
     private val lockDir: Path = defaultLockDir(),
@@ -96,7 +99,7 @@ class PiXIdeLockFileManager(
     companion object {
         private val secureRandom = SecureRandom()
 
-        fun defaultLockDir(): Path = Path.of(System.getProperty("user.home"), ".pi", "pi-x-ide", "lock")
+        fun defaultLockDir(): Path = Path.of(System.getProperty("user.home"), CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock")
 
         fun detectRunningInWindows(): Boolean =
             System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)

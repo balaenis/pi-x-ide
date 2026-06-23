@@ -3,12 +3,14 @@ import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { isConfigEnvValue } from "./config-options";
 
+export const EXT_CONFIG_NAME = "pi-x-ide";
+export const CONFIG_DIR_NAME = ".pi";
 export const PI_CONFIG_FILE = "config.json";
 
 const processEnvOverlays = new WeakSet<NodeJS.ProcessEnv>();
 
 export function resolvePiConfigPath(home: string = homedir()): string {
-  return resolve(home, ".pi", "pi-x-ide", PI_CONFIG_FILE);
+  return resolve(home, CONFIG_DIR_NAME, EXT_CONFIG_NAME, PI_CONFIG_FILE);
 }
 
 export function readPiConfigEnv(configPath: string = resolvePiConfigPath()): NodeJS.ProcessEnv {

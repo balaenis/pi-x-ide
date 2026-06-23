@@ -7,6 +7,7 @@ import test from "node:test";
 import WebSocket from "ws";
 import { startNvimSidecar } from "../src/nvim/sidecar";
 import { parseNvimSidecarMessage } from "../src/nvim/sidecar-schema";
+import { EXT_CONFIG_NAME } from "../src/shared/config";
 import { AUTH_HEADER, type IdeLockFile } from "../src/shared/protocol";
 
 void test("validates nvim sidecar messages", () => {
@@ -47,7 +48,7 @@ void test("starts sidecar, writes lock file, initializes websocket, and forwards
           jsonrpc: "2.0",
           id: 1,
           method: "initialize",
-          params: { protocolVersion: 1, client: { name: "pi-x-ide", version: "test" }, cwd: "/repo" },
+          params: { protocolVersion: 1, client: { name: EXT_CONFIG_NAME, version: "test" }, cwd: "/repo" },
         }),
       );
 

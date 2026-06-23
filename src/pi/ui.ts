@@ -6,6 +6,7 @@ import type { ExtensionContext, ThemeColor } from "@earendil-works/pi-coding-age
 import { logExtensionError } from "../shared/errors";
 import { describeRanges } from "../shared/format";
 import { basename } from "node:path";
+import { EXT_CONFIG_NAME } from "../shared/config";
 import { toRelativeDisplayPath } from "../shared/paths";
 import type { PiIdeRuntime } from "./state";
 
@@ -46,7 +47,7 @@ export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undef
 
   runReportingUiFailure("update IDE UI widget", () =>
     uiContext.ui.setWidget(
-      "pi-x-ide",
+      EXT_CONFIG_NAME,
       (tui, theme) => {
         let frame = 0;
         let timer: ReturnType<typeof setInterval> | undefined;
@@ -104,7 +105,7 @@ export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undef
 export function clearIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undefined = runtime.ctx): void {
   const uiContext = getActiveUiContext(ctx);
   if (!uiContext) return;
-  runReportingUiFailure("clear IDE UI widget", () => uiContext.ui.setWidget("pi-x-ide", undefined));
+  runReportingUiFailure("clear IDE UI widget", () => uiContext.ui.setWidget(EXT_CONFIG_NAME, undefined));
 }
 
 // Truncates colored segments to the given width, appending an ellipsis when content overflows.

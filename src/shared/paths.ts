@@ -3,10 +3,11 @@
 import { realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, relative, resolve, sep } from "node:path";
+import { CONFIG_DIR_NAME, EXT_CONFIG_NAME } from "./config";
 import { normalizePathForHost, windowsUserProfileDirs } from "./platform";
 
 export function resolveLockDir(): string {
-  return resolve(homedir(), ".pi", "pi-x-ide", "lock");
+  return resolve(homedir(), CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock");
 }
 
 export interface ResolveLockDirsOptions {
@@ -21,7 +22,7 @@ export function resolveLockDirs(options: ResolveLockDirsOptions = {}): string[] 
 
   const dirs = [resolve(options.homeLockDir ?? resolveLockDir())];
   for (const profileDir of windowsUserProfileDirs(options.windowsUsersRoot, options.env)) {
-    dirs.push(resolve(profileDir, ".pi", "pi-x-ide", "lock"));
+    dirs.push(resolve(profileDir, CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock"));
   }
   return dedupePaths(dirs);
 }

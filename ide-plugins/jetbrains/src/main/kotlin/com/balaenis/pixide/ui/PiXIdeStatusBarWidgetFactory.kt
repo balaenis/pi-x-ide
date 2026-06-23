@@ -2,6 +2,7 @@
 // ABOUTME: Creates and disposes the widget instance for each open project.
 package com.balaenis.pixide.ui
 
+import com.balaenis.pixide.EXT_CONFIG_NAME
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.StatusBar
@@ -24,6 +25,6 @@ class PiXIdeStatusBarWidgetFactory : StatusBarWidgetFactory {
     override fun canBeEnabledOn(statusBar: StatusBar): Boolean = true
 
     companion object {
-        const val WIDGET_ID = "pi-x-ide"
+        const val WIDGET_ID = EXT_CONFIG_NAME
     }
 }

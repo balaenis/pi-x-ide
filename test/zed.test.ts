@@ -8,7 +8,7 @@ import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
 import { createRuntime } from "../src/pi/state";
-import { resolvePiConfigEnv } from "../src/shared/config";
+import { CONFIG_DIR_NAME, resolvePiConfigEnv } from "../src/shared/config";
 import type { LockFileCandidate } from "../src/shared/protocol";
 import {
   isZedTerminal,
@@ -91,7 +91,7 @@ void test("resolveZedDbPath respects env override", async () => {
 
 void test("resolveZedDbPath respects pi config env override", async () => {
   const root = await mkdtemp(join(tmpdir(), "pi-x-ide-zed-config-"));
-  const configDir = join(root, ".pi");
+  const configDir = join(root, CONFIG_DIR_NAME);
   const configPath = join(configDir, "config.json");
   const dbPath = join(root, "db.sqlite");
   await mkdir(configDir, { recursive: true });

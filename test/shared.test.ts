@@ -5,7 +5,7 @@ import { access, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
-import { readPiConfigEnv, readPiConfigFixPrompt, resolvePiConfigEnv } from "../src/shared/config";
+import { CONFIG_DIR_NAME, EXT_CONFIG_NAME, readPiConfigEnv, readPiConfigFixPrompt, resolvePiConfigEnv } from "../src/shared/config";
 import { formatEditorContext, formatRangeMention, parseRangeMention } from "../src/shared/format";
 import { hasDirectWorkspaceMatch, relationshipMatchLength, resolveLockDir, resolveLockDirs } from "../src/shared/paths";
 import {
@@ -171,12 +171,12 @@ void test("logs IDE widget render errors without throwing", () => {
 });
 
 void test("resolves default lock directory under .pi subdirectory", () => {
-  assert.equal(resolveLockDir(), resolve(homedir(), ".pi", "pi-x-ide", "lock"));
+  assert.equal(resolveLockDir(), resolve(homedir(), CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock"));
 });
 
 void test("loads environment overrides from pi config", async () => {
   const home = await mkdtemp(join(tmpdir(), "pi-x-ide-config-"));
-  const configDir = join(home, ".pi");
+  const configDir = join(home, CONFIG_DIR_NAME);
   const configPath = join(configDir, "config.json");
   await mkdir(configDir, { recursive: true });
   await writeFile(
@@ -199,7 +199,7 @@ void test("loads environment overrides from pi config", async () => {
 
 void test("reads fix_prompt from pi config", async () => {
   const home = await mkdtemp(join(tmpdir(), "pi-x-ide-config-"));
-  const configDir = join(home, ".pi");
+  const configDir = join(home, CONFIG_DIR_NAME);
   const configPath = join(configDir, "config.json");
   await mkdir(configDir, { recursive: true });
 
@@ -434,7 +434,7 @@ void test("resolveLockDirs includes Windows user lock dirs under WSL", async () 
 
   assert.deepEqual(resolveLockDirs({ homeLockDir, windowsUsersRoot: usersRoot, env: { WSL_DISTRO_NAME: "Ubuntu" } }), [
     resolve(homeLockDir),
-    resolve(usersRoot, "julian", ".pi", "pi-x-ide", "lock"),
+    resolve(usersRoot, "julian", CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock"),
   ]);
 });
 
@@ -493,7 +493,7 @@ void test("discovers candidates across home and WSL Windows lock directories", a
   const root = await mkdtemp(join(tmpdir(), "pi-x-ide-multi-lock-"));
   const homeLockDir = join(root, "home-lock");
   const usersRoot = join(root, "Users");
-  const windowsLockDir = join(usersRoot, "julian", ".pi", "pi-x-ide", "lock");
+  const windowsLockDir = join(usersRoot, "julian", CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock");
   await mkdir(homeLockDir, { recursive: true });
   await mkdir(windowsLockDir, { recursive: true });
 
@@ -531,7 +531,7 @@ void test("keeps Windows-side WSL lock when Linux PID check fails", async () => 
   const root = await mkdtemp(join(tmpdir(), "pi-x-ide-windows-pid-"));
   const homeLockDir = join(root, "home-lock");
   const usersRoot = join(root, "Users");
-  const windowsLockDir = join(usersRoot, "julian", ".pi", "pi-x-ide", "lock");
+  const windowsLockDir = join(usersRoot, "julian", CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock");
   await mkdir(homeLockDir, { recursive: true });
   await mkdir(windowsLockDir, { recursive: true });
   const lockPath = join(windowsLockDir, "jetbrains-999999-48123.lock");
@@ -568,7 +568,7 @@ void test("removes unreachable Windows-side WSL lock after Linux PID check fails
   const root = await mkdtemp(join(tmpdir(), "pi-x-ide-windows-pid-unreachable-"));
   const homeLockDir = join(root, "home-lock");
   const usersRoot = join(root, "Users");
-  const windowsLockDir = join(usersRoot, "julian", ".pi", "pi-x-ide", "lock");
+  const windowsLockDir = join(usersRoot, "julian", CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock");
   await mkdir(homeLockDir, { recursive: true });
   await mkdir(windowsLockDir, { recursive: true });
   const lockPath = join(windowsLockDir, "jetbrains-999999-48124.lock");
