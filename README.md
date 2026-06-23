@@ -4,7 +4,8 @@
 
 Automatically attaches the currently opened or selected file and text range from VS Code, Zed, Neovim, and JetBrains IDEs to the Pi TUI, submitting them as conversation context to the LLM.
 
----
+<img width="3822" height="2010" alt="pi-x-ide-guide" src="https://github.com/user-attachments/assets/70abe40d-e4ac-4c2e-aca7-80d2e7867945" />
+
 
 ## Installation & Usage
 
@@ -80,7 +81,7 @@ See [Configuration Reference](#neovim-2) for full setup options, commands, and t
 
 #### JetBrains IDEs
 
-Download the latest JetBrains plugin ZIP from the [latest GitHub Release](https://github.com/balaenis/pi-x-ide/releases/latest), then install it in your JetBrains IDE via **Settings | Plugins | ⚙ | Install Plugin from Disk...**.
+Download the latest JetBrains plugin ZIP(pi-x-ide-jetbrains-*.zip) from the [latest GitHub Release](https://github.com/balaenis/pi-x-ide/releases/latest), then install it in your JetBrains IDE via **Settings | Plugins | ⚙ | Install Plugin from Disk...**.
 
 ### Connect Pi & Verify
 
