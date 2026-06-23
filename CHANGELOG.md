@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0](https://github.com/balaenis/pi-x-ide/compare/v1.14.0...v1.15.0) (2026-06-23)
+
+
+### Features
+
+* **context:** wrap editor context in SELECTED_CONTEXT_MARKER for precise detection ([341e957](https://github.com/balaenis/pi-x-ide/commit/341e957e6f9ea32f60a90645f8fafa2e814bf267))
+
 ## [1.14.0](https://github.com/balaenis/pi-x-ide/compare/v1.13.1...v1.14.0) (2026-06-22)
 
 
