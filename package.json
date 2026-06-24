@@ -3,10 +3,12 @@
   "version": "1.15.0",
   "description": "Pi extension package for IDE selection context integration.",
   "files": [
-    "dist",
-    "schemas",
-    "src"
+    "dist/src",
+    "schemas"
   ],
+  "scripts": {
+    "prepack": "rm -rf dist && bunx tsc -p tsconfig.publish.json"
+  },
   "keywords": [
     "pi-package",
     "pi",
@@ -62,7 +64,7 @@
   "pi": {
     "image": "https://fastly.jsdelivr.net/gh/balaenis/pi-x-ide@main/assets/icons/pi-x-ide.png",
     "extensions": [
-      "./src/pi/index.ts"
+      "./dist/src/pi/index.js"
     ]
   }
 }

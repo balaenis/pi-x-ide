@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "sourceMap": false,
+    "declaration": false,
+    "declarationMap": false,
+    "removeComments": true
+  },
+  "include": ["src/pi/**/*.ts", "src/shared/**/*.ts"],
+  "exclude": ["node_modules", "dist", "test", "ide-plugins", "src/nvim"]
+}

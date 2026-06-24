@@ -3,5 +3,5 @@
 #MISE depends=["setup"]
 set -euo pipefail
 
-mise run --skip-deps compile
-npm publish --provenance --access public --tag "${NPM_TAG:-latest}"
+# mise run --skip-deps compile
+npm publish --provenance --access public --tag "${NPM_TAG:-latest}" "$@"
