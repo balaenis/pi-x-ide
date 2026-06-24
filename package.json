@@ -4,7 +4,9 @@
   "description": "Pi extension package for IDE selection context integration.",
   "files": [
     "dist/src",
-    "schemas"
+    "schemas",
+    "CHANGELOG.md",
+    "RELEASE.md"
   ],
   "scripts": {
     "prepack": "rm -rf dist && bunx tsc -p tsconfig.publish.json"
