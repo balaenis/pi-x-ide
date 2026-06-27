@@ -6,7 +6,6 @@ Automatically attaches the currently opened or selected file and text range from
 
 <img width="3822" height="2010" alt="pi-x-ide-guide" src="https://github.com/user-attachments/assets/70abe40d-e4ac-4c2e-aca7-80d2e7867945" />
 
-
 ## Installation & Usage
 
 ### Install the Pi Extension Package
@@ -81,7 +80,7 @@ See [Configuration Reference](#neovim-2) for full setup options, commands, and t
 
 #### JetBrains IDEs
 
-Download the latest JetBrains plugin ZIP(pi-x-ide-jetbrains-*.zip) from the [latest GitHub Release](https://github.com/balaenis/pi-x-ide/releases/latest), then install it in your JetBrains IDE via **Settings | Plugins | ⚙ | Install Plugin from Disk...**.
+Download the latest JetBrains plugin ZIP(pi-x-ide-jetbrains-\*.zip) from the [latest GitHub Release](https://github.com/balaenis/pi-x-ide/releases/latest), then install it in your JetBrains IDE via **Settings | Plugins | ⚙ | Install Plugin from Disk...**.
 
 ### Connect Pi & Verify
 
@@ -326,6 +325,6 @@ This project uses [Release Please](https://github.com/googleapis/release-please)
 
 See [RELEASE.md](RELEASE.md) for the full release guide.
 
-## Acknowledgments
+## Reference
 
 - [opencode](https://github.com/anomalyco/opencode)
