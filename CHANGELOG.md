@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.2](https://github.com/balaenis/pi-x-ide/compare/v1.15.1...v1.15.2) (2026-06-29)
+
+
+### Bug Fixes
+
+* **pi:** resolve package version from package root ([9a5db66](https://github.com/balaenis/pi-x-ide/commit/9a5db66780b85203730825abfd5f95d24b2c3a87))
+
 ## [1.15.1](https://github.com/balaenis/pi-x-ide/compare/v1.15.0...v1.15.1) (2026-06-29)
 
 
