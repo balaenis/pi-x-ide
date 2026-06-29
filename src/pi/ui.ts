@@ -8,6 +8,7 @@ import { describeRanges } from "../shared/format";
 import { basename } from "node:path";
 import { EXT_CONFIG_NAME } from "../shared/config";
 import { toRelativeDisplayPath } from "../shared/paths";
+import { truncateToWidth, visibleWidth } from "../shared/display-width";
 import type { PiIdeRuntime } from "./state";
 
 const IDE_ICON = "⧉";
@@ -17,6 +18,7 @@ const SPINNER_INTERVAL_MS = 90;
 interface StatusSegment {
   text: string;
   color: ThemeColor;
+  shrink?: boolean;
 }
 
 type ActiveUiContext = Pick<ExtensionContext, "cwd" | "ui">;
@@ -79,11 +81,11 @@ export function updateIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undef
             try {
               const connecting = runtime.enabled && runtime.connectionStatus === "connecting";
               animate(connecting);
-              const segments = buildStatusSegments(runtime, uiContext.cwd, SPINNER_FRAMES[frame]);
+              const segments = buildStatusSegments(runtime, SPINNER_FRAMES[frame]);
               if (segments.length === 0 || width <= 0) return [];
               const visible = truncateSegments(segments, width);
-              const plainLength = visible.reduce((sum, segment) => sum + segment.text.length, 0);
-              const pad = " ".repeat(Math.max(0, width - plainLength));
+              const plainWidth = visible.reduce((sum, segment) => sum + visibleWidth(segment.text), 0);
+              const pad = " ".repeat(Math.max(0, width - plainWidth));
               return [pad + visible.map((segment) => theme.fg(segment.color, segment.text)).join("")];
             } catch (error) {
               logExtensionError("render IDE UI widget", error);
@@ -110,34 +112,48 @@ export function clearIdeUi(runtime: PiIdeRuntime, ctx: ExtensionContext | undefi
 
 // Truncates colored segments to the given width, appending an ellipsis when content overflows.
 function truncateSegments(segments: StatusSegment[], width: number): StatusSegment[] {
-  const total = segments.reduce((sum, segment) => sum + segment.text.length, 0);
+  const total = segments.reduce((sum, segment) => sum + visibleWidth(segment.text), 0);
   if (total <= width) return segments;
   const fallbackColor = segments[0]?.color ?? "dim";
   if (width <= 3) return [{ text: ".".repeat(width), color: fallbackColor }];
 
-  const limit = width - 3;
+  const shrinkIndex = segments.findIndex((segment) => segment.shrink);
+  if (shrinkIndex >= 0) {
+    const shrinkSegment = segments[shrinkIndex];
+    const shrinkWidth = visibleWidth(shrinkSegment.text);
+    const reservedWidth = total - shrinkWidth;
+    const room = width - reservedWidth;
+    if (room > 0) {
+      const preserved = segments.map((segment, index) =>
+        index === shrinkIndex ? { ...segment, text: truncateToWidth(segment.text, room) } : segment,
+      );
+      const preservedWidth = preserved.reduce((sum, segment) => sum + visibleWidth(segment.text), 0);
+      if (preservedWidth <= width) return preserved;
+    }
+  }
+
+  const ellipsis = "...";
+  const limit = width - visibleWidth(ellipsis);
   const visible: StatusSegment[] = [];
   let used = 0;
   for (const segment of segments) {
     if (used >= limit) break;
     const room = limit - used;
-    if (segment.text.length <= room) {
+    const segmentWidth = visibleWidth(segment.text);
+    if (segmentWidth <= room) {
       visible.push(segment);
-      used += segment.text.length;
+      used += segmentWidth;
     } else {
-      visible.push({ text: segment.text.slice(0, room), color: segment.color });
-      used = limit;
+      const text = truncateToWidth(segment.text, room, "");
+      if (text) visible.push({ text, color: segment.color });
+      break;
     }
   }
-  visible.push({ text: "...", color: visible[visible.length - 1]?.color ?? fallbackColor });
+  visible.push({ text: ellipsis, color: visible[visible.length - 1]?.color ?? fallbackColor });
   return visible;
 }
 
-export function buildStatusSegments(
-  runtime: PiIdeRuntime,
-  cwd?: string,
-  spinnerFrame = SPINNER_FRAMES[0],
-): StatusSegment[] {
+export function buildStatusSegments(runtime: PiIdeRuntime, spinnerFrame = SPINNER_FRAMES[0]): StatusSegment[] {
   if (!runtime.enabled) return [];
 
   switch (runtime.connectionStatus) {
@@ -165,7 +181,13 @@ function buildConnectedSegments(runtime: PiIdeRuntime): StatusSegment[] {
   const pending = runtime.attachState === "pending";
   const marker = pending ? "⇡" : "✓";
   const color: ThemeColor = pending ? "success" : "dim";
-  return [{ text: `${IDE_ICON} ${marker} ${rel}${range === "open file" ? "" : range}`, color }];
+  const prefix = `${IDE_ICON} ${marker} `;
+  if (range === "open file") return [{ text: `${prefix}${rel}`, color, shrink: true }];
+  return [
+    { text: prefix, color },
+    { text: rel, color, shrink: true },
+    { text: range, color },
+  ];
 }
 
 export function buildWidget(runtime: PiIdeRuntime, cwd?: string): string[] | undefined {

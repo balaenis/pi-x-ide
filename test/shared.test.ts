@@ -5,7 +5,14 @@ import { access, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
-import { CONFIG_DIR_NAME, EXT_CONFIG_NAME, readPiConfigEnv, readPiConfigFixPrompt, resolvePiConfigEnv } from "../src/shared/config";
+import {
+  CONFIG_DIR_NAME,
+  EXT_CONFIG_NAME,
+  readPiConfigEnv,
+  readPiConfigFixPrompt,
+  resolvePiConfigEnv,
+} from "../src/shared/config";
+import { visibleWidth } from "../src/shared/display-width";
 import { formatEditorContext, formatRangeMention, parseRangeMention } from "../src/shared/format";
 import { hasDirectWorkspaceMatch, relationshipMatchLength, resolveLockDir, resolveLockDirs } from "../src/shared/paths";
 import {
@@ -168,6 +175,53 @@ void test("logs IDE widget render errors without throwing", () => {
   });
   assert.equal(errors.length, 1);
   assert.match(errors[0] ?? "", /render IDE UI widget: theme failure/);
+});
+
+void test("truncates IDE widget output by terminal cell width", () => {
+  const runtime = createRuntime();
+  runtime.connectionStatus = "connected";
+  setLatestSelection(runtime, {
+    ...snapshot,
+    filePath: `/repo/${"한글".repeat(80)}.ts`,
+    ranges: [],
+  });
+
+  let widgetFactory:
+    | ((
+        tui: { requestRender: () => void },
+        theme: { fg: (color: string, text: string) => string },
+      ) => { render: (width: number) => string[]; invalidate: () => void; dispose: () => void })
+    | undefined;
+  const ctx = {
+    cwd: "/repo",
+    hasUI: true,
+    ui: {
+      setWidget: (_id: string, factory: typeof widgetFactory) => {
+        widgetFactory = factory;
+      },
+    },
+  } as unknown as NonNullable<typeof runtime.ctx>;
+
+  updateIdeUi(runtime, ctx);
+  if (!widgetFactory) assert.fail("widget factory was not registered");
+  const widget = widgetFactory({ requestRender: () => undefined }, { fg: (_color, text) => text });
+  const [line] = widget.render(106);
+
+  assert.ok(line);
+  assert.ok(visibleWidth(`${"한글".repeat(80)}.ts`) > 106);
+  assert.ok(visibleWidth(line) <= 106, `${visibleWidth(line)} > 106`);
+
+  setLatestSelection(runtime, {
+    ...snapshot,
+    filePath: `/repo/${"한글".repeat(80)}.ts`,
+  });
+  const [lineWithRange] = widget.render(106);
+
+  assert.ok(lineWithRange);
+  assert.ok(lineWithRange.includes("..."));
+  assert.ok(lineWithRange.includes("#L10-L20"));
+  assert.ok(lineWithRange.indexOf("...") < lineWithRange.indexOf("#L10-L20"));
+  assert.ok(visibleWidth(lineWithRange) <= 106, `${visibleWidth(lineWithRange)} > 106`);
 });
 
 void test("resolves default lock directory under .pi subdirectory", () => {
