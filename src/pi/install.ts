@@ -1,8 +1,10 @@
+// ABOUTME: Discovers and installs companion IDE extensions for supported editors.
+// ABOUTME: Detects editor CLIs, compares installed versions, and runs extension installation commands.
 import { execFile } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { access } from "node:fs/promises";
-import { delimiter, isAbsolute, join } from "node:path";
+import { delimiter, dirname, isAbsolute, join } from "node:path";
 import { promisify } from "node:util";
-import packageJson from "../../package.json";
 import { resolvePiConfigEnv } from "../shared/config";
 import type { PiIdeRuntime } from "./state";
 
@@ -10,7 +12,32 @@ const execFileAsync = promisify(execFile);
 
 export const PI_X_IDE_EXTENSION_ID = "balaenis.pi-x-ide";
 export const PI_X_IDE_AUTO_INSTALL_ENV = "PI_X_IDE_AUTO_INSTALL";
-export const PI_X_IDE_TARGET_VERSION = packageJson.version;
+export const PI_X_IDE_TARGET_VERSION = readPackageVersion();
+
+function readPackageVersion(startDir = __dirname): string {
+  let currentDir = startDir;
+
+  while (true) {
+    const packageJsonPath = join(currentDir, "package.json");
+
+    try {
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
+        name?: unknown;
+        version?: unknown;
+      };
+
+      if (packageJson.name === "pi-x-ide" && typeof packageJson.version === "string") {
+        return packageJson.version;
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+
+    const parentDir = dirname(currentDir);
+    if (parentDir === currentDir) throw new Error("Unable to locate pi-x-ide package.json");
+    currentDir = parentDir;
+  }
+}
 
 export type SupportedIdeId = "vscode" | "cursor" | "windsurf";
 export type IdeInstallConfidence = "current-terminal" | "running-process" | "available-cli";
