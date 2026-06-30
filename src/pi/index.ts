@@ -3,27 +3,27 @@
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
-import { logExtensionError } from "../shared/errors";
-import { formatRangeMention } from "../shared/format";
-import { hasDirectWorkspaceMatch } from "../shared/paths";
-import type { AtMentionedParams, LockFileCandidate } from "../shared/protocol";
-import { discoverIdeCandidates } from "./discovery";
-import { IdeConnection, IdeConnectionTimeoutError, type IdeConnectionCallbacks } from "./connection";
+import { logExtensionError } from "../shared/errors.js";
+import { formatRangeMention } from "../shared/format.js";
+import { hasDirectWorkspaceMatch } from "../shared/paths.js";
+import type { AtMentionedParams, LockFileCandidate } from "../shared/protocol.js";
+import { discoverIdeCandidates } from "./discovery.js";
+import { IdeConnection, IdeConnectionTimeoutError, type IdeConnectionCallbacks } from "./connection.js";
 import {
   discoverInstallCandidates,
   installIdeExtension,
   isAutoInstallEnabled,
   selectAutoInstallCandidate,
   type IdeInstallCandidate,
-} from "./install";
-import { registerIdeCommand } from "./commands";
-import { clearLatestSelection, registerContextHandlers, setLatestSelection } from "./context";
-import { handleDiagnosticFixRequested } from "./diagnostics";
-import { formatReconnectLimitMessage, recordReconnectAttempt, resetReconnectState } from "./reconnect";
-import { containPiError, runPiBoundary, runPiBoundaryAsync } from "./safety";
-import { createRuntime, type PiIdeRuntime } from "./state";
-import { clearIdeUi, updateIdeUi } from "./ui";
-import { startZedPolling, stopZedPolling } from "./zed";
+} from "./install.js";
+import { registerIdeCommand } from "./commands.js";
+import { clearLatestSelection, registerContextHandlers, setLatestSelection } from "./context.js";
+import { handleDiagnosticFixRequested } from "./diagnostics.js";
+import { formatReconnectLimitMessage, recordReconnectAttempt, resetReconnectState } from "./reconnect.js";
+import { containPiError, runPiBoundary, runPiBoundaryAsync } from "./safety.js";
+import { createRuntime, type PiIdeRuntime } from "./state.js";
+import { clearIdeUi, updateIdeUi } from "./ui.js";
+import { startZedPolling, stopZedPolling } from "./zed.js";
 
 const RECONNECT_DELAY_MS = 2_000;
 const INSTALL_RECONNECT_RETRY_MS = 1_500;

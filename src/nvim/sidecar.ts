@@ -2,9 +2,9 @@
 // ABOUTME: Runs the Neovim sidecar process that bridges Neovim selections to Pi over WebSocket.
 // ABOUTME: Maintains lock files and contains sidecar message handling failures.
 import { createInterface } from "node:readline";
-import { type EditorSelectionSnapshot, type IdeLockFile } from "../shared/protocol";
-import { formatRangeMention } from "../shared/format";
-import { IdeWebSocketServer } from "../shared/ide-server";
+import { type EditorSelectionSnapshot, type IdeLockFile } from "../shared/protocol.js";
+import { formatRangeMention } from "../shared/format.js";
+import { IdeWebSocketServer } from "../shared/ide-server.js";
 import {
   createAuthToken,
   createIdeLockFile,
@@ -12,8 +12,13 @@ import {
   refreshIdeLockFile,
   removeIdeLockFile,
   writeIdeLockFile,
-} from "../shared/lock-file";
-import { parseJsonLine, parseNvimSidecarMessage, parseSidecarConfig, type NvimSidecarMessage } from "./sidecar-schema";
+} from "../shared/lock-file.js";
+import {
+  parseJsonLine,
+  parseNvimSidecarMessage,
+  parseSidecarConfig,
+  type NvimSidecarMessage,
+} from "./sidecar-schema.js";
 
 export interface NvimSidecarOptions {
   workspaceFolders?: string[];
@@ -210,14 +215,15 @@ function printHelp(): void {
   );
 }
 
-if (require.main === module) {
-  const parsed = parseCliArgs(process.argv.slice(2));
+export function runNvimSidecarCli(argv = process.argv.slice(2)): void {
+  const parsed = parseCliArgs(argv);
   if (parsed === "help") {
     printHelp();
-  } else {
-    startNvimSidecar(parsed).catch((error: unknown) => {
-      process.stderr.write(`pi-x-ide nvim sidecar: ${errorMessage(error)}\n`);
-      process.exitCode = 1;
-    });
+    return;
   }
+
+  startNvimSidecar(parsed).catch((error: unknown) => {
+    process.stderr.write(`pi-x-ide nvim sidecar: ${errorMessage(error)}\n`);
+    process.exitCode = 1;
+  });
 }

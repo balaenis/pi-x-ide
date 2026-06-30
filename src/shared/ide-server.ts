@@ -8,10 +8,10 @@ import {
   type EditorSelectionSnapshot,
   type IdeSource,
   type InitializeResult,
-} from "./protocol";
-import { isJsonRpcRequest } from "./schema";
-import { logExtensionError } from "./errors";
-import { decodeRawData } from "./ws";
+} from "./protocol.js";
+import { isJsonRpcRequest } from "./schema.js";
+import { logExtensionError } from "./errors.js";
+import { decodeRawData } from "./ws.js";
 
 export class IdeWebSocketServer {
   private httpServer?: Server;

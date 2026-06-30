@@ -3,9 +3,9 @@
 import type { ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
-import { errorMessage, logExtensionError, safeRun, safeRunAsync } from "../shared/errors";
-import type { PiIdeRuntime } from "./state";
-import { updateIdeUi } from "./ui";
+import { errorMessage, logExtensionError, safeRun, safeRunAsync } from "../shared/errors.js";
+import type { PiIdeRuntime } from "./state.js";
+import { updateIdeUi } from "./ui.js";
 
 export function containPiError(
   runtime: PiIdeRuntime,

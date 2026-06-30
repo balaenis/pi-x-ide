@@ -2,8 +2,8 @@
 // ABOUTME: Centralizes WSL-aware logic reused by Zed, discovery, connection, and formatting.
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { isProcessEnvOrPiConfigOverlay, resolvePiConfigEnv } from "./config";
-import type { EditorSelectionSnapshot } from "./protocol";
+import { isProcessEnvOrPiConfigOverlay, resolvePiConfigEnv } from "./config.js";
+import type { EditorSelectionSnapshot } from "./protocol.js";
 
 // Windows system profile directories that never host a real user lock directory.
 const WINDOWS_SYSTEM_PROFILES = new Set(["public", "default", "default user", "all users"]);

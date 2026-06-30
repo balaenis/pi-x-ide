@@ -1,7 +1,7 @@
 // ABOUTME: Implements the Pi-side WebSocket client that receives IDE selection notifications.
 // ABOUTME: Contains callback dispatch boundaries so IDE messages cannot crash the Pi process.
 import WebSocket from "ws";
-import { EXT_CONFIG_NAME } from "../shared/config";
+import { EXT_CONFIG_NAME } from "../shared/config.js";
 import {
   AUTH_HEADER,
   type DiagnosticFixRequestedParams,
@@ -12,18 +12,18 @@ import {
   type LockFileCandidate,
   type SelectionChangedParams,
   type SelectionClearedParams,
-} from "../shared/protocol";
+} from "../shared/protocol.js";
 import {
   isAtMentionedParams,
   isDiagnosticFixRequestedParams,
   isSelectionChangedParams,
   isSelectionClearedParams,
-} from "../shared/schema";
-import { toError, logExtensionError } from "../shared/errors";
-import { formatRangeMention } from "../shared/format";
-import { normalizeEditorSelectionSnapshotForHost } from "../shared/platform";
-import { decodeRawData } from "../shared/ws";
-import { resolveIdeHost } from "./ide-host";
+} from "../shared/schema.js";
+import { toError, logExtensionError } from "../shared/errors.js";
+import { formatRangeMention } from "../shared/format.js";
+import { normalizeEditorSelectionSnapshotForHost } from "../shared/platform.js";
+import { decodeRawData } from "../shared/ws.js";
+import { resolveIdeHost } from "./ide-host.js";
 
 export const IDE_CONNECT_TIMEOUT_MS = 5_000;
 

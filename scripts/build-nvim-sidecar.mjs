@@ -7,8 +7,8 @@ import * as esbuild from "esbuild";
 const production = process.argv.includes("--production");
 const cjsOutfile = "ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar.cjs";
 const outdir = "ide-plugins/nvim/bin";
-/** TypeScript entry point (used for both CJS bundle and direct binary compilation). */
-const entryPoint = "src/nvim/sidecar.ts";
+/** TypeScript CLI entry point (used for both CJS bundle and direct binary compilation). */
+const entryPoint = "src/nvim/sidecar-cli.ts";
 
 /** Platform targets for bun build --compile */
 const TARGETS = ["bun-linux-x64", "bun-linux-arm64", "bun-darwin-x64", "bun-darwin-arm64", "bun-windows-x64"];
@@ -20,7 +20,7 @@ await mkdir(outdir, { recursive: true });
 await esbuild.build({
   entryPoints: [entryPoint],
   banner: {
-    js: "// ABOUTME: Bundles the Neovim sidecar runtime for plugin-managed execution.\n// ABOUTME: Bridges Neovim stdin messages to Pi through the shared IDE protocol.",
+    js: "#!/usr/bin/env node\n// ABOUTME: Bundles the Neovim sidecar runtime for plugin-managed execution.\n// ABOUTME: Bridges Neovim stdin messages to Pi through the shared IDE protocol.",
   },
   bundle: true,
   platform: "node",
@@ -37,7 +37,7 @@ await chmod(cjsOutfile, 0o755).catch(() => undefined);
 // ── Standalone binaries (bun build --compile from TS source) ─────
 // NOTE: compiling the esbuild CJS bundle with bun produces broken
 // binaries (TCP accepts but HTTP/WS never responds). Compile from
-// TypeScript source directly instead.
+// the TypeScript CLI entry directly instead.
 
 const compileAll = process.argv.includes("--target=all");
 const targetsToBuild = compileAll ? TARGETS : [currentBunTarget()].filter(Boolean);
@@ -59,8 +59,8 @@ if (targetsToBuild.length === 0) {
 
 /**
  * Compile a single platform binary with `bun build --compile`.
- * Uses the TypeScript source as entry point (NOT the esbuild CJS
- * bundle, which produces broken binaries when compiled with bun).
+ * Uses the TypeScript CLI entry point (NOT the esbuild CJS bundle,
+ * which produces broken binaries when compiled with bun).
  */
 async function compileBinary({ entry, target }) {
   const ext = target.includes("windows") ? ".exe" : "";

@@ -3,12 +3,12 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
-import { formatEditorContext, snapshotKey, SYSTEM_REMINDER_TAG, SELECTED_CONTEXT_MARKER } from "../shared/format";
-import type { EditorSelectionSnapshot } from "../shared/protocol";
-import { DIAGNOSTIC_CONTEXT_MARKER } from "./diagnostics";
-import { runPiBoundary } from "./safety";
-import type { PiIdeRuntime } from "./state";
-import { updateIdeUi } from "./ui";
+import { formatEditorContext, snapshotKey, SYSTEM_REMINDER_TAG, SELECTED_CONTEXT_MARKER } from "../shared/format.js";
+import type { EditorSelectionSnapshot } from "../shared/protocol.js";
+import { DIAGNOSTIC_CONTEXT_MARKER } from "./diagnostics.js";
+import { runPiBoundary } from "./safety.js";
+import type { PiIdeRuntime } from "./state.js";
+import { updateIdeUi } from "./ui.js";
 
 export function registerContextHandlers(pi: ExtensionAPI, runtime: PiIdeRuntime): void {
   pi.on("before_agent_start", (_event, ctx) =>

@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { chmod, mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { LOCK_FILE_EXTENSION, type IdeLockFile, type IdeSource } from "./protocol";
-import { resolveLockDir } from "./paths";
+import { LOCK_FILE_EXTENSION, type IdeLockFile, type IdeSource } from "./protocol.js";
+import { resolveLockDir } from "./paths.js";
 
 export function createAuthToken(): string {
   return randomBytes(32).toString("hex");

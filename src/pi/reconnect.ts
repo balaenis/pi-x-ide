@@ -1,5 +1,5 @@
-import type { LockFileCandidate } from "../shared/protocol";
-import type { PiIdeRuntime } from "./state";
+import type { LockFileCandidate } from "../shared/protocol.js";
+import type { PiIdeRuntime } from "./state.js";
 
 export const MAX_RECONNECT_ATTEMPTS = 3;
 

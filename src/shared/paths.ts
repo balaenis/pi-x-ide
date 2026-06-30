@@ -3,8 +3,8 @@
 import { realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, relative, resolve, sep } from "node:path";
-import { CONFIG_DIR_NAME, EXT_CONFIG_NAME } from "./config";
-import { normalizePathForHost, windowsUserProfileDirs } from "./platform";
+import { CONFIG_DIR_NAME, EXT_CONFIG_NAME } from "./config.js";
+import { normalizePathForHost, windowsUserProfileDirs } from "./platform.js";
 
 export function resolveLockDir(): string {
   return resolve(homedir(), CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock");

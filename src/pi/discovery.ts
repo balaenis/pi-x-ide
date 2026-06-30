@@ -2,11 +2,11 @@
 // ABOUTME: Scans local and WSL-visible Windows lock directories while cleaning stale files safely.
 import { readdir, readFile, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { LOCK_FILE_EXTENSION, type IdeLockFile, type LockFileCandidate } from "../shared/protocol";
-import { relationshipMatchLength, resolveLockDirs } from "../shared/paths";
-import { parseLockFileContent } from "../shared/schema";
-import { isWsl, normalizePathForHost } from "../shared/platform";
-import { IDE_HOST_TCP_PROBE_TIMEOUT_MS, resolveIdeHost, tcpReachable } from "./ide-host";
+import { LOCK_FILE_EXTENSION, type IdeLockFile, type LockFileCandidate } from "../shared/protocol.js";
+import { relationshipMatchLength, resolveLockDirs } from "../shared/paths.js";
+import { parseLockFileContent } from "../shared/schema.js";
+import { isWsl, normalizePathForHost } from "../shared/platform.js";
+import { IDE_HOST_TCP_PROBE_TIMEOUT_MS, resolveIdeHost, tcpReachable } from "./ide-host.js";
 
 export interface DiscoverOptions {
   cwd: string;

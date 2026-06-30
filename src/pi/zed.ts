@@ -7,15 +7,15 @@ import { DatabaseSync } from "node:sqlite";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
-import type { EditorSelectionSnapshot, SelectionRange } from "../shared/protocol";
-import { resolvePiConfigEnv } from "../shared/config";
-import { isWsl, normalizePathForHost } from "../shared/platform";
-import { snapshotKey } from "../shared/format";
-import { isPathInsideOrEqual } from "../shared/paths";
-import { setLatestSelection, clearLatestSelection } from "./context";
-import type { PiIdeRuntime } from "./state";
-import { containPiError } from "./safety";
-import { updateIdeUi } from "./ui";
+import type { EditorSelectionSnapshot, SelectionRange } from "../shared/protocol.js";
+import { resolvePiConfigEnv } from "../shared/config.js";
+import { isWsl, normalizePathForHost } from "../shared/platform.js";
+import { snapshotKey } from "../shared/format.js";
+import { isPathInsideOrEqual } from "../shared/paths.js";
+import { setLatestSelection, clearLatestSelection } from "./context.js";
+import type { PiIdeRuntime } from "./state.js";
+import { containPiError } from "./safety.js";
+import { updateIdeUi } from "./ui.js";
 
 export { isWsl };
 

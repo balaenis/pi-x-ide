@@ -39,7 +39,7 @@
   "engines": {
     "node": ">=26"
   },
-  "type": "commonjs",
+  "type": "module",
   "main": "./dist/src/pi/index.js",
   "dependencies": {
     "ws": "^8.21.0"

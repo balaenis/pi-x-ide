@@ -3,13 +3,13 @@
 import type { ExtensionContext, ThemeColor } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
-import { logExtensionError } from "../shared/errors";
-import { describeRanges } from "../shared/format";
+import { logExtensionError } from "../shared/errors.js";
+import { describeRanges } from "../shared/format.js";
 import { basename } from "node:path";
-import { EXT_CONFIG_NAME } from "../shared/config";
-import { toRelativeDisplayPath } from "../shared/paths";
-import { truncateToWidth, visibleWidth } from "../shared/display-width";
-import type { PiIdeRuntime } from "./state";
+import { EXT_CONFIG_NAME } from "../shared/config.js";
+import { toRelativeDisplayPath } from "../shared/paths.js";
+import { truncateToWidth, visibleWidth } from "../shared/display-width.js";
+import type { PiIdeRuntime } from "./state.js";
 
 const IDE_ICON = "⧉";
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];

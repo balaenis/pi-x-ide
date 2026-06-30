@@ -15,15 +15,15 @@ import {
   PI_X_IDE_EXTENSION_ID,
   selectAutoInstallCandidate,
   type IdeInstallCandidate,
-} from "../src/pi/install";
+} from "../src/pi/install.js";
 import {
   DEFAULT_ATTACH_SHORTCUT,
   PI_X_IDE_ATTACH_SHORTCUT_ENV,
   registerIdeCommand,
   resolveAttachShortcut,
-} from "../src/pi/commands";
-import { createRuntime } from "../src/pi/state";
-import { CONFIG_DIR_NAME, resolvePiConfigEnv } from "../src/shared/config";
+} from "../src/pi/commands.js";
+import { createRuntime } from "../src/pi/state.js";
+import { CONFIG_DIR_NAME, resolvePiConfigEnv } from "../src/shared/config.js";
 
 void test("checks auto-install env gate", () => {
   assert.equal(isAutoInstallEnabled({}), true);

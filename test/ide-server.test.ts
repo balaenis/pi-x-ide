@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import WebSocket from "ws";
-import { IdeWebSocketServer } from "../src/shared/ide-server";
-import { AUTH_HEADER } from "../src/shared/protocol";
-import { decodeRawData } from "../src/shared/ws";
+import { IdeWebSocketServer } from "../src/shared/ide-server.js";
+import { AUTH_HEADER } from "../src/shared/protocol.js";
+import { decodeRawData } from "../src/shared/ws.js";
 
 void test("sends targeted notifications to only one connected client", async () => {
   const server = new IdeWebSocketServer("token", { name: "Test IDE", ide: "vscode" });

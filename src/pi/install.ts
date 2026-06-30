@@ -4,17 +4,19 @@ import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { access } from "node:fs/promises";
 import { delimiter, dirname, isAbsolute, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { resolvePiConfigEnv } from "../shared/config";
-import type { PiIdeRuntime } from "./state";
+import { resolvePiConfigEnv } from "../shared/config.js";
+import type { PiIdeRuntime } from "./state.js";
 
 const execFileAsync = promisify(execFile);
+const PACKAGE_SEARCH_START_DIR = dirname(fileURLToPath(import.meta.url));
 
 export const PI_X_IDE_EXTENSION_ID = "balaenis.pi-x-ide";
 export const PI_X_IDE_AUTO_INSTALL_ENV = "PI_X_IDE_AUTO_INSTALL";
 export const PI_X_IDE_TARGET_VERSION = readPackageVersion();
 
-function readPackageVersion(startDir = __dirname): string {
+function readPackageVersion(startDir = PACKAGE_SEARCH_START_DIR): string {
   let currentDir = startDir;
 
   while (true) {

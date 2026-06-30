@@ -1,6 +1,6 @@
 // ABOUTME: Defines the JSON-RPC protocol contracts shared by Pi and IDE plugins.
 // ABOUTME: Keeps lock-file, editor snapshot, diagnostics, and attach message types in sync.
-import { EXT_CONFIG_NAME } from "./config";
+import { EXT_CONFIG_NAME } from "./config.js";
 
 export const PROTOCOL_VERSION = 1;
 export const AUTH_HEADER = "x-pi-x-ide-authorization";

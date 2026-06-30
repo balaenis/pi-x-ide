@@ -1,5 +1,5 @@
-import type { EditorSelectionSnapshot, SelectionRange } from "./protocol";
-import { toRelativeDisplayPath } from "./paths";
+import type { EditorSelectionSnapshot, SelectionRange } from "./protocol.js";
+import { toRelativeDisplayPath } from "./paths.js";
 
 export const SYSTEM_REMINDER_TAG = "system-reminder";
 export const SELECTED_CONTEXT_MARKER = "selected-context";

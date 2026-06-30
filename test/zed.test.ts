@@ -7,9 +7,9 @@ import { DatabaseSync } from "node:sqlite";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
-import { createRuntime } from "../src/pi/state";
-import { CONFIG_DIR_NAME, resolvePiConfigEnv } from "../src/shared/config";
-import type { LockFileCandidate } from "../src/shared/protocol";
+import { createRuntime } from "../src/pi/state.js";
+import { CONFIG_DIR_NAME, resolvePiConfigEnv } from "../src/shared/config.js";
+import type { LockFileCandidate } from "../src/shared/protocol.js";
 import {
   isZedTerminal,
   isWsl,
@@ -21,7 +21,7 @@ import {
   stopZedPolling,
   PI_X_IDE_ZED_DB_ENV,
   PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV,
-} from "../src/pi/zed";
+} from "../src/pi/zed.js";
 
 // ── Env / path detection ──────────────────────────────────────
 

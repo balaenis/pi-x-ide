@@ -4,15 +4,15 @@ import assert from "node:assert/strict";
 import { createServer, type AddressInfo, type Socket } from "node:net";
 import test from "node:test";
 import { WebSocketServer } from "ws";
-import { IdeConnection, IdeConnectionTimeoutError } from "../src/pi/connection";
-import { PI_X_IDE_HOST_OVERRIDE_ENV, parseDefaultGateway, resolveIdeHost } from "../src/pi/ide-host";
+import { IdeConnection, IdeConnectionTimeoutError } from "../src/pi/connection.js";
+import { PI_X_IDE_HOST_OVERRIDE_ENV, parseDefaultGateway, resolveIdeHost } from "../src/pi/ide-host.js";
 import {
   formatReconnectLimitMessage,
   MAX_RECONNECT_ATTEMPTS,
   recordReconnectAttempt,
   resetReconnectState,
-} from "../src/pi/reconnect";
-import { createRuntime } from "../src/pi/state";
+} from "../src/pi/reconnect.js";
+import { createRuntime } from "../src/pi/state.js";
 import {
   AUTH_HEADER,
   PROTOCOL_VERSION,
@@ -20,8 +20,8 @@ import {
   type DiagnosticFixRequestedParams,
   type EditorSelectionSnapshot,
   type LockFileCandidate,
-} from "../src/shared/protocol";
-import { decodeRawData } from "../src/shared/ws";
+} from "../src/shared/protocol.js";
+import { decodeRawData } from "../src/shared/ws.js";
 
 void test("caps reconnect attempts at three per candidate", () => {
   const runtime = createRuntime();

@@ -1,5 +1,5 @@
-import type { AtMentionedParams, EditorSelectionSnapshot, SelectionClearedParams } from "../shared/protocol";
-import { isAtMentionedParams, isEditorSelectionSnapshot, isSelectionClearedParams } from "../shared/schema";
+import type { AtMentionedParams, EditorSelectionSnapshot, SelectionClearedParams } from "../shared/protocol.js";
+import { isAtMentionedParams, isEditorSelectionSnapshot, isSelectionClearedParams } from "../shared/schema.js";
 
 export interface SidecarConfig {
   workspaceFolders?: string[];

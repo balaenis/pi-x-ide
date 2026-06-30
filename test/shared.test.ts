@@ -11,23 +11,28 @@ import {
   readPiConfigEnv,
   readPiConfigFixPrompt,
   resolvePiConfigEnv,
-} from "../src/shared/config";
-import { visibleWidth } from "../src/shared/display-width";
-import { formatEditorContext, formatRangeMention, parseRangeMention } from "../src/shared/format";
-import { hasDirectWorkspaceMatch, relationshipMatchLength, resolveLockDir, resolveLockDirs } from "../src/shared/paths";
+} from "../src/shared/config.js";
+import { visibleWidth } from "../src/shared/display-width.js";
+import { formatEditorContext, formatRangeMention, parseRangeMention } from "../src/shared/format.js";
+import {
+  hasDirectWorkspaceMatch,
+  relationshipMatchLength,
+  resolveLockDir,
+  resolveLockDirs,
+} from "../src/shared/paths.js";
 import {
   isWsl,
   normalizeEditorSelectionSnapshotForHost,
   normalizePathForHost,
   windowsUserProfileDirs,
-} from "../src/shared/platform";
-import { type EditorSelectionSnapshot, type IdeLockFile } from "../src/shared/protocol";
-import { createIdeLockFile } from "../src/shared/lock-file";
-import { parseLockFileContent, isSelectionClearedParams, isEditorSelectionSnapshot } from "../src/shared/schema";
-import { discoverIdeCandidates } from "../src/pi/discovery";
-import { clearLatestSelection, setLatestSelection } from "../src/pi/context";
-import { createRuntime } from "../src/pi/state";
-import { updateIdeUi } from "../src/pi/ui";
+} from "../src/shared/platform.js";
+import { type EditorSelectionSnapshot, type IdeLockFile } from "../src/shared/protocol.js";
+import { createIdeLockFile } from "../src/shared/lock-file.js";
+import { parseLockFileContent, isSelectionClearedParams, isEditorSelectionSnapshot } from "../src/shared/schema.js";
+import { discoverIdeCandidates } from "../src/pi/discovery.js";
+import { clearLatestSelection, setLatestSelection } from "../src/pi/context.js";
+import { createRuntime } from "../src/pi/state.js";
+import { updateIdeUi } from "../src/pi/ui.js";
 
 const snapshot: EditorSelectionSnapshot = {
   source: "vscode",

@@ -1,8 +1,8 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent" with { "resolution-mode": "import" };
-import { readPiConfigFixPrompt } from "../shared/config";
+import { readPiConfigFixPrompt } from "../shared/config.js";
 
-import type { DiagnosticFixRequestedParams, IdeDiagnosticCode, Position } from "../shared/protocol";
-import type { PiIdeRuntime } from "./state";
+import type { DiagnosticFixRequestedParams, IdeDiagnosticCode, Position } from "../shared/protocol.js";
+import type { PiIdeRuntime } from "./state.js";
 
 export const DIAGNOSTIC_CONTEXT_MARKER = "pi-x-ide/diagnostic-context";
 

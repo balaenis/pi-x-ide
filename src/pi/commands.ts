@@ -3,12 +3,12 @@
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
-import { resolvePiConfigEnv } from "../shared/config";
-import { formatRangeMention } from "../shared/format";
-import type { LockFileCandidate } from "../shared/protocol";
-import type { PiIdeRuntime } from "./state";
-import { runPiBoundary, runPiBoundaryAsync } from "./safety";
-import { buildWidget, updateIdeUi } from "./ui";
+import { resolvePiConfigEnv } from "../shared/config.js";
+import { formatRangeMention } from "../shared/format.js";
+import type { LockFileCandidate } from "../shared/protocol.js";
+import type { PiIdeRuntime } from "./state.js";
+import { runPiBoundary, runPiBoundaryAsync } from "./safety.js";
+import { buildWidget, updateIdeUi } from "./ui.js";
 
 export const PI_X_IDE_ATTACH_SHORTCUT_ENV = "PI_X_IDE_ATTACH_SHORTCUT";
 export const DEFAULT_ATTACH_SHORTCUT = "ctrl+alt+k";

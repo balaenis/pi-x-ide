@@ -5,10 +5,10 @@ import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import test from "node:test";
 import WebSocket from "ws";
-import { startNvimSidecar } from "../src/nvim/sidecar";
-import { parseNvimSidecarMessage } from "../src/nvim/sidecar-schema";
-import { EXT_CONFIG_NAME } from "../src/shared/config";
-import { AUTH_HEADER, type IdeLockFile } from "../src/shared/protocol";
+import { startNvimSidecar } from "../src/nvim/sidecar.js";
+import { parseNvimSidecarMessage } from "../src/nvim/sidecar-schema.js";
+import { EXT_CONFIG_NAME } from "../src/shared/config.js";
+import { AUTH_HEADER, type IdeLockFile } from "../src/shared/protocol.js";
 
 void test("validates nvim sidecar messages", () => {
   assert.deepEqual(parseNvimSidecarMessage({ type: "shutdown" }), { type: "shutdown" });

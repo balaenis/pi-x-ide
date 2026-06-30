@@ -3,9 +3,9 @@
 import { execFile } from "node:child_process";
 import { createConnection } from "node:net";
 import { promisify } from "node:util";
-import type { IdeLockFile } from "../shared/protocol";
-import { resolvePiConfigEnv } from "../shared/config";
-import { isWsl } from "../shared/platform";
+import type { IdeLockFile } from "../shared/protocol.js";
+import { resolvePiConfigEnv } from "../shared/config.js";
+import { isWsl } from "../shared/platform.js";
 
 export const PI_X_IDE_HOST_OVERRIDE_ENV = "PI_X_IDE_HOST_OVERRIDE";
 export const IDE_HOST_TCP_PROBE_TIMEOUT_MS = 500;

@@ -4,11 +4,11 @@ import {
   buildDiagnosticContextMessage,
   buildDiagnosticFixPrompt,
   handleDiagnosticFixRequested,
-} from "../src/pi/diagnostics";
-import { readPiConfigFixPrompt } from "../src/shared/config";
-import { createRuntime } from "../src/pi/state";
-import type { DiagnosticFixRequestedParams } from "../src/shared/protocol";
-import { isDiagnosticFixRequestedParams } from "../src/shared/schema";
+} from "../src/pi/diagnostics.js";
+import { readPiConfigFixPrompt } from "../src/shared/config.js";
+import { createRuntime } from "../src/pi/state.js";
+import type { DiagnosticFixRequestedParams } from "../src/shared/protocol.js";
+import { isDiagnosticFixRequestedParams } from "../src/shared/schema.js";
 
 const diagnosticPayload: DiagnosticFixRequestedParams = {
   source: "vscode",
