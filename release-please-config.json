@@ -11,6 +11,10 @@
         {
           "type": "generic",
           "path": "ide-plugins/jetbrains/gradle.properties"
+        },
+        {
+          "type": "generic",
+          "path": "src/shared/version.ts"
         }
       ]
     }
