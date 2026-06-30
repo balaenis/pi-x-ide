@@ -130,27 +130,33 @@ void test("builds diagnostic context message without triggering fix instructions
 void test("sends diagnostic fix prompt immediately when Pi is idle", () => {
   const runtime = createRuntime();
   runtime.ctx = createContext({ idle: true });
-  const sent: Array<{ content: unknown; options?: unknown }> = [];
+  const sent: Array<{ message: SentMessage; options?: unknown }> = [];
   const pi = createPi(sent);
 
   handleDiagnosticFixRequested(pi, runtime, diagnosticPayload);
 
   assert.equal(sent.length, 1);
-  assert.equal(sent[0]?.options, undefined);
-  assert.match(String(sent[0]?.content), /pi-x-ide\/diagnostic-context/);
+  assert.equal(sent[0]?.message.customType, "pi-x-ide/diagnostic-fix");
+  assert.equal(sent[0]?.message.display, true);
+  assert.match(String(sent[0]?.message.content), /pi-x-ide\/diagnostic-context/);
+  assert.deepEqual(sent[0]?.options, { triggerTurn: true, deliverAs: "followUp" });
+  const details = sent[0]?.message.details as { filePath: string; diagnostics: unknown[] } | undefined;
+  assert.equal(details?.filePath, "/repo/src/main.ts");
+  assert.equal(details?.diagnostics.length, 1);
 });
 
 void test("queues diagnostic fix prompt as follow-up when Pi is busy", () => {
   const runtime = createRuntime();
   const notifications: string[] = [];
   runtime.ctx = createContext({ idle: false, notifications });
-  const sent: Array<{ content: unknown; options?: unknown }> = [];
+  const sent: Array<{ message: SentMessage; options?: unknown }> = [];
   const pi = createPi(sent);
 
   handleDiagnosticFixRequested(pi, runtime, diagnosticPayload);
 
   assert.equal(sent.length, 1);
-  assert.deepEqual(sent[0]?.options, { deliverAs: "followUp" });
+  assert.deepEqual(sent[0]?.options, { triggerTurn: true, deliverAs: "followUp" });
+  assert.equal(sent[0]?.message.customType, "pi-x-ide/diagnostic-fix");
   assert.deepEqual(notifications, ["VS Code diagnostic fix request queued."]);
 });
 
@@ -164,7 +170,7 @@ void test("pastes diagnostic context into Pi input for send diagnostic requests"
   const notifications: string[] = [];
   const pasted: string[] = [];
   runtime.ctx = createContext({ idle: true, notifications, pasted });
-  const sent: Array<{ content: unknown; options?: unknown }> = [];
+  const sent: Array<{ message: SentMessage; options?: unknown }> = [];
   const pi = createPi(sent);
 
   handleDiagnosticFixRequested(pi, runtime, { ...diagnosticPayload, action: "send-diagnostic" });
@@ -176,12 +182,19 @@ void test("pastes diagnostic context into Pi input for send diagnostic requests"
   assert.deepEqual(notifications, ["VS Code diagnostic context added to input."]);
 });
 
+type SentMessage = {
+  customType: string;
+  content: unknown;
+  display: boolean;
+  details?: unknown;
+};
+
 function createPi(
-  sent: Array<{ content: unknown; options?: unknown }>,
+  sent: Array<{ message: SentMessage; options?: unknown }>,
 ): Parameters<typeof handleDiagnosticFixRequested>[0] {
   return {
-    sendUserMessage: (content: unknown, options?: unknown) => {
-      sent.push({ content, options });
+    sendMessage: (message: SentMessage, options?: unknown) => {
+      sent.push({ message, options });
     },
   } as Parameters<typeof handleDiagnosticFixRequested>[0];
 }

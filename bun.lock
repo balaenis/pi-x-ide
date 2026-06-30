@@ -9,6 +9,7 @@
       },
       "devDependencies": {
         "@earendil-works/pi-coding-agent": "^0.80.1",
+        "@earendil-works/pi-tui": "^0.80.1",
         "@eslint/js": "^10.0.1",
         "@types/node": "^26.0.0",
         "@types/ws": "^8.18.1",
@@ -22,11 +23,12 @@
       },
       "peerDependencies": {
         "@earendil-works/pi-coding-agent": "*",
+        "@earendil-works/pi-tui": "*",
       },
     },
     "ide-plugins/vscode": {
       "name": "pi-x-ide",
-      "version": "1.15.0",
+      "version": "1.15.2",
       "dependencies": {
         "ws": "^8.21.0",
       },

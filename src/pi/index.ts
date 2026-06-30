@@ -19,6 +19,7 @@ import {
 import { registerIdeCommand } from "./commands.js";
 import { clearLatestSelection, registerContextHandlers, setLatestSelection } from "./context.js";
 import { handleDiagnosticFixRequested } from "./diagnostics.js";
+import { registerDiagnosticRenderer } from "./diagnostic-renderer.js";
 import { formatReconnectLimitMessage, recordReconnectAttempt, resetReconnectState } from "./reconnect.js";
 import { containPiError, runPiBoundary, runPiBoundaryAsync } from "./safety.js";
 import { createRuntime, type PiIdeRuntime } from "./state.js";
@@ -44,6 +45,7 @@ export default function (pi: ExtensionAPI): void {
   const runtime = createRuntime();
 
   registerContextHandlers(pi, runtime);
+  registerDiagnosticRenderer(pi);
   registerIdeCommand(pi, runtime, {
     refreshCandidates: (ctx) => refreshCandidates(runtime, ctx),
     connectAuto: (ctx) => connectAutoWithZedFallback(runtime, ctx),

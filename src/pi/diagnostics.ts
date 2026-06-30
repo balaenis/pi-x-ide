@@ -1,6 +1,9 @@
+// ABOUTME: Handles VS Code diagnostic-fix requests from the IDE by forwarding them to Pi.
+// ABOUTME: Builds the LLM fix prompt and renders the request as a custom message in the TUI.
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent" with { "resolution-mode": "import" };
 import { readPiConfigFixPrompt } from "../shared/config.js";
 
+import { DIAGNOSTIC_FIX_CUSTOM_TYPE, type DiagnosticFixDetails } from "./diagnostic-renderer.js";
 import type { DiagnosticFixRequestedParams, IdeDiagnosticCode, Position } from "../shared/protocol.js";
 import type { PiIdeRuntime } from "./state.js";
 
@@ -85,26 +88,39 @@ export function handleDiagnosticFixRequested(
 
   const fixPrompt = readPiConfigFixPrompt();
   const prompt = buildDiagnosticFixPrompt(params, { fixPrompt });
-  if (ctx.isIdle()) {
-    pi.sendUserMessage(prompt);
-    return;
-  }
+  const details: DiagnosticFixDetails = {
+    source: params.source,
+    filePath: params.filePath,
+    workspaceFolder: params.workspaceFolder,
+    triggerRange: params.triggerRange,
+    diagnostics: params.diagnostics,
+    cwd: ctx.cwd,
+  };
 
-  pi.sendUserMessage(prompt, { deliverAs: "followUp" });
-  if (ctx.hasUI) ctx.ui.notify("VS Code diagnostic fix request queued.", "info");
+  pi.sendMessage<DiagnosticFixDetails>(
+    {
+      customType: DIAGNOSTIC_FIX_CUSTOM_TYPE,
+      content: prompt,
+      display: true,
+      details,
+    },
+    { triggerTurn: true, deliverAs: "followUp" },
+  );
+
+  if (!ctx.isIdle() && ctx.hasUI) ctx.ui.notify("VS Code diagnostic fix request queued.", "info");
 }
 
-function formatRange(range: { start: Position; end: Position }): string {
+export function formatRange(range: { start: Position; end: Position }): string {
   const start = formatPosition(range.start);
   const end = formatPosition(range.end);
   return start === end ? start : `${start}-${end}`;
 }
 
-function formatPosition(position: Position): string {
+export function formatPosition(position: Position): string {
   return `L${position.line + 1}:C${position.character + 1}`;
 }
 
-function formatDiagnosticCode(code: IdeDiagnosticCode): string {
+export function formatDiagnosticCode(code: IdeDiagnosticCode): string {
   if (typeof code === "string" || typeof code === "number") return String(code);
   return code.target ? `${code.value} (${code.target})` : String(code.value);
 }
