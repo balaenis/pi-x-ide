@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0](https://github.com/balaenis/pi-x-ide/compare/v1.15.2...v1.16.0) (2026-06-30)
+
+
+### Features
+
+* **pi:** render diagnostic-fix requests as custom TUI messages ([82d1821](https://github.com/balaenis/pi-x-ide/commit/82d18219cdfdfbb48689d6812db093396f229f4d))
+
 ## [1.15.2](https://github.com/balaenis/pi-x-ide/compare/v1.15.1...v1.15.2) (2026-06-29)
 
 
