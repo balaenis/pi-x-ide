@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.1](https://github.com/balaenis/pi-x-ide/compare/v1.16.0...v1.16.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* **release:** update version marker for release-please ([351f71a](https://github.com/balaenis/pi-x-ide/commit/351f71adbf0e721d5d22ef57d30ad55270ff453b))
+
 ## [1.16.0](https://github.com/balaenis/pi-x-ide/compare/v1.15.2...v1.16.0) (2026-06-30)
 
 
