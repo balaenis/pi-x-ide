@@ -10,7 +10,7 @@ import com.balaenis.pixide.protocol.EditorSelectionSnapshot
 import com.balaenis.pixide.protocol.SelectionClearedParams
 import com.balaenis.pixide.server.PiXIdeWebSocketServer
 import com.balaenis.pixide.ui.PiXIdeStatusBarWidgetFactory
-import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
@@ -150,7 +150,7 @@ class PiXIdeProjectService(
     }
 
     private fun pluginVersion(): String =
-        PluginManagerCore.getPlugin(PluginId.getId("balaenis.pi-x-ide"))?.version ?: "dev"
+        PluginManager.getInstance().findEnabledPlugin(PluginId.getId("balaenis.pi-x-ide"))?.version ?: "dev"
 
     sealed class AttachResult {
         data class Attached(val rangeText: String) : AttachResult()
