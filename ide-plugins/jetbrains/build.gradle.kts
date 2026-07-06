@@ -7,8 +7,10 @@ plugins {
     id("org.jetbrains.intellij.platform")
 }
 
+val pluginVersionProvider = providers.gradleProperty("pluginVersion")
+
 group = providers.gradleProperty("pluginGroup").get()
-version = providers.gradleProperty("pluginVersion").get()
+version = pluginVersionProvider.get()
 
 kotlin {
     jvmToolchain(21)
@@ -54,7 +56,7 @@ intellijPlatform {
     pluginConfiguration {
         id = "balaenis.pi-x-ide"
         name = "Pi x IDE"
-        version = providers.gradleProperty("pluginVersion")
+        version = pluginVersionProvider
 
         ideaVersion {
             sinceBuild = providers.gradleProperty("pluginSinceBuild")
@@ -75,7 +77,7 @@ intellijPlatform {
         token = providers.environmentVariable("PUBLISH_TOKEN")
         // Route pre-release versions to a matching custom channel and stable versions to `default`.
         // Example: 1.14.0-alpha.1 -> "alpha" channel, 1.13.1 -> "default" channel.
-        channels = providers.gradleProperty("pluginVersion")
+        channels = pluginVersionProvider
             .map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
     }
 
@@ -97,6 +99,14 @@ val certChainFileProvider = providers.environmentVariable("CERTIFICATE_CHAIN_FIL
     .map { layout.projectDirectory.file(it) }
 
 tasks {
+    processResources {
+        val pluginVersion = pluginVersionProvider.get()
+        inputs.property("pluginVersion", pluginVersion)
+        filesMatching("pi-x-ide.properties") {
+            expand("pluginVersion" to pluginVersion)
+        }
+    }
+
     test {
         useJUnitPlatform()
     }

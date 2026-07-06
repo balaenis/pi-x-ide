@@ -10,15 +10,14 @@ import com.balaenis.pixide.protocol.EditorSelectionSnapshot
 import com.balaenis.pixide.protocol.SelectionClearedParams
 import com.balaenis.pixide.server.PiXIdeWebSocketServer
 import com.balaenis.pixide.ui.PiXIdeStatusBarWidgetFactory
-import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.WindowManager
+import java.util.Properties
 import java.util.concurrent.atomic.AtomicBoolean
 
 class PiXIdeProjectService(
@@ -150,7 +149,14 @@ class PiXIdeProjectService(
     }
 
     private fun pluginVersion(): String =
-        PluginManager.getInstance().findEnabledPlugin(PluginId.getId("balaenis.pi-x-ide"))?.version ?: "dev"
+        runCatching {
+            val properties = Properties()
+            PiXIdeProjectService::class.java.classLoader
+                .getResourceAsStream("pi-x-ide.properties")
+                ?.use { properties.load(it) }
+            properties.getProperty("plugin.version")?.takeIf { it.isNotBlank() } ?: "dev"
+        }.onFailure { LOG.warn("Failed to read Pi x IDE plugin version resource", it) }
+            .getOrDefault("dev")
 
     sealed class AttachResult {
         data class Attached(val rangeText: String) : AttachResult()
