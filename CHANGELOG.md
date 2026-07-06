@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.3](https://github.com/balaenis/pi-x-ide/compare/v1.16.2...v1.16.3) (2026-07-06)
+
+
+### Bug Fixes
+
+* **jetbrains:** avoid internal API for plugin version ([d7d1be7](https://github.com/balaenis/pi-x-ide/commit/d7d1be7fa8ccda4e0bbb105cd8552dc8858453ce))
+
 ## [1.16.2](https://github.com/balaenis/pi-x-ide/compare/v1.16.1...v1.16.2) (2026-07-04)
 
 
