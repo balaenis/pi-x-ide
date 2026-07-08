@@ -80,7 +80,9 @@ See [Configuration Reference](#neovim-2) for full setup options, commands, and t
 
 #### JetBrains IDEs
 
-Download the latest JetBrains plugin ZIP(pi-x-ide-jetbrains-\*.zip) from the [latest GitHub Release](https://github.com/balaenis/pi-x-ide/releases/latest), then install it in your JetBrains IDE via **Settings | Plugins | ⚙ | Install Plugin from Disk...**.
+Install from the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/32664-pi-x-ide):
+
+**Settings | Plugins | Marketplace | Search `balaenis.pi-x-ide` and install the plugin.**
 
 ### Connect Pi & Verify
 
