@@ -29,11 +29,22 @@ For `github/workflows`:
 - uses: actions/checkout@{find the latest version}
 ```
 
-## Update `README.md`
+## Update documentation
 
-When you add new features or make changes that require users to know some important details, please update `@README.md` and sync the other language versions:
+User-facing documentation is organized by the [Diátaxis](https://diataxis.fr/) framework and lives under `docs/`:
 
-- `@README.zh-CN.md`
+- `docs/tutorials/` - learning-oriented walkthroughs
+- `docs/how-to/` - task-oriented guides (install, WSL2, troubleshooting)
+- `docs/reference/` - commands, configuration, feature parity, protocol
+- `docs/explanation/` - discovery and architecture
+
+When you add new features or make changes that require users to know some important details, please update the relevant English docs and keep the Chinese mirror in sync. Files that must stay in sync:
+
+- `@README.md` ↔ `@README.zh-CN.md`
+- `@CONTRIBUTING.md` ↔ `@CONTRIBUTING.zh-CN.md`
+- `docs/{tutorials,how-to,reference,explanation}/*.md` ↔ `docs/zh-CN/{tutorials,how-to,reference,explanation}/*.md`
+
+The `docs/zh-CN/` tree mirrors the English `docs/` structure. When adding a new English doc, create its counterpart under `docs/zh-CN/` in the same change. Note that relative links to repo-root assets (`schemas/`, `config.example.json`) and `docs/specs/` use one more `../` level from `docs/zh-CN/`.
 
 ## Update config schema
 
