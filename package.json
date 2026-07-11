@@ -5,6 +5,15 @@
   "files": [
     "dist/src",
     "schemas",
+    "docs/tutorials",
+    "docs/how-to",
+    "docs/reference",
+    "docs/explanation",
+    "docs/zh-CN",
+    "docs/specs/ide-protocol.md",
+    "config.example.json",
+    "CONTRIBUTING.md",
+    "CONTRIBUTING.zh-CN.md",
     "CHANGELOG.md",
     "RELEASE.md"
   ],

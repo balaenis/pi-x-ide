@@ -23,45 +23,42 @@ pi
 
 Open a file, select some text, and press `Ctrl+Alt+K` in the Pi TUI to attach it
 as `@src/foo.ts#L10-L20`. New to Pi × IDE? Follow the
-[5-minute tutorial](https://github.com/balaenis/pi-x-ide/blob/main/docs/tutorials/get-started.md).
+[5-minute tutorial](docs/tutorials/get-started.md).
 
 ## Documentation
 
-> Links point to the [GitHub repository](https://github.com/balaenis/pi-x-ide) so
-> they resolve from npm as well.
-
 **Learning**
 
-- [Get started](https://github.com/balaenis/pi-x-ide/blob/main/docs/tutorials/get-started.md)
+- [Get started](docs/tutorials/get-started.md) — from install to your first
+  attached selection
 
 **How-to guides**
 
-- [Install for VS Code / Cursor / Windsurf](https://github.com/balaenis/pi-x-ide/blob/main/docs/how-to/install-vscode.md)
-- [Use with Zed](https://github.com/balaenis/pi-x-ide/blob/main/docs/how-to/install-zed.md)
-- [Install the Neovim plugin](https://github.com/balaenis/pi-x-ide/blob/main/docs/how-to/install-neovim.md)
-- [Install the JetBrains plugin](https://github.com/balaenis/pi-x-ide/blob/main/docs/how-to/install-jetbrains.md)
-- [Use over WSL2](https://github.com/balaenis/pi-x-ide/blob/main/docs/how-to/use-wsl2.md)
-- [Troubleshoot a missing connection](https://github.com/balaenis/pi-x-ide/blob/main/docs/how-to/troubleshoot-connection.md)
+- [Install for VS Code / Cursor / Windsurf](docs/how-to/install-vscode.md)
+- [Use with Zed](docs/how-to/install-zed.md)
+- [Install the Neovim plugin](docs/how-to/install-neovim.md)
+- [Install the JetBrains plugin](docs/how-to/install-jetbrains.md)
+- [Use over WSL2](docs/how-to/use-wsl2.md)
+- [Troubleshoot a missing connection](docs/how-to/troubleshoot-connection.md)
 
 **Reference**
 
-- [`/ide` commands](https://github.com/balaenis/pi-x-ide/blob/main/docs/reference/commands.md)
-- [Configuration](https://github.com/balaenis/pi-x-ide/blob/main/docs/reference/configuration.md)
-- [Feature parity](https://github.com/balaenis/pi-x-ide/blob/main/docs/reference/feature-parity.md)
-- [Protocol reference](https://github.com/balaenis/pi-x-ide/blob/main/docs/reference/protocol.md)
+- [`/ide` commands](docs/reference/commands.md)
+- [Configuration](docs/reference/configuration.md)
+- [Feature parity](docs/reference/feature-parity.md)
+- [Protocol reference](docs/reference/protocol.md)
 
 **Explanation**
 
-- [How discovery works](https://github.com/balaenis/pi-x-ide/blob/main/docs/explanation/discovery.md)
-- [Architecture](https://github.com/balaenis/pi-x-ide/blob/main/docs/explanation/architecture.md)
+- [How discovery works](docs/explanation/discovery.md)
+- [Architecture](docs/explanation/architecture.md)
 
-中文文档见
-[README.zh-CN.md](https://github.com/balaenis/pi-x-ide/blob/main/README.zh-CN.md).
+中文文档见 [README.zh-CN.md](README.zh-CN.md)。
 
 ## Development
 
-See [CONTRIBUTING.md](https://github.com/balaenis/pi-x-ide/blob/main/CONTRIBUTING.md)
-for build, local testing, and release instructions.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for build, local testing, and release
+instructions.
 
 ## Acknowledgments
 
@@ -69,4 +66,4 @@ for build, local testing, and release instructions.
 
 ## License
 
-[Apache-2.0](https://github.com/balaenis/pi-x-ide/blob/main/LICENSE)
+[Apache-2.0](LICENSE)
