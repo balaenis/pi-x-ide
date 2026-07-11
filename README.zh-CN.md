@@ -53,7 +53,7 @@ English: [README.md](README.md).
 
 构建、本地测试与发布说明见 [CONTRIBUTING.zh-CN.md](CONTRIBUTING.zh-CN.md)。
 
-## 致谢
+## 参考
 
 - [opencode](https://github.com/anomalyco/opencode)
 

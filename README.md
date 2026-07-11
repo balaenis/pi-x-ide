@@ -60,7 +60,7 @@ as `@src/foo.ts#L10-L20`. New to Pi × IDE? Follow the
 See [CONTRIBUTING.md](CONTRIBUTING.md) for build, local testing, and release
 instructions.
 
-## Acknowledgments
+## Reference
 
 - [opencode](https://github.com/anomalyco/opencode)
 
