@@ -20,13 +20,19 @@ import { registerIdeCommand } from "./commands.js";
 import { clearLatestSelection, registerContextHandlers, setLatestSelection } from "./context.js";
 import { handleDiagnosticFixRequested } from "./diagnostics.js";
 import { registerDiagnosticRenderer } from "./diagnostic-renderer.js";
-import { formatReconnectLimitMessage, recordReconnectAttempt, resetReconnectState } from "./reconnect.js";
+import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
+import {
+  formatReconnectLimitMessage,
+  RECONNECT_DELAY_MS,
+  recordReconnectAttempt,
+  resetReconnectState,
+} from "./reconnect.js";
 import { containPiError, runPiBoundary, runPiBoundaryAsync } from "./safety.js";
 import { createRuntime, type PiIdeRuntime } from "./state.js";
 import { clearIdeUi, updateIdeUi } from "./ui.js";
 import { startZedPolling, stopZedPolling } from "./zed.js";
 
-const RECONNECT_DELAY_MS = 2_000;
 const INSTALL_RECONNECT_RETRY_MS = 1_500;
 const INSTALL_RECONNECT_TIMEOUT_MS = 15_000;
 
@@ -64,6 +70,7 @@ export default function (pi: ExtensionAPI): void {
         runtime.ctx = ctx;
         runtime.cwd = ctx.cwd;
         stopZedPolling(runtime);
+        stopReconnectScheduling(runtime);
         if (!runtime.enabled) {
           runtime.connectionStatus = "disabled";
           updateIdeUi(runtime, ctx);
@@ -84,8 +91,7 @@ export default function (pi: ExtensionAPI): void {
         runtime.sessionGeneration += 1;
         runtime.ctx = ctx;
         stopZedPolling(runtime);
-        if (runtime.reconnectTimer) clearTimeout(runtime.reconnectTimer);
-        runtime.reconnectTimer = undefined;
+        stopReconnectScheduling(runtime);
         const connection = runtime.connection;
         runtime.connection = undefined;
         connection?.disconnect();
@@ -330,8 +336,7 @@ async function connectCandidate(
   runtime.cwd = ctx.cwd;
   runtime.enabled = true;
   stopZedPolling(runtime);
-  if (runtime.reconnectTimer) clearTimeout(runtime.reconnectTimer);
-  runtime.reconnectTimer = undefined;
+  stopReconnectScheduling(runtime);
 
   const previous = runtime.connection;
   runtime.connection = undefined;
@@ -428,11 +433,16 @@ function isCurrentConnection(
   return runtime.sessionGeneration === generation && !!connection && runtime.connection === connection;
 }
 
+function stopReconnectScheduling(runtime: PiIdeRuntime): void {
+  const fiber = runtime.reconnectFiber;
+  runtime.reconnectFiber = undefined;
+  if (fiber) Effect.runFork(Fiber.interrupt(fiber));
+}
+
 function disconnect(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionCommandContext, disabled = false): void {
   runtime.ctx = ctx;
   stopZedPolling(runtime);
-  if (runtime.reconnectTimer) clearTimeout(runtime.reconnectTimer);
-  runtime.reconnectTimer = undefined;
+  stopReconnectScheduling(runtime);
   const connection = runtime.connection;
   runtime.connection = undefined;
   connection?.disconnect();
@@ -451,7 +461,7 @@ function disconnect(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionComm
 }
 
 function scheduleReconnect(runtime: PiIdeRuntime): void {
-  if (runtime.reconnectTimer || !runtime.enabled) return;
+  if (runtime.reconnectFiber || !runtime.enabled) return;
   const generation = runtime.sessionGeneration;
   const attempt = recordReconnectAttempt(runtime, runtime.currentCandidate);
   if (attempt === undefined) {
@@ -460,14 +470,28 @@ function scheduleReconnect(runtime: PiIdeRuntime): void {
     updateIdeUi(runtime);
     return;
   }
-  runtime.reconnectTimer = setTimeout(() => {
-    runtime.reconnectTimer = undefined;
-    const ctx = runtime.ctx;
-    if (!ctx || !runtime.enabled || runtime.sessionGeneration !== generation) return;
-    connectAutoWithZedFallback(runtime, ctx, runtime.sessionGeneration, { resetReconnectState: false }).catch(
-      (error: unknown) => containPiError(runtime, "IDE reconnect", error),
-    );
-  }, RECONNECT_DELAY_MS);
+
+  const fiber = Effect.runFork(
+    Effect.gen(function* () {
+      yield* Effect.sleep(`${RECONNECT_DELAY_MS} millis`);
+      const ctx = runtime.ctx;
+      if (!ctx || !runtime.enabled || runtime.sessionGeneration !== generation) return;
+      yield* Effect.promise(() =>
+        connectAutoWithZedFallback(runtime, ctx, runtime.sessionGeneration, { resetReconnectState: false }).catch(
+          (error: unknown) => {
+            containPiError(runtime, "IDE reconnect", error);
+          },
+        ),
+      );
+    }).pipe(
+      Effect.ensuring(
+        Effect.sync(() => {
+          if (runtime.reconnectFiber === fiber) runtime.reconnectFiber = undefined;
+        }),
+      ),
+    ),
+  );
+  runtime.reconnectFiber = fiber;
 }
 
 function handleAtMentioned(runtime: PiIdeRuntime, params: AtMentionedParams): void {

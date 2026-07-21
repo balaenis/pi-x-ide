@@ -1,7 +1,10 @@
+// ABOUTME: Tracks per-candidate IDE reconnect attempt counters and limit messages.
+// ABOUTME: Keeps reconnect policy pure so scheduling can use timers or Effect fibers.
 import type { LockFileCandidate } from "../shared/protocol.js";
 import type { PiIdeRuntime } from "./state.js";
 
 export const MAX_RECONNECT_ATTEMPTS = 3;
+export const RECONNECT_DELAY_MS = 2_000;
 
 export function resetReconnectState(runtime: PiIdeRuntime): void {
   runtime.reconnectAttempts = 0;
