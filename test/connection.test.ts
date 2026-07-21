@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { createServer, type AddressInfo, type Socket } from "node:net";
 import test from "node:test";
+import * as Effect from "effect/Effect";
 import { WebSocketServer } from "ws";
 import { IdeConnection, IdeConnectionTimeoutError } from "../src/pi/connection.js";
 import { PI_X_IDE_HOST_OVERRIDE_ENV, parseDefaultGateway, resolveIdeHost } from "../src/pi/ide-host.js";
@@ -12,6 +13,7 @@ import {
   recordReconnectAttempt,
   resetReconnectState,
 } from "../src/pi/reconnect.js";
+import { runPiEffect } from "../src/pi/safety.js";
 import { createRuntime } from "../src/pi/state.js";
 import {
   AUTH_HEADER,
@@ -22,6 +24,27 @@ import {
   type LockFileCandidate,
 } from "../src/shared/protocol.js";
 import { decodeRawData } from "../src/shared/ws.js";
+
+void test("runPiEffect contains failures and updates runtime error status", async () => {
+  const runtime = createRuntime();
+  const messages: string[] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => {
+    messages.push(args.map(String).join(" "));
+  };
+  try {
+    const failed = await runPiEffect("pi-effect-fail", runtime, Effect.fail(new Error("boom")));
+    assert.equal(failed, undefined);
+    assert.equal(runtime.connectionStatus, "error");
+    assert.match(runtime.connectionMessage ?? "", /pi-effect-fail: boom/);
+    assert.ok(messages.some((message) => message.includes("pi-effect-fail") && message.includes("boom")));
+
+    const ok = await runPiEffect("pi-effect-ok", runtime, Effect.succeed(7));
+    assert.equal(ok, 7);
+  } finally {
+    console.error = original;
+  }
+});
 
 void test("caps reconnect attempts at three per candidate", () => {
   const runtime = createRuntime();

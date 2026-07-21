@@ -3,7 +3,9 @@
 import type { ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
+import * as Effect from "effect/Effect";
 import { errorMessage, logExtensionError, safeRun, safeRunAsync } from "../shared/errors.js";
+import { runEffect } from "../shared/effect-runtime.js";
 import type { PiIdeRuntime } from "./state.js";
 import { updateIdeUi } from "./ui.js";
 
@@ -35,4 +37,14 @@ export async function runPiBoundaryAsync<T>(
   ctx?: ExtensionContext | ExtensionCommandContext,
 ): Promise<T | undefined> {
   return safeRunAsync(scope, action, (error) => containPiError(runtime, scope, error, ctx));
+}
+
+/** Run an Effect at a Pi session/command boundary; failures update runtime error status. */
+export function runPiEffect<A>(
+  scope: string,
+  runtime: PiIdeRuntime,
+  effect: Effect.Effect<A, unknown, never>,
+  ctx?: ExtensionContext | ExtensionCommandContext,
+): Promise<A | undefined> {
+  return runEffect(scope, effect, (error) => containPiError(runtime, scope, error, ctx));
 }

@@ -1,6 +1,9 @@
 // ABOUTME: Implements the Pi-side WebSocket client that receives IDE selection notifications.
 // ABOUTME: Contains callback dispatch boundaries so IDE messages cannot crash the Pi process.
 import WebSocket from "ws";
+import * as Cause from "effect/Cause";
+import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
 import { EXT_CONFIG_NAME } from "../shared/config.js";
 import {
   AUTH_HEADER,
@@ -19,6 +22,7 @@ import {
   isSelectionChangedParams,
   isSelectionClearedParams,
 } from "../shared/schema.js";
+import { IdeConnectTimeoutError } from "../shared/effect-errors.js";
 import { toError, logExtensionError } from "../shared/errors.js";
 import { formatRangeMention } from "../shared/format.js";
 import { normalizeEditorSelectionSnapshotForHost } from "../shared/platform.js";
@@ -26,6 +30,7 @@ import { decodeRawData } from "../shared/ws.js";
 import { resolveIdeHost } from "./ide-host.js";
 
 export const IDE_CONNECT_TIMEOUT_MS = 5_000;
+const IDE_CONNECT_HANDSHAKE_TIMEOUT_PADDING_MS = 1_000;
 
 export class IdeConnectionTimeoutError extends Error {
   constructor(
@@ -69,55 +74,88 @@ export class IdeConnection {
   }
 
   async connect(timeoutMs = IDE_CONNECT_TIMEOUT_MS): Promise<void> {
-    this.closedByUser = false;
-    const { lock } = this.candidate;
-    const resolvedHost = await (this.options.resolveHost ?? resolveIdeHost)(lock);
-    const socket = new WebSocket(`ws://${resolvedHost}:${lock.port}`, {
-      handshakeTimeout: timeoutMs + 1_000,
-      headers: {
-        [AUTH_HEADER]: lock.authToken,
-      },
-    });
-    this.socket = socket;
+    const exit = await Effect.runPromiseExit(this.connectEffect(timeoutMs));
+    if (Exit.isSuccess(exit)) return;
 
-    socket.on("message", (raw) => this.runSocketHandler("message", () => this.handleMessage(decodeRawData(raw))));
-    socket.on("close", (_code, reason) => {
-      this.runSocketHandler("close", () => {
-        if (this.socket !== socket) return;
-        this.socket = undefined;
-        this.emitCallback("disconnected callback", () =>
-          this.callbacks.onDisconnected?.(reason.toString("utf8") || (this.closedByUser ? "closed" : "disconnected")),
-        );
+    // Prefer Cause.squash so tagged timeouts and socket errors surface as a single unknown.
+    const failure = Cause.squash(exit.cause);
+    if (isIdeConnectTimeoutError(failure)) {
+      // Map tagged timeout → class error so instanceof checks in index.ts / tests keep working.
+      throw new IdeConnectionTimeoutError(this.candidate, failure.host);
+    }
+    throw failure instanceof Error ? failure : toError(failure);
+  }
+
+  /** Internal Effect: resolve host, open socket, race open vs timeout, then initialize. */
+  private connectEffect(timeoutMs: number): Effect.Effect<void, IdeConnectTimeoutError | Error, never> {
+    return Effect.gen(this, function* () {
+      this.closedByUser = false;
+      const { lock } = this.candidate;
+      const resolvedHost = yield* Effect.tryPromise({
+        try: () => (this.options.resolveHost ?? resolveIdeHost)(lock),
+        catch: (cause) => toError(cause, "resolve host"),
       });
-    });
-    socket.on("error", (error) => {
-      if (this.socket === socket) this.reportError("websocket error", error);
-    });
 
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        cleanup();
-        if (this.socket === socket) this.socket = undefined;
-        socket.terminate();
-        reject(new IdeConnectionTimeoutError(this.candidate, resolvedHost));
-      }, timeoutMs);
-      const onOpen = () => {
-        cleanup();
-        this.sendInitialize();
-        resolve();
-      };
-      const onError = (error: Error) => {
-        cleanup();
-        if (this.socket === socket) this.socket = undefined;
-        reject(error);
-      };
-      const cleanup = () => {
-        clearTimeout(timeout);
-        socket.off("open", onOpen);
-        socket.off("error", onError);
-      };
-      socket.once("open", onOpen);
-      socket.once("error", onError);
+      const socket = new WebSocket(`ws://${resolvedHost}:${lock.port}`, {
+        handshakeTimeout: timeoutMs + IDE_CONNECT_HANDSHAKE_TIMEOUT_PADDING_MS,
+        headers: {
+          [AUTH_HEADER]: lock.authToken,
+        },
+      });
+      this.socket = socket;
+
+      socket.on("message", (raw) => this.runSocketHandler("message", () => this.handleMessage(decodeRawData(raw))));
+      socket.on("close", (_code, reason) => {
+        this.runSocketHandler("close", () => {
+          if (this.socket !== socket) return;
+          this.socket = undefined;
+          this.emitCallback("disconnected callback", () =>
+            this.callbacks.onDisconnected?.(reason.toString("utf8") || (this.closedByUser ? "closed" : "disconnected")),
+          );
+        });
+      });
+      socket.on("error", (error) => {
+        if (this.socket === socket) this.reportError("websocket error", error);
+      });
+
+      yield* Effect.async<void, IdeConnectTimeoutError | Error>((resume) => {
+        let settled = false;
+        const finish = (result: Effect.Effect<void, IdeConnectTimeoutError | Error>) => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          resume(result);
+        };
+        const timeout = setTimeout(() => {
+          if (this.socket === socket) this.socket = undefined;
+          socket.terminate();
+          finish(
+            Effect.fail(
+              new IdeConnectTimeoutError({
+                name: this.candidate.lock.name,
+                host: resolvedHost,
+                port: lock.port,
+              }),
+            ),
+          );
+        }, timeoutMs);
+        const onOpen = () => {
+          this.sendInitialize();
+          finish(Effect.succeed(undefined));
+        };
+        const onError = (error: Error) => {
+          if (this.socket === socket) this.socket = undefined;
+          finish(Effect.fail(error));
+        };
+        const cleanup = () => {
+          clearTimeout(timeout);
+          socket.off("open", onOpen);
+          socket.off("error", onError);
+        };
+        socket.once("open", onOpen);
+        socket.once("error", onError);
+        return Effect.sync(cleanup);
+      });
     });
   }
 
@@ -201,6 +239,10 @@ export class IdeConnection {
       logExtensionError(`${label} onError callback`, callbackError);
     }
   }
+}
+
+function isIdeConnectTimeoutError(value: unknown): value is IdeConnectTimeoutError {
+  return value instanceof IdeConnectTimeoutError;
 }
 
 function withReceivedAt<
