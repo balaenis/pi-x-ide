@@ -6,6 +6,7 @@ import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@e
 import { resolvePiConfigEnv } from "../shared/config.js";
 import { formatRangeMention } from "../shared/format.js";
 import type { LockFileCandidate } from "../shared/protocol.js";
+import { showIdeSettings } from "./config-ui.js";
 import type { PiIdeRuntime } from "./state.js";
 import { runPiBoundary, runPiBoundaryAsync } from "./safety.js";
 import { buildWidget, updateIdeUi } from "./ui.js";
@@ -59,6 +60,7 @@ export function registerIdeCommand(
         { value: "off", label: "off", description: "Disable IDE integration" },
         { value: "attach", label: "attach", description: "Attach latest IDE selection to the prompt" },
         { value: "install", label: "install", description: "Install or update the IDE extension" },
+        { value: "settings", label: "settings", description: "Open IDE settings (Display, AutoInstall, ...)" },
       ];
       const filtered = subcommands.filter((s) => s.value.startsWith(argumentPrefix));
       return filtered.length > 0 ? filtered : null;
@@ -93,8 +95,11 @@ export function registerIdeCommand(
             case "install":
               await actions.installExtension(ctx);
               return;
+            case "settings":
+              await showIdeSettings(runtime, ctx);
+              return;
             default:
-              ctx.ui.notify("Usage: /ide [status|list|auto|off|attach|install]", "warning");
+              ctx.ui.notify("Usage: /ide [status|list|auto|off|attach|install|settings]", "warning");
           }
         },
         ctx,

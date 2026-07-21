@@ -1,6 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/balaenis/pi-x-ide/refs/heads/main/schemas/config.json",
-  "fix_prompt": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
+  "fixPrompt": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
+  "status_display": "widget",
   "env": {
     "PI_X_IDE_AUTO_INSTALL": "1",
     "PI_X_IDE_ATTACH_SHORTCUT": "ctrl+alt+k"

@@ -68,8 +68,11 @@ export const SUPPORTED_IDE_CLI_PROFILES: IdeCliProfile[] = [
   { id: "windsurf", label: "Windsurf", command: "windsurf" },
 ];
 
-export function isAutoInstallEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  const configuredEnv = resolvePiConfigEnv(env);
+export function isAutoInstallEnabled(
+  env: NodeJS.ProcessEnv = process.env,
+  options: { projectDir?: string; home?: string; configPath?: string } = {},
+): boolean {
+  const configuredEnv = resolvePiConfigEnv(env, options);
   const value = configuredEnv[PI_X_IDE_AUTO_INSTALL_ENV];
   if (value === undefined) return true;
   return !["0", "false", "off"].includes(value.trim().toLowerCase());

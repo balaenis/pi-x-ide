@@ -111,6 +111,6 @@ and [Architecture](../explanation/architecture.md).
 - [Install another editor](../how-to/) — Zed, Neovim, or JetBrains.
 - [Use Pi × IDE over WSL2](../how-to/use-wsl2.md) — Pi in WSL, IDE on Windows.
 - [Configuration reference](../reference/configuration.md) — env vars, keymaps,
-  and the `fix_prompt` option.
+  `fixPrompt`, and `status_display`.
 - [`/ide` command reference](../reference/commands.md) — manage connections from
   the TUI.

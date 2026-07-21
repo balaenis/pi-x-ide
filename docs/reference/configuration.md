@@ -1,16 +1,22 @@
 # Configuration reference
 
 Pi × IDE is configured through three layers: per-IDE settings, Pi-side
-environment variables, and top-level options in `~/.pi/pi-x-ide/config.json`.
+environment variables, and top-level options in config JSON files.
 
-Pi-side variables can be set as real environment variables **or** in
-`~/.pi/pi-x-ide/config.json` under `env`. Real environment variables take
-precedence.
+Config files:
+
+- **Global:** `~/.pi/pi-x-ide/config.json`
+- **Project:** `<cwd>/.pi/pi-x-ide/config.json` (overrides global for supported keys)
+
+Pi-side variables can be set as real environment variables **or** in config
+`env`. Real environment variables take precedence. Interactive settings
+(`Display`, `AutoInstall`, …) are available via [`/ide settings`](commands.md).
 
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/balaenis/pi-x-ide/refs/heads/main/schemas/config.json",
-  "fix_prompt": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
+  "fixPrompt": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
+  "status_display": "widget",
   "env": {
     "PI_X_IDE_AUTO_INSTALL": "1",
     "PI_X_IDE_ATTACH_SHORTCUT": "ctrl+alt+k"
@@ -76,7 +82,7 @@ custom command. See
 
 | Variable                        | Default       | Description                                                                            |
 | ------------------------------- | ------------- | -------------------------------------------------------------------------------------- |
-| `PI_X_IDE_AUTO_INSTALL`         | `1`           | Auto-install the VS Code extension on Pi startup. Set to `0`/`false`/`off` to disable. |
+| `PI_X_IDE_AUTO_INSTALL`         | `1`           | Auto-install the VS Code extension on Pi startup. Set to `0`/`false`/`off` to disable. Also configurable as `AutoInstall` in `/ide settings`. |
 | `PI_X_IDE_ATTACH_SHORTCUT`      | `ctrl+alt+k`  | Pi TUI shortcut for `/ide attach`. Set to `off`, `none`, `false`, or `0` to disable.   |
 | `PI_X_IDE_HOST_OVERRIDE`        | (unset)       | Override the host Pi uses for IDE WebSocket connections. Useful for WSL2 networking.   |
 | `PI_X_IDE_ZED_DB`               | (auto-detect) | Override the path to Zed's SQLite database.                                            |
@@ -86,9 +92,10 @@ custom command. See
 
 <a id="top-level-options"></a>
 
-| Option       | Default                                                                                         | Description                                                                                                                                                                                                          |
-| ------------ | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fix_prompt` | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | Custom prompt prefix when requesting a fix for IDE diagnostics. Use `{DIAGNOSTIC}` as a placeholder for the diagnostic context. If the placeholder is omitted, the diagnostic context is appended after your prompt. |
+| Option           | Default                                                                                         | Description                                                                                                                                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fixPrompt`      | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | Custom prompt prefix when requesting a fix for IDE diagnostics. Use `{DIAGNOSTIC}` as a placeholder for the diagnostic context. If the placeholder is omitted, the diagnostic context is appended after your prompt. |
+| `status_display` | `widget`                                                                                        | Where to show IDE connection status in the Pi TUI. Default `widget` (above-editor); `statusline` uses the footer status line. Only one placement is active at a time. Project config overrides global. Set as `Display` via `/ide settings`. |
 
-The `fix_prompt` controls the prompt used by the VS Code **Pi: Fix it** Quick Fix
+The `fixPrompt` controls the prompt used by the VS Code **Pi: Fix it** Quick Fix
 action. See [Install the VS Code extension](../how-to/install-vscode.md#diagnostic-quick-fix).

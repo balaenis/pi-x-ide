@@ -102,7 +102,12 @@ async function maybeAutoInstallAndReconnect(
   generation: number,
 ): Promise<void> {
   try {
-    if (!isAutoInstallEnabled() || !isInstallSessionActive(runtime, generation)) return;
+    if (
+      !isAutoInstallEnabled(process.env, { projectDir: ctx.cwd ?? runtime.cwd }) ||
+      !isInstallSessionActive(runtime, generation)
+    ) {
+      return;
+    }
 
     const candidates = await discoverInstallCandidates();
     const candidate = selectAutoInstallCandidate(candidates);

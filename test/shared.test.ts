@@ -1,16 +1,23 @@
 // ABOUTME: Exercises shared protocol, config, path, and runtime selection helper behavior.
 // ABOUTME: Covers regression cases for stale pi extension context handling.
 import assert from "node:assert/strict";
-import { access, mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import {
   CONFIG_DIR_NAME,
   EXT_CONFIG_NAME,
   readPiConfigEnv,
   readPiConfigFixPrompt,
+  readPiConfigStatusDisplay,
   resolvePiConfigEnv,
+  resolveIdeConfigSettings,
+  resolvePiConfigAutoInstall,
+  resolvePiConfigStatusDisplay,
+  resolvePiProjectConfigPath,
+  writePiConfigSettings,
+  writePiConfigStatusDisplay,
 } from "../src/shared/config.js";
 import { visibleWidth } from "../src/shared/display-width.js";
 import { formatEditorContext, formatRangeMention, parseRangeMention } from "../src/shared/format.js";
@@ -170,10 +177,11 @@ void test("logs IDE widget render errors without throwing", () => {
       setWidget: (_id: string, factory: typeof widgetFactory) => {
         widgetFactory = factory;
       },
+      setStatus: () => {},
     },
   } as unknown as NonNullable<typeof runtime.ctx>;
 
-  updateIdeUi(runtime, ctx);
+  updateIdeUi(runtime, ctx, "widget");
   if (!widgetFactory) assert.fail("widget factory was not registered");
   const widget = widgetFactory(
     { requestRender: () => undefined },
@@ -213,10 +221,11 @@ void test("truncates IDE widget output by terminal cell width", () => {
       setWidget: (_id: string, factory: typeof widgetFactory) => {
         widgetFactory = factory;
       },
+      setStatus: () => {},
     },
   } as unknown as NonNullable<typeof runtime.ctx>;
 
-  updateIdeUi(runtime, ctx);
+  updateIdeUi(runtime, ctx, "widget");
   if (!widgetFactory) assert.fail("widget factory was not registered");
   const widget = widgetFactory({ requestRender: () => undefined }, { fg: (_color, text) => text });
   const [line] = widget.render(106);
@@ -265,7 +274,7 @@ void test("loads environment overrides from pi config", async () => {
   assert.equal(mergedEnv.PI_X_IDE_AUTO_INSTALL, "1");
 });
 
-void test("reads fix_prompt from pi config", async () => {
+void test("reads fixPrompt from pi config", async () => {
   const home = await mkdtemp(join(tmpdir(), "pi-x-ide-config-"));
   const configDir = join(home, CONFIG_DIR_NAME);
   const configPath = join(configDir, "config.json");
@@ -276,19 +285,186 @@ void test("reads fix_prompt from pi config", async () => {
   assert.equal(absent, undefined);
 
   // With placeholder
-  await writeFile(configPath, JSON.stringify({ fix_prompt: "Fix it: {DIAGNOSTIC}" }));
+  await writeFile(configPath, JSON.stringify({ fixPrompt: "Fix it: {DIAGNOSTIC}" }));
   const withPlaceholder = readPiConfigFixPrompt(configPath);
   assert.equal(withPlaceholder, "Fix it: {DIAGNOSTIC}");
 
   // Without placeholder
-  await writeFile(configPath, JSON.stringify({ fix_prompt: "Just fix it." }));
+  await writeFile(configPath, JSON.stringify({ fixPrompt: "Just fix it." }));
   const withoutPlaceholder = readPiConfigFixPrompt(configPath);
   assert.equal(withoutPlaceholder, "Just fix it.");
 
   // Not a string
-  await writeFile(configPath, JSON.stringify({ fix_prompt: 42 }));
+  await writeFile(configPath, JSON.stringify({ fixPrompt: 42 }));
   const notString = readPiConfigFixPrompt(configPath);
   assert.equal(notString, undefined);
+});
+
+void test("reads status_display from pi config", async () => {
+  const home = await mkdtemp(join(tmpdir(), "pi-x-ide-config-"));
+  const configDir = join(home, CONFIG_DIR_NAME);
+  const configPath = join(configDir, "config.json");
+  await mkdir(configDir, { recursive: true });
+
+  assert.equal(readPiConfigStatusDisplay(configPath), "widget");
+
+  await writeFile(configPath, JSON.stringify({ status_display: "statusline" }));
+  assert.equal(readPiConfigStatusDisplay(configPath), "statusline");
+
+  await writeFile(configPath, JSON.stringify({ status_display: "widget" }));
+  assert.equal(readPiConfigStatusDisplay(configPath), "widget");
+
+  await writeFile(configPath, JSON.stringify({ status_display: "footer" }));
+  assert.equal(readPiConfigStatusDisplay(configPath), "widget");
+
+  await writeFile(configPath, JSON.stringify({ status_display: 1 }));
+  assert.equal(readPiConfigStatusDisplay(configPath), "widget");
+});
+
+void test("project status_display overrides global config", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pi-x-ide-config-scope-"));
+  const home = join(root, "home");
+  const projectDir = join(root, "project");
+  await mkdir(home, { recursive: true });
+  await mkdir(projectDir, { recursive: true });
+
+  const globalPath = join(home, CONFIG_DIR_NAME, EXT_CONFIG_NAME, "config.json");
+  await mkdir(dirname(globalPath), { recursive: true });
+  await writeFile(globalPath, JSON.stringify({ status_display: "widget", env: { KEEP: "1" } }));
+
+  assert.deepEqual(resolvePiConfigStatusDisplay({ projectDir, home }), {
+    value: "widget",
+    scope: "global",
+    path: globalPath,
+  });
+
+  const projectSaved = writePiConfigStatusDisplay("statusline", { scope: "project", projectDir });
+  assert.equal(projectSaved.path, resolvePiProjectConfigPath(projectDir));
+  assert.equal(readPiConfigStatusDisplay({ projectDir, home }), "statusline");
+  assert.deepEqual(resolvePiConfigStatusDisplay({ projectDir, home }), {
+    value: "statusline",
+    scope: "project",
+    path: projectSaved.path,
+  });
+
+  // Global file is unchanged and still preserves unrelated keys when rewritten.
+  const globalSaved = writePiConfigStatusDisplay("statusline", { scope: "global", home });
+  const globalRaw = JSON.parse(await readFile(globalSaved.path, "utf8")) as Record<string, unknown>;
+  assert.equal(globalRaw.status_display, "statusline");
+  assert.deepEqual(globalRaw.env, { KEEP: "1" });
+});
+
+void test("writePiConfigSettings merges AutoInstall env without wiping other env keys", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pi-x-ide-config-settings-"));
+  const home = join(root, "home");
+  const projectDir = join(root, "project");
+  await mkdir(home, { recursive: true });
+
+  writePiConfigSettings(
+    { display: "widget", autoInstall: false },
+    { scope: "global", home },
+  );
+  writePiConfigSettings({ autoInstall: true }, { scope: "global", home });
+
+  // Preserve unrelated env keys across writes.
+  const globalPath = join(home, CONFIG_DIR_NAME, EXT_CONFIG_NAME, "config.json");
+  const first = JSON.parse(await readFile(globalPath, "utf8")) as {
+    status_display?: string;
+    env?: Record<string, string>;
+  };
+  first.env = { ...first.env, PI_X_IDE_ATTACH_SHORTCUT: "ctrl+alt+k" };
+  await writeFile(globalPath, `${JSON.stringify(first, null, 2)}\n`);
+
+  writePiConfigSettings({ autoInstall: false }, { scope: "global", home });
+  const after = JSON.parse(await readFile(globalPath, "utf8")) as {
+    status_display?: string;
+    env?: Record<string, string>;
+  };
+  assert.equal(after.status_display, "widget");
+  assert.equal(after.env?.PI_X_IDE_AUTO_INSTALL, "false");
+  assert.equal(after.env?.PI_X_IDE_ATTACH_SHORTCUT, "ctrl+alt+k");
+
+  writePiConfigSettings(
+    { display: "statusline", autoInstall: true },
+    { scope: "project", projectDir },
+  );
+  assert.deepEqual(resolveIdeConfigSettings({ projectDir, home }).settings, {
+    display: "statusline",
+    autoInstall: true,
+  });
+  assert.equal(resolvePiConfigAutoInstall({ projectDir, home }).scope, "project");
+});
+
+void test("routes IDE status to widget or statusline based on status_display", () => {
+  const runtime = createRuntime();
+  runtime.connectionStatus = "connected";
+  setLatestSelection(runtime, snapshot);
+
+  let widgetFactory: unknown;
+  let statusText: string | undefined = "stale";
+  const ctx = {
+    cwd: "/repo",
+    hasUI: true,
+    ui: {
+      setWidget: (_id: string, factory: unknown) => {
+        widgetFactory = factory;
+      },
+      setStatus: (_id: string, text: string | undefined) => {
+        statusText = text;
+      },
+    },
+  } as unknown as NonNullable<typeof runtime.ctx>;
+
+  updateIdeUi(runtime, ctx, "widget");
+  assert.equal(typeof widgetFactory, "function");
+  assert.equal(statusText, undefined);
+
+  widgetFactory = undefined;
+  statusText = "stale";
+  updateIdeUi(runtime, ctx, "statusline");
+  assert.equal(widgetFactory, undefined);
+  assert.equal(statusText, "⧉ ⇡ main.ts#L10-L20");
+});
+
+void test("statusline status text uses the same segment colors as the widget", () => {
+  const runtime = createRuntime();
+  runtime.connectionStatus = "connected";
+  setLatestSelection(runtime, snapshot);
+
+  // Inject a fake active Pi theme so statusline colorization matches production.
+  const themeKey = Symbol.for("@earendil-works/pi-coding-agent:theme");
+  const previousTheme = (globalThis as Record<symbol, unknown>)[themeKey];
+  (globalThis as Record<symbol, unknown>)[themeKey] = {
+    fg: (color: string, text: string) => `<${color}>${text}</${color}>`,
+  };
+
+  let statusText: string | undefined;
+  const ctx = {
+    cwd: "/repo",
+    hasUI: true,
+    ui: {
+      setWidget: () => {},
+      setStatus: (_id: string, text: string | undefined) => {
+        statusText = text;
+      },
+    },
+  } as unknown as NonNullable<typeof runtime.ctx>;
+
+  try {
+    updateIdeUi(runtime, ctx, "statusline");
+    assert.equal(statusText, "<success>⧉ ⇡ </success><success>main.ts</success><success>#L10-L20</success>");
+
+    runtime.connectionStatus = "error";
+    updateIdeUi(runtime, ctx, "statusline");
+    assert.equal(statusText, "<dim>⧉ </dim><error>✕</error>");
+
+    runtime.connectionStatus = "connecting";
+    updateIdeUi(runtime, ctx, "statusline");
+    assert.match(statusText ?? "", /^<dim>⧉ .+<\/dim>$/);
+  } finally {
+    if (previousTheme === undefined) delete (globalThis as Record<symbol, unknown>)[themeKey];
+    else (globalThis as Record<symbol, unknown>)[themeKey] = previousTheme;
+  }
 });
 
 void test("validates lock file content", () => {
