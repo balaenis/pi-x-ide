@@ -55,6 +55,8 @@ void test("validates diagnostic fix request params", () => {
   assert.equal(isDiagnosticFixRequestedParams({ ...diagnosticPayload, action: "send-diagnostic" }), true);
   assert.equal(isDiagnosticFixRequestedParams({ ...diagnosticPayload, action: "explain" }), false);
   assert.equal(isDiagnosticFixRequestedParams({ ...diagnosticPayload, diagnostics: [] }), false);
+  assert.equal(isDiagnosticFixRequestedParams({ ...diagnosticPayload, source: "zed" }), false);
+  assert.equal(isDiagnosticFixRequestedParams({ ...diagnosticPayload, source: "nvim" }), false);
   assert.equal(
     isDiagnosticFixRequestedParams({
       ...diagnosticPayload,

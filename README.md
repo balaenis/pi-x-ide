@@ -52,6 +52,7 @@ as `@src/foo.ts#L10-L20`. New to Pi × IDE? Follow the
 
 - [How discovery works](docs/explanation/discovery.md)
 - [Architecture](docs/explanation/architecture.md)
+- [Effect adoption (contributors)](docs/explanation/effect.md)
 
 中文文档见 [README.zh-CN.md](README.zh-CN.md)。
 

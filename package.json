@@ -51,6 +51,7 @@
   "type": "module",
   "main": "./dist/src/pi/index.js",
   "dependencies": {
+    "effect": "^3.22.0",
     "ws": "^8.21.0"
   },
   "peerDependencies": {

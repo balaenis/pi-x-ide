@@ -4,6 +4,8 @@ import { copyFileSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync 
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
@@ -399,10 +401,25 @@ function bestWorkspaceFolder(workspacePaths: string | null, cwd: string, env: No
 
 // ── Polling lifecycle ─────────────────────────────────────────
 
+export function resolveZedPollIntervalMs(env: NodeJS.ProcessEnv = process.env, intervalMs?: number): number {
+  const configuredEnv = resolvePiConfigEnv(env);
+  const configuredIntervalRaw = configuredEnv[PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV];
+  let configuredInterval: number | undefined;
+  if (configuredIntervalRaw !== undefined) {
+    const parsed = Number(configuredIntervalRaw);
+    if (Number.isFinite(parsed) && parsed > 0) configuredInterval = parsed;
+  }
+  const resolved = intervalMs ?? configuredInterval ?? ZED_POLL_INTERVAL_MS;
+  return Math.min(Math.max(resolved, ZED_POLL_INTERVAL_MS_MIN), ZED_POLL_INTERVAL_MS_MAX);
+}
+
 export function stopZedPolling(runtime: PiIdeRuntime): void {
-  if (runtime.zedPollTimer) {
-    clearTimeout(runtime.zedPollTimer);
-    runtime.zedPollTimer = undefined;
+  const fiber = runtime.zedPollFiber;
+  runtime.zedPollFiber = undefined;
+  runtime.zedPollIntervalMs = undefined;
+  if (fiber) {
+    // Interrupt is async; clear handle first so stop is idempotent and prompt.
+    Effect.runFork(Fiber.interrupt(fiber));
   }
   runtime.zedPollSelectionKey = undefined;
   runtime.zedPollWalMtimeMs = undefined;
@@ -424,15 +441,11 @@ export function startZedPolling(
   const dbPath = options?.dbPath ?? resolveZedDbPath(env);
   if (!dbPath) return false;
 
-  const configuredIntervalRaw = env[PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV];
-  let configuredInterval: number | undefined;
-  if (configuredIntervalRaw !== undefined) {
-    const parsed = Number(configuredIntervalRaw);
-    if (Number.isFinite(parsed) && parsed > 0) configuredInterval = parsed;
-  }
-  const resolved = options?.intervalMs ?? configuredInterval ?? ZED_POLL_INTERVAL_MS;
-  const intervalMs = Math.min(Math.max(resolved, ZED_POLL_INTERVAL_MS_MIN), ZED_POLL_INTERVAL_MS_MAX);
+  const intervalMs = resolveZedPollIntervalMs(env, options?.intervalMs);
   const generation = options?.generation;
+
+  // Restart cleanly if a previous fiber is still tracked.
+  stopZedPolling(runtime);
 
   // Set connection status and clear any stale WebSocket candidate state.
   runtime.connection?.disconnect();
@@ -441,67 +454,90 @@ export function startZedPolling(
   runtime.connectionStatus = "connected";
   runtime.connectedServer = { name: "Zed", ide: "zed" };
   runtime.connectionMessage = undefined;
+  runtime.zedPollIntervalMs = intervalMs;
   updateIdeUi(runtime, ctx as ExtensionContext);
 
-  const schedule = () => {
-    if (runtime.zedPollTimer) return; // already stopped
-    runtime.zedPollTimer = setTimeout(() => {
-      try {
-        runtime.zedPollTimer = undefined;
+  const pollTick = (): "continue" | "stop" => {
+    // Guard: session generation changed
+    if (generation !== undefined && runtime.sessionGeneration !== generation) return "stop";
+    // Guard: WebSocket has taken over
+    if (runtime.connection && runtime.connectedServer?.ide !== "zed") return "stop";
 
-        // Guard: session generation changed
-        if (generation !== undefined && runtime.sessionGeneration !== generation) return;
-        // Guard: WebSocket has taken over
-        if (runtime.connection && runtime.connection !== undefined) {
-          // connection is an IdeConnection — if WebSocket took over, stop
-          if (runtime.connectedServer?.ide !== "zed") return;
-        }
+    // Check whether the WAL sidecar has changed since the last poll.
+    // On WSL the DB snapshot is expensive (~10 MB copy + checkpoint),
+    // so skip the work when nothing changed in the editor.
+    const walPath = `${dbPath}-wal`;
+    let walMtimeMs: number | undefined;
+    try {
+      walMtimeMs = statSync(walPath).mtimeMs;
+    } catch {
+      // WAL absent — always poll (Zed may be in a different journal mode).
+    }
+    if (
+      walMtimeMs !== undefined &&
+      runtime.zedPollWalMtimeMs !== undefined &&
+      walMtimeMs === runtime.zedPollWalMtimeMs
+    ) {
+      return "continue";
+    }
+    runtime.zedPollWalMtimeMs = walMtimeMs;
 
-        // Check whether the WAL sidecar has changed since the last poll.
-        // On WSL the DB snapshot is expensive (~10 MB copy + checkpoint),
-        // so skip the work when nothing changed in the editor.
-        const walPath = `${dbPath}-wal`;
-        let walMtimeMs: number | undefined;
-        try {
-          walMtimeMs = statSync(walPath).mtimeMs;
-        } catch {
-          // WAL absent — always poll (Zed may be in a different journal mode).
-        }
-        if (
-          walMtimeMs !== undefined &&
-          runtime.zedPollWalMtimeMs !== undefined &&
-          walMtimeMs === runtime.zedPollWalMtimeMs
-        ) {
-          schedule();
-          return;
-        }
-        runtime.zedPollWalMtimeMs = walMtimeMs;
+    let snapshot: EditorSelectionSnapshot | undefined;
+    try {
+      snapshot = resolveZedSelection({ dbPath, cwd: ctx.cwd, env });
+    } catch {
+      snapshot = undefined;
+    }
 
-        let snapshot: EditorSelectionSnapshot | undefined;
-        try {
-          snapshot = resolveZedSelection({ dbPath, cwd: ctx.cwd, env });
-        } catch {
-          snapshot = undefined;
-        }
-
-        if (snapshot) {
-          const key = snapshotKey(snapshot);
-          if (key !== runtime.zedPollSelectionKey) {
-            runtime.zedPollSelectionKey = key;
-            setLatestSelection(runtime, snapshot, ctx as ExtensionContext);
-          }
-        } else {
-          clearLatestSelection(runtime, ctx as ExtensionContext);
-        }
-
-        schedule();
-      } catch (error) {
-        stopZedPolling(runtime);
-        containPiError(runtime, "Zed polling", error, ctx as ExtensionContext);
+    if (snapshot) {
+      const key = snapshotKey(snapshot);
+      if (key !== runtime.zedPollSelectionKey) {
+        runtime.zedPollSelectionKey = key;
+        setLatestSelection(runtime, snapshot, ctx as ExtensionContext);
       }
-    }, intervalMs);
+    } else {
+      clearLatestSelection(runtime, ctx as ExtensionContext);
+    }
+    return "continue";
   };
 
-  schedule();
+  const program = Effect.gen(function* () {
+    while (true) {
+      // Match previous setTimeout behavior: wait interval, then poll.
+      yield* Effect.sleep(`${intervalMs} millis`);
+      let outcome: "continue" | "stop" | "error";
+      let pollError: unknown;
+      try {
+        outcome = pollTick();
+      } catch (error) {
+        outcome = "error";
+        pollError = error;
+      }
+      if (outcome === "error") {
+        // Clear handles without interrupting self; contain like the timer path.
+        runtime.zedPollFiber = undefined;
+        runtime.zedPollIntervalMs = undefined;
+        runtime.zedPollSelectionKey = undefined;
+        runtime.zedPollWalMtimeMs = undefined;
+        containPiError(runtime, "Zed polling", pollError, ctx as ExtensionContext);
+        return;
+      }
+      if (outcome === "stop") return;
+    }
+  });
+
+  const fiber = Effect.runFork(
+    program.pipe(
+      Effect.ensuring(
+        Effect.sync(() => {
+          if (runtime.zedPollFiber === fiber) {
+            runtime.zedPollFiber = undefined;
+            runtime.zedPollIntervalMs = undefined;
+          }
+        }),
+      ),
+    ),
+  );
+  runtime.zedPollFiber = fiber;
   return true;
 }

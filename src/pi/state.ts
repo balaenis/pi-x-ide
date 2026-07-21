@@ -1,4 +1,7 @@
+// ABOUTME: Defines the mutable Pi-side runtime state for IDE connection sessions.
+// ABOUTME: Tracks candidates, selection, reconnect/Zed fiber handles, and session generation.
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with { "resolution-mode": "import" };
+import type { RuntimeFiber } from "effect/Fiber";
 import type { AttachState, EditorSelectionSnapshot, LockFileCandidate } from "../shared/protocol.js";
 import type { IdeConnection } from "./connection.js";
 
@@ -16,12 +19,14 @@ export interface PiIdeRuntime {
   latestSelectionKey?: string;
   attachState: AttachState;
   turnSelection?: EditorSelectionSnapshot;
-  reconnectTimer?: NodeJS.Timeout;
+  reconnectFiber?: RuntimeFiber<void, never>;
   reconnectAttempts: number;
   reconnectCandidateKey?: string;
-  zedPollTimer?: NodeJS.Timeout;
+  zedPollFiber?: RuntimeFiber<void, never>;
   zedPollSelectionKey?: string;
   zedPollWalMtimeMs?: number;
+  /** Last resolved Zed poll interval (ms); set while polling for observability/tests. */
+  zedPollIntervalMs?: number;
   installingIdeIds: Set<string>;
   sessionGeneration: number;
 }

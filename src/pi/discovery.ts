@@ -2,6 +2,7 @@
 // ABOUTME: Scans local and WSL-visible Windows lock directories while cleaning stale files safely.
 import { readdir, readFile, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
+import * as Effect from "effect/Effect";
 import { LOCK_FILE_EXTENSION, type IdeLockFile, type LockFileCandidate } from "../shared/protocol.js";
 import { relationshipMatchLength, resolveLockDirs } from "../shared/paths.js";
 import { parseLockFileContent } from "../shared/schema.js";
@@ -52,99 +53,126 @@ export function sortCandidates(candidates: LockFileCandidate[]): LockFileCandida
   );
 }
 
-export async function discoverIdeCandidates(options: DiscoverOptions): Promise<LockFileCandidate[]> {
-  const env = options.env ?? process.env;
-  const lockDirs = resolveLockDirs({
-    lockDir: options.lockDir,
-    homeLockDir: options.homeLockDir,
-    env,
-    windowsUsersRoot: options.windowsUsersRoot,
-  });
-  const candidates: LockFileCandidate[] = [];
-  for (const lockDir of lockDirs) {
-    candidates.push(...(await discoverIdeCandidatesInDir(lockDir, options, env)));
-  }
-
-  return sortCandidates(candidates);
+function removeLockFile(path: string): Effect.Effect<void, never, never> {
+  return Effect.promise(() =>
+    rm(path, { force: true }).then(
+      () => undefined,
+      () => undefined,
+    ),
+  );
 }
 
-async function discoverIdeCandidatesInDir(
-  lockDir: string,
-  options: DiscoverOptions,
-  env: NodeJS.ProcessEnv,
-): Promise<LockFileCandidate[]> {
-  const now = options.now ?? Date.now();
-  const maxAgeMs = options.maxAgeMs ?? 24 * 60 * 60 * 1000;
-  const checkPid = options.checkPid ?? true;
-
-  let entries: string[];
-  try {
-    entries = await readdir(lockDir);
-  } catch {
-    return [];
-  }
-
-  const candidates: LockFileCandidate[] = [];
-  for (const entry of entries) {
-    if (!entry.endsWith(LOCK_FILE_EXTENSION)) continue;
-    const path = join(lockDir, entry);
-    let content: string;
-    let mtimeMs: number;
-    try {
-      const [fileContent, fileStat] = await Promise.all([readFile(path, "utf8"), stat(path)]);
-      content = fileContent;
-      mtimeMs = fileStat.mtimeMs;
-    } catch {
-      continue;
-    }
-
-    if (now - mtimeMs > maxAgeMs) {
-      await rm(path, { force: true }).catch(() => undefined);
-      continue;
-    }
-    const lock = parseLockFileContent(content);
-    if (!lock) {
-      await rm(path, { force: true }).catch(() => undefined);
-      continue;
-    }
-    if (checkPid && typeof lock.pid === "number" && !isProcessAlive(lock.pid)) {
-      if (lock.runningInWindows === true && isWsl(env)) {
-        const reachable = await isDeadWindowsPidLockReachable(lock, options, env);
-        if (!reachable) {
-          await rm(path, { force: true }).catch(() => undefined);
-          continue;
-        }
-      } else {
-        await rm(path, { force: true }).catch(() => undefined);
-        continue;
-      }
-    }
-
-    const match = bestWorkspaceMatch(lock, options.cwd, env);
-    const { matchLength, workspaceFolder } = match ?? {
-      matchLength: 0,
-      workspaceFolder: lock.workspaceFolders[0] ? normalizePathForHost(lock.workspaceFolders[0], env) : "",
-    };
-
-    candidates.push({ path, lock, mtimeMs, matchLength, workspaceFolder });
-  }
-
-  return candidates;
-}
-
-async function isDeadWindowsPidLockReachable(
+function isDeadWindowsPidLockReachable(
   lock: IdeLockFile,
   options: DiscoverOptions,
   env: NodeJS.ProcessEnv,
-): Promise<boolean> {
-  try {
-    const host = await (
-      options.resolveHost ?? ((ideLock) => resolveIdeHost(ideLock, { env, tcpProbe: options.tcpProbe }))
-    )(lock);
-    return await (options.tcpProbe ?? tcpReachable)(host, lock.port, IDE_HOST_TCP_PROBE_TIMEOUT_MS);
-  } catch {
-    return false;
-  }
+): Effect.Effect<boolean, never, never> {
+  return Effect.promise(async () => {
+    try {
+      const host = await (
+        options.resolveHost ?? ((ideLock) => resolveIdeHost(ideLock, { env, tcpProbe: options.tcpProbe }))
+      )(lock);
+      return await (options.tcpProbe ?? tcpReachable)(host, lock.port, IDE_HOST_TCP_PROBE_TIMEOUT_MS);
+    } catch {
+      return false;
+    }
+  });
+}
+
+function discoverIdeCandidatesInDirEffect(
+  lockDir: string,
+  options: DiscoverOptions,
+  env: NodeJS.ProcessEnv,
+): Effect.Effect<LockFileCandidate[], never, never> {
+  return Effect.gen(function* () {
+    const now = options.now ?? Date.now();
+    const maxAgeMs = options.maxAgeMs ?? 24 * 60 * 60 * 1000;
+    const checkPid = options.checkPid ?? true;
+
+    const entries = yield* Effect.promise(async () => {
+      try {
+        return await readdir(lockDir);
+      } catch {
+        return [] as string[];
+      }
+    });
+
+    const candidates: LockFileCandidate[] = [];
+    for (const entry of entries) {
+      if (!entry.endsWith(LOCK_FILE_EXTENSION)) continue;
+      const path = join(lockDir, entry);
+
+      const file = yield* Effect.promise(async () => {
+        try {
+          const [content, fileStat] = await Promise.all([readFile(path, "utf8"), stat(path)]);
+          return { content, mtimeMs: fileStat.mtimeMs } as const;
+        } catch {
+          return undefined;
+        }
+      });
+      if (!file) continue;
+
+      if (now - file.mtimeMs > maxAgeMs) {
+        yield* removeLockFile(path);
+        continue;
+      }
+
+      const lock = parseLockFileContent(file.content);
+      if (!lock) {
+        yield* removeLockFile(path);
+        continue;
+      }
+
+      if (checkPid && typeof lock.pid === "number" && !isProcessAlive(lock.pid)) {
+        if (lock.runningInWindows === true && isWsl(env)) {
+          const reachable = yield* isDeadWindowsPidLockReachable(lock, options, env);
+          if (!reachable) {
+            yield* removeLockFile(path);
+            continue;
+          }
+        } else {
+          yield* removeLockFile(path);
+          continue;
+        }
+      }
+
+      const match = bestWorkspaceMatch(lock, options.cwd, env);
+      const { matchLength, workspaceFolder } = match ?? {
+        matchLength: 0,
+        workspaceFolder: lock.workspaceFolders[0] ? normalizePathForHost(lock.workspaceFolders[0], env) : "",
+      };
+
+      candidates.push({ path, lock, mtimeMs: file.mtimeMs, matchLength, workspaceFolder });
+    }
+
+    return candidates;
+  });
+}
+
+export function discoverIdeCandidatesEffect(
+  options: DiscoverOptions,
+): Effect.Effect<LockFileCandidate[], never, never> {
+  return Effect.gen(function* () {
+    const env = options.env ?? process.env;
+    const lockDirs = resolveLockDirs({
+      lockDir: options.lockDir,
+      homeLockDir: options.homeLockDir,
+      env,
+      windowsUsersRoot: options.windowsUsersRoot,
+    });
+
+    const candidates: LockFileCandidate[] = [];
+    for (const lockDir of lockDirs) {
+      const dirCandidates = yield* discoverIdeCandidatesInDirEffect(lockDir, options, env);
+      candidates.push(...dirCandidates);
+    }
+
+    return sortCandidates(candidates);
+  });
+}
+
+export async function discoverIdeCandidates(options: DiscoverOptions): Promise<LockFileCandidate[]> {
+  return Effect.runPromise(discoverIdeCandidatesEffect(options));
 }
 
 export async function resolveBestIdeCandidate(options: DiscoverOptions): Promise<LockFileCandidate | undefined> {

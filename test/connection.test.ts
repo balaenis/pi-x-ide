@@ -3,15 +3,20 @@
 import assert from "node:assert/strict";
 import { createServer, type AddressInfo, type Socket } from "node:net";
 import test from "node:test";
+import * as Effect from "effect/Effect";
 import { WebSocketServer } from "ws";
 import { IdeConnection, IdeConnectionTimeoutError } from "../src/pi/connection.js";
 import { PI_X_IDE_HOST_OVERRIDE_ENV, parseDefaultGateway, resolveIdeHost } from "../src/pi/ide-host.js";
 import {
   formatReconnectLimitMessage,
   MAX_RECONNECT_ATTEMPTS,
+  RECONNECT_DELAY_MS,
   recordReconnectAttempt,
   resetReconnectState,
+  scheduleReconnect,
+  stopReconnectScheduling,
 } from "../src/pi/reconnect.js";
+import { runPiEffect } from "../src/pi/safety.js";
 import { createRuntime } from "../src/pi/state.js";
 import {
   AUTH_HEADER,
@@ -22,6 +27,27 @@ import {
   type LockFileCandidate,
 } from "../src/shared/protocol.js";
 import { decodeRawData } from "../src/shared/ws.js";
+
+void test("runPiEffect contains failures and updates runtime error status", async () => {
+  const runtime = createRuntime();
+  const messages: string[] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => {
+    messages.push(args.map(String).join(" "));
+  };
+  try {
+    const failed = await runPiEffect("pi-effect-fail", runtime, Effect.fail(new Error("boom")));
+    assert.equal(failed, undefined);
+    assert.equal(runtime.connectionStatus, "error");
+    assert.match(runtime.connectionMessage ?? "", /pi-effect-fail: boom/);
+    assert.ok(messages.some((message) => message.includes("pi-effect-fail") && message.includes("boom")));
+
+    const ok = await runPiEffect("pi-effect-ok", runtime, Effect.succeed(7));
+    assert.equal(ok, 7);
+  } finally {
+    console.error = original;
+  }
+});
 
 void test("caps reconnect attempts at three per candidate", () => {
   const runtime = createRuntime();
@@ -39,6 +65,64 @@ void test("caps reconnect attempts at three per candidate", () => {
   resetReconnectState(runtime);
   assert.equal(recordReconnectAttempt(runtime, candidate), 1);
 });
+
+void test("scheduleReconnect fiber lifecycle respects stop, disable, and generation", async () => {
+  assert.equal(RECONNECT_DELAY_MS, 2_000);
+
+  const runtime = createRuntime();
+  runtime.sessionGeneration = 1;
+  let calls = 0;
+  const bump = () => {
+    calls += 1;
+    return Promise.resolve();
+  };
+  scheduleReconnect(runtime, bump);
+  assert.ok(runtime.reconnectFiber);
+  // Second schedule while fiber is active is a no-op.
+  scheduleReconnect(runtime, bump);
+  assert.equal(runtime.reconnectAttempts, 1);
+
+  stopReconnectScheduling(runtime);
+  assert.equal(runtime.reconnectFiber, undefined);
+  await sleep(50);
+  assert.equal(calls, 0);
+
+  // Disabled runtime never schedules.
+  runtime.enabled = false;
+  scheduleReconnect(runtime, bump);
+  assert.equal(runtime.reconnectFiber, undefined);
+  runtime.enabled = true;
+
+  // Generation bump after schedule cancels work via interrupt path.
+  let observedGeneration: number | undefined;
+  scheduleReconnect(runtime, (scheduledGeneration) => {
+    observedGeneration = scheduledGeneration;
+    calls += 1;
+    return Promise.resolve();
+  });
+  assert.ok(runtime.reconnectFiber);
+  runtime.sessionGeneration += 1;
+  stopReconnectScheduling(runtime);
+  assert.equal(runtime.reconnectFiber, undefined);
+  assert.equal(calls, 0);
+  assert.equal(observedGeneration, undefined);
+
+  // Exhausted attempts set error status without creating a fiber.
+  resetReconnectState(runtime);
+  runtime.currentCandidate = createCandidate({ port: 41003 });
+  assert.equal(recordReconnectAttempt(runtime, runtime.currentCandidate), 1);
+  assert.equal(recordReconnectAttempt(runtime, runtime.currentCandidate), 2);
+  assert.equal(recordReconnectAttempt(runtime, runtime.currentCandidate), 3);
+  scheduleReconnect(runtime, bump);
+  assert.equal(runtime.reconnectFiber, undefined);
+  assert.equal(runtime.connectionStatus, "error");
+  assert.match(runtime.connectionMessage ?? "", /after 3 attempts/);
+  assert.equal(calls, 0);
+});
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 void test("resolves IDE hosts from override, WSL gateway, and lock fallback", async () => {
   const lock = createCandidate({ host: "127.0.0.1", runningInWindows: true }).lock;

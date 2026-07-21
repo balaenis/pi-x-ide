@@ -46,6 +46,7 @@ pi
 
 - [发现机制](docs/zh-CN/explanation/discovery.md)
 - [架构](docs/zh-CN/explanation/architecture.md)
+- [Effect 采用说明（贡献者）](docs/zh-CN/explanation/effect.md)
 
 English: [README.md](README.md).
 

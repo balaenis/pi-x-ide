@@ -17,6 +17,7 @@ import {
   resolveZedDbPath,
   parseZedWorkspacePaths,
   resolveZedSelection,
+  resolveZedPollIntervalMs,
   startZedPolling,
   stopZedPolling,
   PI_X_IDE_ZED_DB_ENV,
@@ -613,20 +614,21 @@ void test("newline workspace paths are parsed", async () => {
 
 // ── Polling lifecycle ─────────────────────────────────────────
 
-void test("stopZedPolling clears timer and selection key", () => {
+void test("stopZedPolling clears fiber handle and selection key", () => {
   const runtime = createRuntime();
-  runtime.zedPollTimer = setTimeout(() => {}, 999_999);
   runtime.zedPollSelectionKey = "some-key";
+  runtime.zedPollIntervalMs = 250;
   stopZedPolling(runtime);
-  assert.equal(runtime.zedPollTimer, undefined);
+  assert.equal(runtime.zedPollFiber, undefined);
   assert.equal(runtime.zedPollSelectionKey, undefined);
+  assert.equal(runtime.zedPollIntervalMs, undefined);
 });
 
 void test("stopZedPolling is idempotent", () => {
   const runtime = createRuntime();
   stopZedPolling(runtime);
   stopZedPolling(runtime);
-  assert.equal(runtime.zedPollTimer, undefined);
+  assert.equal(runtime.zedPollFiber, undefined);
 });
 
 function createContext(cwd = "/tmp"): ExtensionContext {
@@ -662,14 +664,14 @@ void test("startZedPolling returns false when not in Zed terminal", () => {
   const runtime = createRuntime();
   const result = startZedPolling(runtime, createContext(), { env: {} });
   assert.equal(result, false);
-  assert.equal(runtime.zedPollTimer, undefined);
+  assert.equal(runtime.zedPollFiber, undefined);
 });
 
 void test("startZedPolling returns false when DB path not found", () => {
   const runtime = createRuntime();
   const result = startZedPolling(runtime, createContext(), { env: { ZED_TERM: "true" } });
   assert.equal(result, false);
-  assert.equal(runtime.zedPollTimer, undefined);
+  assert.equal(runtime.zedPollFiber, undefined);
 });
 
 void test("startZedPolling clamps configured poll interval", async () => {
@@ -683,15 +685,20 @@ void test("startZedPolling clamps configured poll interval", async () => {
   ];
 
   for (const { value, expected } of cases) {
+    const env: NodeJS.ProcessEnv = { ZED_TERM: "true", [PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV]: value };
+    assert.equal(resolveZedPollIntervalMs(env), expected);
+
     const runtime = createRuntime();
     const started = startZedPolling(runtime, createContext(dir), {
       dbPath,
-      env: { ZED_TERM: "true", [PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV]: value },
+      env,
     });
 
     assert.equal(started, true);
-    assert.equal((runtime.zedPollTimer as NodeJS.Timeout & { _idleTimeout?: number })._idleTimeout, expected);
+    assert.ok(runtime.zedPollFiber);
+    assert.equal(runtime.zedPollIntervalMs, expected);
     stopZedPolling(runtime);
+    assert.equal(runtime.zedPollFiber, undefined);
   }
 });
 
