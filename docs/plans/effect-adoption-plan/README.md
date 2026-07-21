@@ -2,9 +2,9 @@
 
 **Goal:** Incrementally adopt Effect 3.x in `pi-x-ide` for typed errors, Schema validation, and composable async workflows, without rewriting IDE plugins or breaking Pi extension boundaries.
 
-**Status:** Planned (not started)
+**Status:** Implemented on branch (Phases 1–7); optional soak for Phase 6 fibers before treating as default on `main`.
 
-**Inputs:** Repository as of 2026-07-21; `package.json` already depends on `effect@^3.22.0` with zero source imports.
+**Inputs:** Repository as of 2026-07-21; `package.json` depends on `effect@^3.22.0`. Source modules under `src/shared/effect-*.ts` and Pi-side Effect facades are in use.
 
 ## Phase Map
 
@@ -18,6 +18,18 @@
 | 5 | [Connection & Pi boundary](./05-connection-boundary.md) | Yes | Phase 1; Phase 2 for decode; Phase 3 for host Effect | Med |
 | 6 | [Reconnect & Zed fibers](./06-reconnect-zed-fibers.md) | Yes (optional) | Phase 5 | High |
 | 7 | [Documentation](./07-documentation.md) | Yes | Phase 1–2 content to document | Low |
+
+### Phase status (implementation)
+
+| Phase | Status |
+| --- | --- |
+| 1 Foundations | Done — `effect-errors`, `effect-runtime` |
+| 2 Protocol Schema | Done — `effect-schema` + `schema` adapters; `jsonrpc-guard` for VS Code |
+| 3 Discovery & host | Done — Effect programs + Promise facades |
+| 4 Install | Done — Effect programs + `IdeInstallResult` facades |
+| 5 Connection & Pi boundary | Done — connect Effect + `runPiEffect` |
+| 6 Reconnect & Zed fibers | Done (optional) — `reconnectFiber` / `zedPollFiber` |
+| 7 Documentation | Done — `docs/explanation/effect.md` (+ zh-CN) |
 
 ## Suggested PR order
 
@@ -53,5 +65,6 @@ mise run build
 ## Related
 
 - Architecture: `docs/explanation/architecture.md`  
+- Effect explanation: `docs/explanation/effect.md`  
 - Protocol: `docs/specs/ide-protocol.md`  
 - Supersedes monolithic draft: removed in favor of this directory  

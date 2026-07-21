@@ -87,5 +87,6 @@ token 除了跨越 WSL 边界外不会离开 localhost - 此时 WebSocket 仍指
 ## 相关
 
 - [发现机制](discovery.md) - Pi 如何找到 lock file 并选择连接。
+- [Effect 采用说明](effect.md) - Pi 侧 TypeScript 如何在内部用 Effect 处理错误、Schema 校验与 IO 边界。
 - [协议规范](../../specs/ide-protocol.md) - 确切的消息结构、握手和通知。
 - [功能对比](../reference/feature-parity.md) - 各编辑器支持的能力。

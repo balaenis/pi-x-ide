@@ -685,7 +685,7 @@ void test("startZedPolling clamps configured poll interval", async () => {
   ];
 
   for (const { value, expected } of cases) {
-    const env = { ZED_TERM: "true", [PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV]: value };
+    const env: NodeJS.ProcessEnv = { ZED_TERM: "true", [PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV]: value };
     assert.equal(resolveZedPollIntervalMs(env), expected);
 
     const runtime = createRuntime();

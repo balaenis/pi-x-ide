@@ -113,6 +113,8 @@ still targets the resolved Windows host.
 
 - [How discovery works](discovery.md) — how Pi finds lock files and picks a
   connection.
+- [Effect adoption](effect.md) — how Pi-side TypeScript may use Effect internally
+  for errors, schema validation, and IO boundaries.
 - [Protocol specification](../specs/ide-protocol.md) — exact message shapes,
   handshake, and notifications.
 - [Feature parity](../reference/feature-parity.md) — which capabilities each
