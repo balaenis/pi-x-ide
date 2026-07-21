@@ -20,14 +20,7 @@ import { registerIdeCommand } from "./commands.js";
 import { clearLatestSelection, registerContextHandlers, setLatestSelection } from "./context.js";
 import { handleDiagnosticFixRequested } from "./diagnostics.js";
 import { registerDiagnosticRenderer } from "./diagnostic-renderer.js";
-import * as Effect from "effect/Effect";
-import * as Fiber from "effect/Fiber";
-import {
-  formatReconnectLimitMessage,
-  RECONNECT_DELAY_MS,
-  recordReconnectAttempt,
-  resetReconnectState,
-} from "./reconnect.js";
+import { resetReconnectState, scheduleReconnect, stopReconnectScheduling } from "./reconnect.js";
 import { containPiError, runPiBoundary, runPiBoundaryAsync } from "./safety.js";
 import { createRuntime, type PiIdeRuntime } from "./state.js";
 import { clearIdeUi, updateIdeUi } from "./ui.js";
@@ -373,7 +366,7 @@ async function connectCandidate(
       runtime.connectionMessage =
         error instanceof IdeConnectionTimeoutError ? formatConnectTimeoutMessage(error) : errorMessage(error);
       updateIdeUi(runtime, ctx);
-      if (!(error instanceof IdeConnectionTimeoutError)) scheduleReconnect(runtime);
+      if (!(error instanceof IdeConnectionTimeoutError)) scheduleIdeReconnect(runtime);
     }
   }
 }
@@ -400,7 +393,7 @@ function createConnectionCallbacks(
       runtime.connectionStatus = runtime.enabled ? "disconnected" : "disabled";
       runtime.connectionMessage = reason;
       updateIdeUi(runtime);
-      if (runtime.enabled) scheduleReconnect(runtime);
+      if (runtime.enabled) scheduleIdeReconnect(runtime);
     },
     onSelectionChanged: (snapshot) => {
       if (!isCurrentConnection(runtime, getConnection(), generation)) return;
@@ -433,12 +426,6 @@ function isCurrentConnection(
   return runtime.sessionGeneration === generation && !!connection && runtime.connection === connection;
 }
 
-function stopReconnectScheduling(runtime: PiIdeRuntime): void {
-  const fiber = runtime.reconnectFiber;
-  runtime.reconnectFiber = undefined;
-  if (fiber) Effect.runFork(Fiber.interrupt(fiber));
-}
-
 function disconnect(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionCommandContext, disabled = false): void {
   runtime.ctx = ctx;
   stopZedPolling(runtime);
@@ -460,38 +447,16 @@ function disconnect(runtime: PiIdeRuntime, ctx: ExtensionContext | ExtensionComm
   updateIdeUi(runtime, ctx);
 }
 
-function scheduleReconnect(runtime: PiIdeRuntime): void {
-  if (runtime.reconnectFiber || !runtime.enabled) return;
-  const generation = runtime.sessionGeneration;
-  const attempt = recordReconnectAttempt(runtime, runtime.currentCandidate);
-  if (attempt === undefined) {
-    runtime.connectionStatus = "error";
-    runtime.connectionMessage = formatReconnectLimitMessage(runtime.currentCandidate);
-    updateIdeUi(runtime);
-    return;
-  }
-
-  const fiber = Effect.runFork(
-    Effect.gen(function* () {
-      yield* Effect.sleep(`${RECONNECT_DELAY_MS} millis`);
-      const ctx = runtime.ctx;
-      if (!ctx || !runtime.enabled || runtime.sessionGeneration !== generation) return;
-      yield* Effect.promise(() =>
-        connectAutoWithZedFallback(runtime, ctx, runtime.sessionGeneration, { resetReconnectState: false }).catch(
-          (error: unknown) => {
-            containPiError(runtime, "IDE reconnect", error);
-          },
-        ),
-      );
-    }).pipe(
-      Effect.ensuring(
-        Effect.sync(() => {
-          if (runtime.reconnectFiber === fiber) runtime.reconnectFiber = undefined;
-        }),
-      ),
-    ),
-  );
-  runtime.reconnectFiber = fiber;
+function scheduleIdeReconnect(runtime: PiIdeRuntime): void {
+  scheduleReconnect(runtime, async (generation) => {
+    const ctx = runtime.ctx;
+    if (!ctx || !runtime.enabled || runtime.sessionGeneration !== generation) return;
+    try {
+      await connectAutoWithZedFallback(runtime, ctx, runtime.sessionGeneration, { resetReconnectState: false });
+    } catch (error) {
+      containPiError(runtime, "IDE reconnect", error);
+    }
+  });
 }
 
 function handleAtMentioned(runtime: PiIdeRuntime, params: AtMentionedParams): void {

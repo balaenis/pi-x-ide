@@ -10,8 +10,11 @@ import { PI_X_IDE_HOST_OVERRIDE_ENV, parseDefaultGateway, resolveIdeHost } from 
 import {
   formatReconnectLimitMessage,
   MAX_RECONNECT_ATTEMPTS,
+  RECONNECT_DELAY_MS,
   recordReconnectAttempt,
   resetReconnectState,
+  scheduleReconnect,
+  stopReconnectScheduling,
 } from "../src/pi/reconnect.js";
 import { runPiEffect } from "../src/pi/safety.js";
 import { createRuntime } from "../src/pi/state.js";
@@ -62,6 +65,64 @@ void test("caps reconnect attempts at three per candidate", () => {
   resetReconnectState(runtime);
   assert.equal(recordReconnectAttempt(runtime, candidate), 1);
 });
+
+void test("scheduleReconnect fiber lifecycle respects stop, disable, and generation", async () => {
+  assert.equal(RECONNECT_DELAY_MS, 2_000);
+
+  const runtime = createRuntime();
+  runtime.sessionGeneration = 1;
+  let calls = 0;
+  const bump = () => {
+    calls += 1;
+    return Promise.resolve();
+  };
+  scheduleReconnect(runtime, bump);
+  assert.ok(runtime.reconnectFiber);
+  // Second schedule while fiber is active is a no-op.
+  scheduleReconnect(runtime, bump);
+  assert.equal(runtime.reconnectAttempts, 1);
+
+  stopReconnectScheduling(runtime);
+  assert.equal(runtime.reconnectFiber, undefined);
+  await sleep(50);
+  assert.equal(calls, 0);
+
+  // Disabled runtime never schedules.
+  runtime.enabled = false;
+  scheduleReconnect(runtime, bump);
+  assert.equal(runtime.reconnectFiber, undefined);
+  runtime.enabled = true;
+
+  // Generation bump after schedule cancels work via interrupt path.
+  let observedGeneration: number | undefined;
+  scheduleReconnect(runtime, (scheduledGeneration) => {
+    observedGeneration = scheduledGeneration;
+    calls += 1;
+    return Promise.resolve();
+  });
+  assert.ok(runtime.reconnectFiber);
+  runtime.sessionGeneration += 1;
+  stopReconnectScheduling(runtime);
+  assert.equal(runtime.reconnectFiber, undefined);
+  assert.equal(calls, 0);
+  assert.equal(observedGeneration, undefined);
+
+  // Exhausted attempts set error status without creating a fiber.
+  resetReconnectState(runtime);
+  runtime.currentCandidate = createCandidate({ port: 41003 });
+  assert.equal(recordReconnectAttempt(runtime, runtime.currentCandidate), 1);
+  assert.equal(recordReconnectAttempt(runtime, runtime.currentCandidate), 2);
+  assert.equal(recordReconnectAttempt(runtime, runtime.currentCandidate), 3);
+  scheduleReconnect(runtime, bump);
+  assert.equal(runtime.reconnectFiber, undefined);
+  assert.equal(runtime.connectionStatus, "error");
+  assert.match(runtime.connectionMessage ?? "", /after 3 attempts/);
+  assert.equal(calls, 0);
+});
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 void test("resolves IDE hosts from override, WSL gateway, and lock fallback", async () => {
   const lock = createCandidate({ host: "127.0.0.1", runningInWindows: true }).lock;
