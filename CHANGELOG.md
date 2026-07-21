@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.17.0](https://github.com/balaenis/pi-x-ide/compare/v1.16.3...v1.17.0) (2026-07-21)
+
+
+### Features
+
+* adopt Effect for Pi-side errors, schema, IO, and fibers ([0c3c622](https://github.com/balaenis/pi-x-ide/commit/0c3c6220e29aca86363e1e594f3068cb51d63288))
+* **shared:** add Effect tagged errors and boundary runners ([4ac61c2](https://github.com/balaenis/pi-x-ide/commit/4ac61c293b522251cac2abf778177fcd3ac32b8f))
+* **shared:** validate protocol payloads with Effect Schema ([c37f3d4](https://github.com/balaenis/pi-x-ide/commit/c37f3d47e9e4b7830e779ab087ef91caef2c94b8))
+
+
+### Bug Fixes
+
+* **pi:** harden reconnect fiber fire-clear and lifecycle tests ([aedbbb6](https://github.com/balaenis/pi-x-ide/commit/aedbbb6fb8987b83b1bf29bedf485fc5481e7c5e))
+* **pi:** restore connect timeout cleanup order before terminate ([21dd4a7](https://github.com/balaenis/pi-x-ide/commit/21dd4a76f12722a9bc3a9c07f5ae2e63ba6d035a))
+
 ## [1.16.3](https://github.com/balaenis/pi-x-ide/compare/v1.16.2...v1.16.3) (2026-07-06)
 
 ### Bug Fixes
