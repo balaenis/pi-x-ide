@@ -9,7 +9,7 @@ import {
   type IdeSource,
   type InitializeResult,
 } from "./protocol.js";
-import { isJsonRpcRequest } from "./schema.js";
+import { isJsonRpcRequest } from "./jsonrpc-guard.js";
 import { logExtensionError } from "./errors.js";
 import { decodeRawData } from "./ws.js";
 

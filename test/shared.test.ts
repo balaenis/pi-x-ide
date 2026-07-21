@@ -28,7 +28,12 @@ import {
 } from "../src/shared/platform.js";
 import { type EditorSelectionSnapshot, type IdeLockFile } from "../src/shared/protocol.js";
 import { createIdeLockFile } from "../src/shared/lock-file.js";
-import { parseLockFileContent, isSelectionClearedParams, isEditorSelectionSnapshot } from "../src/shared/schema.js";
+import {
+  parseLockFileContent,
+  isSelectionClearedParams,
+  isEditorSelectionSnapshot,
+  isIdeLockFile,
+} from "../src/shared/schema.js";
 import { LockFileParseError } from "../src/shared/effect-errors.js";
 import { runEffect, runEffectOrThrow, runEffectSync } from "../src/shared/effect-runtime.js";
 import * as Effect from "effect/Effect";
@@ -98,6 +103,7 @@ void test("validates selection cleared params", () => {
   assert.equal(isSelectionClearedParams({ source: "vscode", reason: "no-active-editor", receivedAt: 123 }), true);
   assert.equal(isSelectionClearedParams({ source: "vscode", reason: "unknown" }), false);
   assert.equal(isSelectionClearedParams({ source: "vscode" }), false);
+  assert.equal(isSelectionClearedParams({ source: "vscode", reason: "closed" }), false);
 });
 
 void test("clears stale editor selection state", () => {
@@ -311,6 +317,16 @@ void test("validates lock file content", () => {
   });
   assert.equal(parseLockFileContent(JSON.stringify({ ...lock, ide: "helix" })), undefined);
   assert.equal(parseLockFileContent(JSON.stringify({ ...lock, port: 99999 })), undefined);
+  assert.equal(parseLockFileContent(JSON.stringify({ ...lock, port: 0 })), undefined);
+  assert.equal(parseLockFileContent(JSON.stringify({ ...lock, port: 70_000 })), undefined);
+  assert.equal(parseLockFileContent(JSON.stringify({ ...lock, version: 2 })), undefined);
+  const { authToken: _omitAuth, ...withoutAuth } = lock;
+  assert.equal(parseLockFileContent(JSON.stringify(withoutAuth)), undefined);
+  assert.equal(isIdeLockFile({ ...lock, authToken: undefined }), false);
+  assert.equal(parseLockFileContent("{ not json"), undefined);
+  assert.equal(parseLockFileContent("[]"), undefined);
+  assert.equal(parseLockFileContent("null"), undefined);
+  assert.equal(isEditorSelectionSnapshot(snapshot), true);
 });
 
 void test("accepts boolean runningInWindows and rejects non-boolean", () => {
