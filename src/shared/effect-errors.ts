@@ -11,9 +11,7 @@ export class LockFileParseError extends Data.TaggedError("LockFileParseError")<{
   readonly reason: string;
 }> {
   override get message(): string {
-    return this.path
-      ? `LockFileParseError: ${this.reason} (${this.path})`
-      : `LockFileParseError: ${this.reason}`;
+    return this.path ? `LockFileParseError: ${this.reason} (${this.path})` : `LockFileParseError: ${this.reason}`;
   }
 }
 

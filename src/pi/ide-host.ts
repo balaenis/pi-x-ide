@@ -30,16 +30,10 @@ export function resolveIdeHostEffect(
     if (override) return override;
 
     if (lock.runningInWindows === true && isWsl(env)) {
-      const gateway = yield* Effect.promise(() =>
-        resolveWslDefaultGateway(options.runCommand ?? defaultRunCommand),
-      );
+      const gateway = yield* Effect.promise(() => resolveWslDefaultGateway(options.runCommand ?? defaultRunCommand));
       if (gateway) {
         const reachable = yield* Effect.promise(() =>
-          (options.tcpProbe ?? tcpReachable)(
-            gateway,
-            lock.port,
-            options.timeoutMs ?? IDE_HOST_TCP_PROBE_TIMEOUT_MS,
-          ),
+          (options.tcpProbe ?? tcpReachable)(gateway, lock.port, options.timeoutMs ?? IDE_HOST_TCP_PROBE_TIMEOUT_MS),
         );
         if (reachable) return gateway;
       }

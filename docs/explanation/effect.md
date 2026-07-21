@@ -31,17 +31,17 @@ full lock JSON into logs, Effect error messages, or `scope` strings.
 
 ## Module map
 
-| Module | Role |
-| --- | --- |
-| `src/shared/effect-errors.ts` | `Data.TaggedError` domain errors with readable `message` getters |
-| `src/shared/effect-runtime.ts` | `runEffect` / `runEffectSync` (log-and-swallow); `runEffectOrThrow` (tests) |
-| `src/shared/effect-schema.ts` | Effect Schema definitions + `decode*` helpers |
-| `src/shared/schema.ts` | Stable `is*` / `parse*` facades over Schema decode |
-| `src/shared/jsonrpc-guard.ts` | Effect-free `isJsonRpcRequest` for the VS Code `ide-server` import graph |
-| `src/pi/safety.ts` | `runPiEffect` → `containPiError` + UI status |
-| `src/pi/discovery.ts`, `ide-host.ts`, `install.ts` | Effect programs + Promise facades |
-| `src/pi/connection.ts` | Connect handshake Effect; maps tagged timeout → `IdeConnectionTimeoutError` |
-| `src/pi/reconnect.ts`, `zed.ts` | Interruptible fibers for reconnect delay and Zed poll |
+| Module                                             | Role                                                                        |
+| -------------------------------------------------- | --------------------------------------------------------------------------- |
+| `src/shared/effect-errors.ts`                      | `Data.TaggedError` domain errors with readable `message` getters            |
+| `src/shared/effect-runtime.ts`                     | `runEffect` / `runEffectSync` (log-and-swallow); `runEffectOrThrow` (tests) |
+| `src/shared/effect-schema.ts`                      | Effect Schema definitions + `decode*` helpers                               |
+| `src/shared/schema.ts`                             | Stable `is*` / `parse*` facades over Schema decode                          |
+| `src/shared/jsonrpc-guard.ts`                      | Effect-free `isJsonRpcRequest` for the VS Code `ide-server` import graph    |
+| `src/pi/safety.ts`                                 | `runPiEffect` → `containPiError` + UI status                                |
+| `src/pi/discovery.ts`, `ide-host.ts`, `install.ts` | Effect programs + Promise facades                                           |
+| `src/pi/connection.ts`                             | Connect handshake Effect; maps tagged timeout → `IdeConnectionTimeoutError` |
+| `src/pi/reconnect.ts`, `zed.ts`                    | Interruptible fibers for reconnect delay and Zed poll                       |
 
 VS Code still imports `@shared/*` pieces that must stay Effect-free on the hot
 path (`jsonrpc-guard`, protocol, lock-file helpers). Pulling `effect-schema` into

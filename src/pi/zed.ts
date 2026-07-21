@@ -401,10 +401,7 @@ function bestWorkspaceFolder(workspacePaths: string | null, cwd: string, env: No
 
 // ── Polling lifecycle ─────────────────────────────────────────
 
-export function resolveZedPollIntervalMs(
-  env: NodeJS.ProcessEnv = process.env,
-  intervalMs?: number,
-): number {
+export function resolveZedPollIntervalMs(env: NodeJS.ProcessEnv = process.env, intervalMs?: number): number {
   const configuredEnv = resolvePiConfigEnv(env);
   const configuredIntervalRaw = configuredEnv[PI_X_IDE_ZED_POLL_INTERVAL_MS_ENV];
   let configuredInterval: number | undefined;

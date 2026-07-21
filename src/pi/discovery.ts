@@ -54,7 +54,12 @@ export function sortCandidates(candidates: LockFileCandidate[]): LockFileCandida
 }
 
 function removeLockFile(path: string): Effect.Effect<void, never, never> {
-  return Effect.promise(() => rm(path, { force: true }).then(() => undefined, () => undefined));
+  return Effect.promise(() =>
+    rm(path, { force: true }).then(
+      () => undefined,
+      () => undefined,
+    ),
+  );
 }
 
 function isDeadWindowsPidLockReachable(

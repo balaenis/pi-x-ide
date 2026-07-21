@@ -44,14 +44,14 @@
 **Steps:**
 
 - [ ] Sections (concise editorial style):
-  1. Why Effect in pi-x-ide  
-  2. Boundary rule (run at edges; no leak into Pi host / VS Code activate)  
-  3. Module map: `effect-errors.ts`, `effect-runtime.ts`, `effect-schema.ts`, `schema.ts` adapters  
-  4. Import style  
-  5. Error tagging conventions  
-  6. What stays Promise-based  
-  7. Non-goals (no full Layer rewrite yet; plugins out of scope)  
-  8. Link to `docs/plans/effect-adoption-plan/`  
+  1. Why Effect in pi-x-ide
+  2. Boundary rule (run at edges; no leak into Pi host / VS Code activate)
+  3. Module map: `effect-errors.ts`, `effect-runtime.ts`, `effect-schema.ts`, `schema.ts` adapters
+  4. Import style
+  5. Error tagging conventions
+  6. What stays Promise-based
+  7. Non-goals (no full Layer rewrite yet; plugins out of scope)
+  8. Link to `docs/plans/effect-adoption-plan/`
 - [ ] Do not document unmerged APIs as if shipped; phrase “introduced as adoption proceeds” if drafting early.
 
 **Validation:**

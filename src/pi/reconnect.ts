@@ -44,10 +44,7 @@ export function stopReconnectScheduling(runtime: PiIdeRuntime): void {
  * Schedule a reconnect after RECONNECT_DELAY_MS.
  * `reconnect` receives the generation captured at schedule time for guard checks.
  */
-export function scheduleReconnect(
-  runtime: PiIdeRuntime,
-  reconnect: (generation: number) => Promise<void>,
-): void {
+export function scheduleReconnect(runtime: PiIdeRuntime, reconnect: (generation: number) => Promise<void>): void {
   if (runtime.reconnectFiber || !runtime.enabled) return;
   const generation = runtime.sessionGeneration;
   const attempt = recordReconnectAttempt(runtime, runtime.currentCandidate);
