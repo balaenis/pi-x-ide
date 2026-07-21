@@ -21,17 +21,17 @@ Effect 不是产品功能，终端用户无需配置。
 
 ## 模块地图
 
-| 模块 | 作用 |
-| --- | --- |
-| `src/shared/effect-errors.ts` | `Data.TaggedError` 领域错误（可读 `message`） |
-| `src/shared/effect-runtime.ts` | `runEffect` / `runEffectSync`（吞失败并打日志）；`runEffectOrThrow`（测试） |
-| `src/shared/effect-schema.ts` | Effect Schema 定义与 `decode*` |
-| `src/shared/schema.ts` | 稳定的 `is*` / `parse*` 门面 |
-| `src/shared/jsonrpc-guard.ts` | 无 Effect 的 `isJsonRpcRequest`，供 VS Code `ide-server` 依赖图使用 |
-| `src/pi/safety.ts` | `runPiEffect` → `containPiError` + UI 状态 |
-| `src/pi/discovery.ts`、`ide-host.ts`、`install.ts` | Effect 程序 + Promise 门面 |
-| `src/pi/connection.ts` | 连接握手 Effect；tagged timeout 映射为 `IdeConnectionTimeoutError` |
-| `src/pi/reconnect.ts`、`zed.ts` | reconnect 延迟与 Zed 轮询的可中断 fiber |
+| 模块                                               | 作用                                                                        |
+| -------------------------------------------------- | --------------------------------------------------------------------------- |
+| `src/shared/effect-errors.ts`                      | `Data.TaggedError` 领域错误（可读 `message`）                               |
+| `src/shared/effect-runtime.ts`                     | `runEffect` / `runEffectSync`（吞失败并打日志）；`runEffectOrThrow`（测试） |
+| `src/shared/effect-schema.ts`                      | Effect Schema 定义与 `decode*`                                              |
+| `src/shared/schema.ts`                             | 稳定的 `is*` / `parse*` 门面                                                |
+| `src/shared/jsonrpc-guard.ts`                      | 无 Effect 的 `isJsonRpcRequest`，供 VS Code `ide-server` 依赖图使用         |
+| `src/pi/safety.ts`                                 | `runPiEffect` → `containPiError` + UI 状态                                  |
+| `src/pi/discovery.ts`、`ide-host.ts`、`install.ts` | Effect 程序 + Promise 门面                                                  |
+| `src/pi/connection.ts`                             | 连接握手 Effect；tagged timeout 映射为 `IdeConnectionTimeoutError`          |
+| `src/pi/reconnect.ts`、`zed.ts`                    | reconnect 延迟与 Zed 轮询的可中断 fiber                                     |
 
 VS Code 仍通过 `@shared/*` 引入必须保持无 Effect 的路径（`jsonrpc-guard`、protocol、lock-file 辅助）。若把 `effect-schema` 拉进 VS Code 包体，属于 escape hatch 失败：解码应留在 Pi 侧，或在包体膨胀时拆分 guard。
 

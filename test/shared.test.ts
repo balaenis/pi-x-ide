@@ -735,9 +735,13 @@ void test("runEffect resolves success and swallows async failures", async () => 
   assert.equal(await runEffect("t", Effect.succeed(42)), 42);
 
   const seen: unknown[] = [];
-  const failed = await runEffect("effect-async-fail", Effect.fail(new LockFileParseError({ reason: "bad" })), (error) => {
-    seen.push(error);
-  });
+  const failed = await runEffect(
+    "effect-async-fail",
+    Effect.fail(new LockFileParseError({ reason: "bad" })),
+    (error) => {
+      seen.push(error);
+    },
+  );
   assert.equal(failed, undefined);
   assert.equal(seen.length, 1);
   const asyncError = seen[0];

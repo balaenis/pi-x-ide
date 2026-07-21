@@ -45,18 +45,18 @@
 - [ ] ABOUTME header describing protocol Schema definitions and decode helpers.
 - [ ] Implement schemas matching current guards:
 
-| Schema | Key constraints (must preserve) |
-| --- | --- |
-| `Position` | finite number, `line >= 0`, `character >= 0` |
-| `SelectionRange` | `text: string`, nested positions |
-| `IdeSource` | `"vscode" \| "zed" \| "nvim" \| "jetbrains" \| "unknown"` |
-| `IdeLockFile` | `version === 1`, `transport === "ws"`, port 1–65535, string host/token/name/timestamps, `workspaceFolders: string[]`, optional `pid`, optional `runningInWindows` |
-| `EditorSelectionSnapshot` | source, filePath, ranges[], optional workspaceFolder/receivedAt |
-| `SelectionClearedParams` | source + `reason === "no-active-editor"` |
-| `AtMentionedParams` | snapshot fields + `rangeText: string` |
-| `IdeDiagnostic` + related types | severity `error\|warning`, ranges, contextLines, optional relatedInformation |
-| `DiagnosticFixRequestedParams` | `source === "vscode"`, non-empty diagnostics, triggerRange, optional action |
-| `JsonRpcRequest` | `jsonrpc === "2.0"`, id string\|number, method string |
+| Schema                          | Key constraints (must preserve)                                                                                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Position`                      | finite number, `line >= 0`, `character >= 0`                                                                                                                      |
+| `SelectionRange`                | `text: string`, nested positions                                                                                                                                  |
+| `IdeSource`                     | `"vscode" \| "zed" \| "nvim" \| "jetbrains" \| "unknown"`                                                                                                         |
+| `IdeLockFile`                   | `version === 1`, `transport === "ws"`, port 1–65535, string host/token/name/timestamps, `workspaceFolders: string[]`, optional `pid`, optional `runningInWindows` |
+| `EditorSelectionSnapshot`       | source, filePath, ranges[], optional workspaceFolder/receivedAt                                                                                                   |
+| `SelectionClearedParams`        | source + `reason === "no-active-editor"`                                                                                                                          |
+| `AtMentionedParams`             | snapshot fields + `rangeText: string`                                                                                                                             |
+| `IdeDiagnostic` + related types | severity `error\|warning`, ranges, contextLines, optional relatedInformation                                                                                      |
+| `DiagnosticFixRequestedParams`  | `source === "vscode"`, non-empty diagnostics, triggerRange, optional action                                                                                       |
+| `JsonRpcRequest`                | `jsonrpc === "2.0"`, id string\|number, method string                                                                                                             |
 
 - [ ] Prefer filters/refinements over post-decode asserts so invalid values fail decode.
 - [ ] Provide internal helpers:

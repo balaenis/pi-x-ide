@@ -2,63 +2,55 @@
 
 ## [1.16.3](https://github.com/balaenis/pi-x-ide/compare/v1.16.2...v1.16.3) (2026-07-06)
 
-
 ### Bug Fixes
 
-* **jetbrains:** avoid internal API for plugin version ([d7d1be7](https://github.com/balaenis/pi-x-ide/commit/d7d1be7fa8ccda4e0bbb105cd8552dc8858453ce))
+- **jetbrains:** avoid internal API for plugin version ([d7d1be7](https://github.com/balaenis/pi-x-ide/commit/d7d1be7fa8ccda4e0bbb105cd8552dc8858453ce))
 
 ## [1.16.2](https://github.com/balaenis/pi-x-ide/compare/v1.16.1...v1.16.2) (2026-07-04)
 
-
 ### Bug Fixes
 
-* **jetbrains:** avoid internal plugin manager API ([efc694d](https://github.com/balaenis/pi-x-ide/commit/efc694d4885294cd01fbe039ef142dd62631eabf))
+- **jetbrains:** avoid internal plugin manager API ([efc694d](https://github.com/balaenis/pi-x-ide/commit/efc694d4885294cd01fbe039ef142dd62631eabf))
 
 ## [1.16.1](https://github.com/balaenis/pi-x-ide/compare/v1.16.0...v1.16.1) (2026-06-30)
 
-
 ### Bug Fixes
 
-* **release:** update version marker for release-please ([351f71a](https://github.com/balaenis/pi-x-ide/commit/351f71adbf0e721d5d22ef57d30ad55270ff453b))
+- **release:** update version marker for release-please ([351f71a](https://github.com/balaenis/pi-x-ide/commit/351f71adbf0e721d5d22ef57d30ad55270ff453b))
 
 ## [1.16.0](https://github.com/balaenis/pi-x-ide/compare/v1.15.2...v1.16.0) (2026-06-30)
 
-
 ### Features
 
-* **pi:** render diagnostic-fix requests as custom TUI messages ([82d1821](https://github.com/balaenis/pi-x-ide/commit/82d18219cdfdfbb48689d6812db093396f229f4d))
+- **pi:** render diagnostic-fix requests as custom TUI messages ([82d1821](https://github.com/balaenis/pi-x-ide/commit/82d18219cdfdfbb48689d6812db093396f229f4d))
 
 ## [1.15.2](https://github.com/balaenis/pi-x-ide/compare/v1.15.1...v1.15.2) (2026-06-29)
 
-
 ### Bug Fixes
 
-* **pi:** resolve package version from package root ([9a5db66](https://github.com/balaenis/pi-x-ide/commit/9a5db66780b85203730825abfd5f95d24b2c3a87))
+- **pi:** resolve package version from package root ([9a5db66](https://github.com/balaenis/pi-x-ide/commit/9a5db66780b85203730825abfd5f95d24b2c3a87))
 
 ## [1.15.1](https://github.com/balaenis/pi-x-ide/compare/v1.15.0...v1.15.1) (2026-06-29)
 
-
 ### Bug Fixes
 
-* **ui:** use grapheme-aware width for CJK-safe IDE status bar truncation ([9513960](https://github.com/balaenis/pi-x-ide/commit/95139605c36926be7e0ecb1553f823d3639a2b65))
+- **ui:** use grapheme-aware width for CJK-safe IDE status bar truncation ([9513960](https://github.com/balaenis/pi-x-ide/commit/95139605c36926be7e0ecb1553f823d3639a2b65))
 
 ## [1.15.0](https://github.com/balaenis/pi-x-ide/compare/v1.14.0...v1.15.0) (2026-06-23)
 
-
 ### Features
 
-* **context:** wrap editor context in SELECTED_CONTEXT_MARKER for precise detection ([341e957](https://github.com/balaenis/pi-x-ide/commit/341e957e6f9ea32f60a90645f8fafa2e814bf267))
+- **context:** wrap editor context in SELECTED_CONTEXT_MARKER for precise detection ([341e957](https://github.com/balaenis/pi-x-ide/commit/341e957e6f9ea32f60a90645f8fafa2e814bf267))
 
 ## [1.14.0](https://github.com/balaenis/pi-x-ide/compare/v1.13.1...v1.14.0) (2026-06-22)
 
-
 ### Features
 
-* **jetbrains:** add JetBrains IDE plugin with lock-file, selection-tracking, and WebSocket server ([401e65d](https://github.com/balaenis/pi-x-ide/commit/401e65d50ed00f2803324c954560551f9ebe5c70)), closes [#47](https://github.com/balaenis/pi-x-ide/issues/47)
-* **jetbrains:** add plugin icons, toolbar group, and icon references to actions ([ab5b0c4](https://github.com/balaenis/pi-x-ide/commit/ab5b0c483d004b2cc1d5950acbbdab9af8b9d9b6))
-* **jetbrains:** add signing and publishPlugin support for JetBrains Marketplace ([d86f5e0](https://github.com/balaenis/pi-x-ide/commit/d86f5e0ec2769eeaec5a90b4c117c40d08e4df4e))
-* **jetbrains:** run pi through login shell for proper PATH setup on native Unix and WSL ([7bf2924](https://github.com/balaenis/pi-x-ide/commit/7bf2924918692481c80a78fffd3ccffa67b166d3))
-* **wsl:** add WSL-aware IDE discovery and cross-platform host resolution ([d8bd2e4](https://github.com/balaenis/pi-x-ide/commit/d8bd2e42687a79022a47337149169f03f1034b21))
+- **jetbrains:** add JetBrains IDE plugin with lock-file, selection-tracking, and WebSocket server ([401e65d](https://github.com/balaenis/pi-x-ide/commit/401e65d50ed00f2803324c954560551f9ebe5c70)), closes [#47](https://github.com/balaenis/pi-x-ide/issues/47)
+- **jetbrains:** add plugin icons, toolbar group, and icon references to actions ([ab5b0c4](https://github.com/balaenis/pi-x-ide/commit/ab5b0c483d004b2cc1d5950acbbdab9af8b9d9b6))
+- **jetbrains:** add signing and publishPlugin support for JetBrains Marketplace ([d86f5e0](https://github.com/balaenis/pi-x-ide/commit/d86f5e0ec2769eeaec5a90b4c117c40d08e4df4e))
+- **jetbrains:** run pi through login shell for proper PATH setup on native Unix and WSL ([7bf2924](https://github.com/balaenis/pi-x-ide/commit/7bf2924918692481c80a78fffd3ccffa67b166d3))
+- **wsl:** add WSL-aware IDE discovery and cross-platform host resolution ([d8bd2e4](https://github.com/balaenis/pi-x-ide/commit/d8bd2e42687a79022a47337149169f03f1034b21))
 
 ## [1.13.1](https://github.com/balaenis/pi-x-ide/compare/v1.13.0...v1.13.1) (2026-06-20)
 
