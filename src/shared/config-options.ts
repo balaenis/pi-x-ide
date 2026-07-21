@@ -20,7 +20,7 @@ export const CONFIG_ENV_OPTIONS = {
   PI_X_IDE_AUTO_INSTALL: {
     type: ["string", "number", "boolean"],
     default: "enabled",
-    description: "Controls VS Code-family extension auto-install. Values 0, false, and off disable it.",
+    description: "Controls VS Code extension auto-install. Values 0, false, and off disable it.",
   },
   PI_X_IDE_ATTACH_SHORTCUT: {
     type: ["string"],

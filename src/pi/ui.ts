@@ -15,12 +15,19 @@ import type { PiIdeRuntime } from "./state.js";
 const IDE_ICON = "⧉";
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 const SPINNER_INTERVAL_MS = 90;
+// Pi stores the active theme on globalThis so every module loader sees the same instance.
+const PI_THEME_KEYS = [
+  Symbol.for("@earendil-works/pi-coding-agent:theme"),
+  Symbol.for("@mariozechner/pi-coding-agent:theme"),
+] as const;
 
 interface StatusSegment {
   text: string;
   color: ThemeColor;
   shrink?: boolean;
 }
+
+type ThemeColorizer = (color: ThemeColor, text: string) => string;
 
 type ActiveUiContext = Pick<ExtensionContext, "cwd" | "ui">;
 
@@ -56,12 +63,18 @@ function runReportingUiFailure(scope: string, action: () => void): void {
 export function updateIdeUi(
   runtime: PiIdeRuntime,
   ctx: ExtensionContext | undefined = runtime.ctx,
-  statusDisplay: StatusDisplay = readPiConfigStatusDisplay(),
+  statusDisplay?: StatusDisplay,
 ): void {
   const uiContext = getActiveUiContext(ctx);
   if (!uiContext) return;
 
-  if (statusDisplay === "statusline") {
+  const display =
+    statusDisplay ??
+    readPiConfigStatusDisplay({
+      projectDir: ctx?.cwd ?? runtime.cwd,
+    });
+
+  if (display === "statusline") {
     clearWidget(uiContext);
     updateStatusline(runtime, uiContext);
     return;
@@ -154,7 +167,8 @@ function updateStatusline(runtime: PiIdeRuntime, uiContext: ActiveUiContext): vo
 
 function applyStatusline(runtime: PiIdeRuntime, uiContext: ActiveUiContext, spinnerFrame: string): void {
   runReportingUiFailure("update IDE statusline", () => {
-    const text = buildStatusText(runtime, spinnerFrame);
+    // Colorize with the same ThemeColor mapping as the above-editor widget so pending/error/dim match.
+    const text = buildStatusText(runtime, spinnerFrame, getThemeColorizer());
     uiContext.ui.setStatus(EXT_CONFIG_NAME, text);
   });
 }
@@ -257,10 +271,40 @@ export function buildStatusSegments(runtime: PiIdeRuntime, spinnerFrame = SPINNE
   }
 }
 
-export function buildStatusText(runtime: PiIdeRuntime, spinnerFrame = SPINNER_FRAMES[0]): string | undefined {
+export function buildStatusText(
+  runtime: PiIdeRuntime,
+  spinnerFrame = SPINNER_FRAMES[0],
+  colorize?: ThemeColorizer,
+): string | undefined {
   const segments = buildStatusSegments(runtime, spinnerFrame);
   if (segments.length === 0) return undefined;
-  return segments.map((segment) => segment.text).join("");
+  return formatStatusSegments(segments, colorize);
+}
+
+export function formatStatusSegments(segments: StatusSegment[], colorize?: ThemeColorizer): string {
+  if (!colorize) return segments.map((segment) => segment.text).join("");
+  return segments.map((segment) => colorize(segment.color, segment.text)).join("");
+}
+
+function getThemeColorizer(): ThemeColorizer | undefined {
+  const activeTheme = getActivePiTheme();
+  if (!activeTheme) return undefined;
+  return (color, text) => activeTheme.fg(color, text);
+}
+
+function getActivePiTheme(): { fg: (color: ThemeColor, text: string) => string } | undefined {
+  const globalStore = globalThis as Record<symbol, unknown>;
+  for (const key of PI_THEME_KEYS) {
+    const candidate = globalStore[key];
+    if (!isThemeLike(candidate)) continue;
+    return candidate;
+  }
+  return undefined;
+}
+
+function isThemeLike(value: unknown): value is { fg: (color: ThemeColor, text: string) => string } {
+  if (!value || typeof value !== "object") return false;
+  return typeof (value as { fg?: unknown }).fg === "function";
 }
 
 function buildConnectedSegments(runtime: PiIdeRuntime): StatusSegment[] {

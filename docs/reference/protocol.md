@@ -53,7 +53,7 @@ UTF-16 code-unit counts.
 ## TUI behavior
 
 When connected, Pi shows IDE connection status in one place, selected by
-`status_display` in `~/.pi/pi-x-ide/config.json`:
+`status_display` (project config overrides global; set via `/ide settings`):
 
 - `widget` (default): an above-editor widget via `ctx.ui.setWidget("pi-x-ide", ...)`.
 - `statusline`: the default footer status line via `ctx.ui.setStatus("pi-x-ide", ...)`.

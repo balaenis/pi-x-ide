@@ -42,7 +42,7 @@ line 和 character 偏移从 0 开始，与 VS Code/LSP 一致。Neovim 把字�
 
 ## TUI 行为
 
-连接后，Pi 根据 `~/.pi/pi-x-ide/config.json` 中的 `status_display` 只在一处显示 IDE 连接状态：
+连接后，Pi 根据 `status_display`（项目配置覆盖全局；可通过 `/ide settings` 设置）只在一处显示 IDE 连接状态：
 
 - `widget`（默认）：通过 `ctx.ui.setWidget("pi-x-ide", ...)` 显示在编辑器上方。
 - `statusline`：通过 `ctx.ui.setStatus("pi-x-ide", ...)` 显示在默认页脚状态行。
