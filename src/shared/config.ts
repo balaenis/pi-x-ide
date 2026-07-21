@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
-import { isConfigEnvValue } from "./config-options.js";
+import {
+  DEFAULT_STATUS_DISPLAY,
+  isConfigEnvValue,
+  STATUS_DISPLAY_VALUES,
+  type StatusDisplay,
+} from "./config-options.js";
 
 export const EXT_CONFIG_NAME = "pi-x-ide";
 export const CONFIG_DIR_NAME = ".pi";
@@ -59,7 +64,22 @@ export function readPiConfigFixPrompt(configPath: string = resolvePiConfigPath()
     return undefined;
   }
   if (!isRecord(parsed)) return undefined;
-  return typeof parsed.fix_prompt === "string" ? parsed.fix_prompt : undefined;
+  return typeof parsed.fixPrompt === "string" ? parsed.fixPrompt : undefined;
+}
+
+export function readPiConfigStatusDisplay(configPath: string = resolvePiConfigPath()): StatusDisplay {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(configPath, "utf8")) as unknown;
+  } catch {
+    return DEFAULT_STATUS_DISPLAY;
+  }
+  if (!isRecord(parsed) || typeof parsed.status_display !== "string") return DEFAULT_STATUS_DISPLAY;
+  return isStatusDisplay(parsed.status_display) ? parsed.status_display : DEFAULT_STATUS_DISPLAY;
+}
+
+function isStatusDisplay(value: string): value is StatusDisplay {
+  return (STATUS_DISPLAY_VALUES as readonly string[]).includes(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

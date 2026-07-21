@@ -51,13 +51,25 @@ export interface ConfigOption {
   readonly type: readonly ConfigEnvValueType[];
   readonly description: string;
   readonly default?: string;
+  readonly enum?: readonly string[];
 }
 
+export const STATUS_DISPLAY_VALUES = ["widget", "statusline"] as const;
+export type StatusDisplay = (typeof STATUS_DISPLAY_VALUES)[number];
+export const DEFAULT_STATUS_DISPLAY: StatusDisplay = "widget";
+
 export const CONFIG_OPTIONS = {
-  fix_prompt: {
+  fixPrompt: {
     type: ["string"],
     default: "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
     description:
       "Custom prompt prefix when requesting a fix for IDE diagnostics. Use {DIAGNOSTIC} as a placeholder for the diagnostic context. If the placeholder is omitted, the diagnostic context is appended after your prompt.",
+  },
+  status_display: {
+    type: ["string"],
+    default: DEFAULT_STATUS_DISPLAY,
+    enum: STATUS_DISPLAY_VALUES,
+    description:
+      'Where to show IDE connection status. Use "widget" for the above-editor widget (default), or "statusline" for the default footer status line.',
   },
 } as const satisfies Record<string, ConfigOption>;

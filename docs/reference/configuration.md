@@ -10,7 +10,8 @@ precedence.
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/balaenis/pi-x-ide/refs/heads/main/schemas/config.json",
-  "fix_prompt": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
+  "fixPrompt": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
+  "status_display": "widget",
   "env": {
     "PI_X_IDE_AUTO_INSTALL": "1",
     "PI_X_IDE_ATTACH_SHORTCUT": "ctrl+alt+k"
@@ -86,9 +87,10 @@ custom command. See
 
 <a id="top-level-options"></a>
 
-| Option       | Default                                                                                         | Description                                                                                                                                                                                                          |
-| ------------ | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fix_prompt` | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | Custom prompt prefix when requesting a fix for IDE diagnostics. Use `{DIAGNOSTIC}` as a placeholder for the diagnostic context. If the placeholder is omitted, the diagnostic context is appended after your prompt. |
+| Option           | Default                                                                                         | Description                                                                                                                                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fixPrompt`      | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | Custom prompt prefix when requesting a fix for IDE diagnostics. Use `{DIAGNOSTIC}` as a placeholder for the diagnostic context. If the placeholder is omitted, the diagnostic context is appended after your prompt. |
+| `status_display` | `widget`                                                                                        | Where to show IDE connection status in the Pi TUI. Use `widget` for the above-editor widget, or `statusline` for the default footer status line. Only one placement is active at a time.                             |
 
-The `fix_prompt` controls the prompt used by the VS Code **Pi: Fix it** Quick Fix
+The `fixPrompt` controls the prompt used by the VS Code **Pi: Fix it** Quick Fix
 action. See [Install the VS Code extension](../how-to/install-vscode.md#diagnostic-quick-fix).

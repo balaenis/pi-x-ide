@@ -7,7 +7,8 @@ Pi 侧变量可设为真实环境变量 **或** 写入 `~/.pi/pi-x-ide/config.js
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/balaenis/pi-x-ide/refs/heads/main/schemas/config.json",
-  "fix_prompt": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
+  "fixPrompt": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
+  "status_display": "widget",
   "env": {
     "PI_X_IDE_AUTO_INSTALL": "1",
     "PI_X_IDE_ATTACH_SHORTCUT": "ctrl+alt+k"
@@ -80,8 +81,9 @@ require("pi_x_ide").setup({
 
 <a id="顶层选项"></a>
 
-| 选项         | 默认值                                                                                          | 说明                                                                                                                                            |
-| ------------ | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fix_prompt` | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | 请求修复 IDE 诊断信息时的自定义 prompt 前缀。使用 `{DIAGNOSTIC}` 作为诊断上下文的占位符。如果未包含占位符，诊断上下文会拼接在你的 prompt 之后。 |
+| 选项             | 默认值                                                                                          | 说明                                                                                                                                            |
+| ---------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fixPrompt`      | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | 请求修复 IDE 诊断信息时的自定义 prompt 前缀。使用 `{DIAGNOSTIC}` 作为诊断上下文的占位符。如果未包含占位符，诊断上下文会拼接在你的 prompt 之后。 |
+| `status_display` | `widget`                                                                                        | 在 Pi TUI 中显示 IDE 连接状态的位置。`widget` 使用编辑器上方 widget；`statusline` 使用默认页脚状态行。同一时间只启用一种显示方式。             |
 
-`fix_prompt` 控制 VS Code **Pi: Fix it** Quick Fix 使用的 prompt。见 [安装 VS Code 扩展](../how-to/install-vscode.md#诊断-quick-fix)。
+`fixPrompt` 控制 VS Code **Pi: Fix it** Quick Fix 使用的 prompt。见 [安装 VS Code 扩展](../how-to/install-vscode.md#诊断-quick-fix)。

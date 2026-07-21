@@ -158,6 +158,7 @@ function createCommandContext(): ExtensionCommandContext {
       select: () => Promise.resolve(undefined),
       pasteToEditor: () => {},
       setWidget: () => {},
+      setStatus: () => {},
     },
   } as unknown as ExtensionCommandContext;
 }

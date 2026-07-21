@@ -10,6 +10,7 @@ import {
   EXT_CONFIG_NAME,
   readPiConfigEnv,
   readPiConfigFixPrompt,
+  readPiConfigStatusDisplay,
   resolvePiConfigEnv,
 } from "../src/shared/config.js";
 import { visibleWidth } from "../src/shared/display-width.js";
@@ -170,10 +171,11 @@ void test("logs IDE widget render errors without throwing", () => {
       setWidget: (_id: string, factory: typeof widgetFactory) => {
         widgetFactory = factory;
       },
+      setStatus: () => {},
     },
   } as unknown as NonNullable<typeof runtime.ctx>;
 
-  updateIdeUi(runtime, ctx);
+  updateIdeUi(runtime, ctx, "widget");
   if (!widgetFactory) assert.fail("widget factory was not registered");
   const widget = widgetFactory(
     { requestRender: () => undefined },
@@ -213,10 +215,11 @@ void test("truncates IDE widget output by terminal cell width", () => {
       setWidget: (_id: string, factory: typeof widgetFactory) => {
         widgetFactory = factory;
       },
+      setStatus: () => {},
     },
   } as unknown as NonNullable<typeof runtime.ctx>;
 
-  updateIdeUi(runtime, ctx);
+  updateIdeUi(runtime, ctx, "widget");
   if (!widgetFactory) assert.fail("widget factory was not registered");
   const widget = widgetFactory({ requestRender: () => undefined }, { fg: (_color, text) => text });
   const [line] = widget.render(106);
@@ -265,7 +268,7 @@ void test("loads environment overrides from pi config", async () => {
   assert.equal(mergedEnv.PI_X_IDE_AUTO_INSTALL, "1");
 });
 
-void test("reads fix_prompt from pi config", async () => {
+void test("reads fixPrompt from pi config", async () => {
   const home = await mkdtemp(join(tmpdir(), "pi-x-ide-config-"));
   const configDir = join(home, CONFIG_DIR_NAME);
   const configPath = join(configDir, "config.json");
@@ -276,19 +279,71 @@ void test("reads fix_prompt from pi config", async () => {
   assert.equal(absent, undefined);
 
   // With placeholder
-  await writeFile(configPath, JSON.stringify({ fix_prompt: "Fix it: {DIAGNOSTIC}" }));
+  await writeFile(configPath, JSON.stringify({ fixPrompt: "Fix it: {DIAGNOSTIC}" }));
   const withPlaceholder = readPiConfigFixPrompt(configPath);
   assert.equal(withPlaceholder, "Fix it: {DIAGNOSTIC}");
 
   // Without placeholder
-  await writeFile(configPath, JSON.stringify({ fix_prompt: "Just fix it." }));
+  await writeFile(configPath, JSON.stringify({ fixPrompt: "Just fix it." }));
   const withoutPlaceholder = readPiConfigFixPrompt(configPath);
   assert.equal(withoutPlaceholder, "Just fix it.");
 
   // Not a string
-  await writeFile(configPath, JSON.stringify({ fix_prompt: 42 }));
+  await writeFile(configPath, JSON.stringify({ fixPrompt: 42 }));
   const notString = readPiConfigFixPrompt(configPath);
   assert.equal(notString, undefined);
+});
+
+void test("reads status_display from pi config", async () => {
+  const home = await mkdtemp(join(tmpdir(), "pi-x-ide-config-"));
+  const configDir = join(home, CONFIG_DIR_NAME);
+  const configPath = join(configDir, "config.json");
+  await mkdir(configDir, { recursive: true });
+
+  assert.equal(readPiConfigStatusDisplay(configPath), "widget");
+
+  await writeFile(configPath, JSON.stringify({ status_display: "statusline" }));
+  assert.equal(readPiConfigStatusDisplay(configPath), "statusline");
+
+  await writeFile(configPath, JSON.stringify({ status_display: "widget" }));
+  assert.equal(readPiConfigStatusDisplay(configPath), "widget");
+
+  await writeFile(configPath, JSON.stringify({ status_display: "footer" }));
+  assert.equal(readPiConfigStatusDisplay(configPath), "widget");
+
+  await writeFile(configPath, JSON.stringify({ status_display: 1 }));
+  assert.equal(readPiConfigStatusDisplay(configPath), "widget");
+});
+
+void test("routes IDE status to widget or statusline based on status_display", () => {
+  const runtime = createRuntime();
+  runtime.connectionStatus = "connected";
+  setLatestSelection(runtime, snapshot);
+
+  let widgetFactory: unknown;
+  let statusText: string | undefined = "stale";
+  const ctx = {
+    cwd: "/repo",
+    hasUI: true,
+    ui: {
+      setWidget: (_id: string, factory: unknown) => {
+        widgetFactory = factory;
+      },
+      setStatus: (_id: string, text: string | undefined) => {
+        statusText = text;
+      },
+    },
+  } as unknown as NonNullable<typeof runtime.ctx>;
+
+  updateIdeUi(runtime, ctx, "widget");
+  assert.equal(typeof widgetFactory, "function");
+  assert.equal(statusText, undefined);
+
+  widgetFactory = undefined;
+  statusText = "stale";
+  updateIdeUi(runtime, ctx, "statusline");
+  assert.equal(widgetFactory, undefined);
+  assert.equal(statusText, "⧉ ⇡ main.ts#L10-L20");
 });
 
 void test("validates lock file content", () => {

@@ -42,12 +42,12 @@ line 和 character 偏移从 0 开始，与 VS Code/LSP 一致。Neovim 把字�
 
 ## TUI 行为
 
-连接后 Pi 显示：
+连接后，Pi 根据 `~/.pi/pi-x-ide/config.json` 中的 `status_display` 只在一处显示 IDE 连接状态：
 
-- 通过 `ctx.ui.setStatus("pi-x-ide", ...)` 的页脚状态行。
-- 通过 `ctx.ui.setWidget("pi-x-ide", ...)` 的编辑器下方 widget，显示 IDE、workspace、文件、范围和 `pending` / `sent` attach 状态。
+- `widget`（默认）：通过 `ctx.ui.setWidget("pi-x-ide", ...)` 显示在编辑器上方。
+- `statusline`：通过 `ctx.ui.setStatus("pi-x-ide", ...)` 显示在默认页脚状态行。
 
-widget 刻意不显示选中文本内容。
+两种位置都显示紧凑的连接/选区状态（IDE 图标、spinner 或状态标记、文件、范围，以及 `pending` / `sent` attach 状态），刻意不显示选中文本内容。见 [配置](configuration.md#顶层选项)。
 
 ## 完整规范
 

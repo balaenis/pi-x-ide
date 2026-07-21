@@ -198,9 +198,12 @@ When `action` is `"fix"` or omitted, Pi formats the diagnostics into a prompt an
 
 ## TUI behavior
 
-When connected, Pi displays:
+When connected, Pi displays IDE connection status in one place, selected by
+`status_display` in `~/.pi/pi-x-ide/config.json`:
 
-- Footer status via `ctx.ui.setStatus("pi-x-ide", ...)`.
-- A below-editor widget via `ctx.ui.setWidget("pi-x-ide", ...)` with IDE, workspace, file, range, and `pending` / `sent` attach state.
+- `widget` (default): above-editor widget via `ctx.ui.setWidget("pi-x-ide", ...)`.
+- `statusline`: default footer status line via `ctx.ui.setStatus("pi-x-ide", ...)`.
 
-The widget intentionally does not display selected text content.
+Both placements show the compact connection/selection state (IDE icon, spinner or
+status mark, file, range, and `pending` / `sent` attach state). Selected text
+content is intentionally omitted.

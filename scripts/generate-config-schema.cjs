@@ -100,6 +100,7 @@ function buildOptionSchema(option) {
     description: option.description,
   };
   if (option.default !== undefined) schema.default = option.default;
+  if (option.enum !== undefined) schema.enum = [...option.enum];
   return schema;
 }
 

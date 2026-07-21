@@ -64,4 +64,4 @@ PI_X_IDE_AUTO_INSTALL=0
 - **Pi: Fix it** - 把诊断信息发送给 Pi 并启动分析对话。
 - **Pi: Send diagnostic** - 把诊断上下文粘贴到 Pi 输入框，不启动对话。
 
-**Pi: Fix it** 使用的 prompt 前缀可通过 `fix_prompt` 配置。见 [配置](../reference/configuration.md#顶层选项)。
+**Pi: Fix it** 使用的 prompt 前缀可通过 `fixPrompt` 配置。见 [配置](../reference/configuration.md#顶层选项)。

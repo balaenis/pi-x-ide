@@ -52,13 +52,16 @@ UTF-16 code-unit counts.
 
 ## TUI behavior
 
-When connected, Pi shows:
+When connected, Pi shows IDE connection status in one place, selected by
+`status_display` in `~/.pi/pi-x-ide/config.json`:
 
-- A footer status line via `ctx.ui.setStatus("pi-x-ide", ...)`.
-- A below-editor widget via `ctx.ui.setWidget("pi-x-ide", ...)` with the IDE,
-  workspace, file, range, and `pending` / `sent` attach state.
+- `widget` (default): an above-editor widget via `ctx.ui.setWidget("pi-x-ide", ...)`.
+- `statusline`: the default footer status line via `ctx.ui.setStatus("pi-x-ide", ...)`.
 
-The widget intentionally does not display selected text content.
+Both placements show the compact connection/selection state (IDE icon, spinner or
+status mark, file, range, and `pending` / `sent` attach state). Selected text
+content is intentionally omitted. See
+[Configuration](configuration.md#top-level-options).
 
 ## Full specification
 

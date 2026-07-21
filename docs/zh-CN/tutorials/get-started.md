@@ -85,5 +85,5 @@ Pi 加载 `pi-x-ide` 并查找 IDE 连接。当终端工作目录位于某个 ID
 
 - [安装其他编辑器](../how-to/) - Zed、Neovim 或 JetBrains。
 - [在 WSL2 中使用](../how-to/use-wsl2.md) - Pi 在 WSL，IDE 在 Windows。
-- [配置参考](../reference/configuration.md) - 环境变量、快捷键和 `fix_prompt` 选项。
+- [配置参考](../reference/configuration.md) - 环境变量、快捷键、`fixPrompt` 和 `status_display`。
 - [`/ide` 命令参考](../reference/commands.md) - 在 TUI 中管理连接。

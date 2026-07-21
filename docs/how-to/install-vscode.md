@@ -71,5 +71,5 @@ Place the cursor on an error or warning, open Quick Fix (`Ctrl+.`), and choose:
 - **Pi: Send diagnostic** - pastes the diagnostic context into the Pi input box
   without starting a turn.
 
-The prompt prefix used by **Pi: Fix it** is configurable via `fix_prompt`. See
+The prompt prefix used by **Pi: Fix it** is configurable via `fixPrompt`. See
 [Configuration](../reference/configuration.md#top-level-options).
