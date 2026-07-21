@@ -127,9 +127,14 @@ export class IdeConnection {
           resume(result);
         };
         const timeout = setTimeout(() => {
+          // Match main order: detach open/error listeners before terminate so a
+          // follow-on socket error cannot replace the timeout rejection.
+          cleanup();
           if (this.socket === socket) this.socket = undefined;
           socket.terminate();
-          finish(
+          if (settled) return;
+          settled = true;
+          resume(
             Effect.fail(
               new IdeConnectTimeoutError({
                 name: this.candidate.lock.name,
@@ -140,8 +145,9 @@ export class IdeConnection {
           );
         }, timeoutMs);
         const onOpen = () => {
-          this.sendInitialize();
+          // Clear timer/listeners first (main parity), then initialize.
           finish(Effect.succeed(undefined));
+          this.sendInitialize();
         };
         const onError = (error: Error) => {
           if (this.socket === socket) this.socket = undefined;
