@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.18.0](https://github.com/balaenis/pi-x-ide/compare/v1.17.0...v1.18.0) (2026-07-21)
+
+
+### Features
+
+* add status_display option, rename fix_prompt to fixPrompt ([d9b37d5](https://github.com/balaenis/pi-x-ide/commit/d9b37d515ddfe27125bc4ef21146101333bee136))
+* **pi:** add /ide settings dialog with global and project scope config ([1095a89](https://github.com/balaenis/pi-x-ide/commit/1095a89dbbde34c6bafd8d15547a913f92b8efae))
+
 ## [1.17.0](https://github.com/balaenis/pi-x-ide/compare/v1.16.3...v1.17.0) (2026-07-21)
 
 
