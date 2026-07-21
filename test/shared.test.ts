@@ -29,6 +29,9 @@ import {
 import { type EditorSelectionSnapshot, type IdeLockFile } from "../src/shared/protocol.js";
 import { createIdeLockFile } from "../src/shared/lock-file.js";
 import { parseLockFileContent, isSelectionClearedParams, isEditorSelectionSnapshot } from "../src/shared/schema.js";
+import { LockFileParseError } from "../src/shared/effect-errors.js";
+import { runEffect, runEffectOrThrow, runEffectSync } from "../src/shared/effect-runtime.js";
+import * as Effect from "effect/Effect";
 import { discoverIdeCandidates } from "../src/pi/discovery.js";
 import { clearLatestSelection, setLatestSelection } from "../src/pi/context.js";
 import { createRuntime } from "../src/pi/state.js";
@@ -657,4 +660,110 @@ void test("removes unreachable Windows-side WSL lock after Linux PID check fails
   });
   assert.equal(candidates.length, 0);
   await assert.rejects(() => access(lockPath));
+});
+
+void test("runEffectSync returns success values", () => {
+  assert.equal(runEffectSync("t", Effect.succeed(1)), 1);
+});
+
+void test("runEffectSync swallows failures and logs by default", () => {
+  const messages = captureConsoleErrors(() => {
+    const result = runEffectSync("effect-sync-fail", Effect.fail(new Error("boom")));
+    assert.equal(result, undefined);
+  });
+  assert.ok(messages.some((message) => message.includes("effect-sync-fail") && message.includes("boom")));
+});
+
+void test("runEffectSync invokes custom onError handler", () => {
+  const seen: unknown[] = [];
+  const result = runEffectSync("t", Effect.fail(new Error("custom")), (error) => {
+    seen.push(error);
+  });
+  assert.equal(result, undefined);
+  assert.equal(seen.length, 1);
+  const syncError = seen[0];
+  assert.ok(syncError instanceof Error);
+  assert.equal(syncError.message, "custom");
+});
+
+void test("LockFileParseError carries Effect tag and readable message", () => {
+  const error = new LockFileParseError({ path: "/tmp/x.lock", reason: "invalid json" });
+  assert.equal(error._tag, "LockFileParseError");
+  assert.equal(error.path, "/tmp/x.lock");
+  assert.equal(error.reason, "invalid json");
+  assert.match(error.message, /LockFileParseError/);
+  assert.match(error.message, /invalid json/);
+  assert.match(error.message, /\/tmp\/x\.lock/);
+});
+
+void test("runEffectSync default log includes tagged error fields", () => {
+  const messages = captureConsoleErrors(() => {
+    const result = runEffectSync(
+      "effect-tagged-sync",
+      Effect.fail(new LockFileParseError({ path: "/tmp/y.lock", reason: "truncated" })),
+    );
+    assert.equal(result, undefined);
+  });
+  assert.ok(
+    messages.some(
+      (message) =>
+        message.includes("effect-tagged-sync") &&
+        message.includes("LockFileParseError") &&
+        message.includes("truncated") &&
+        message.includes("/tmp/y.lock"),
+    ),
+  );
+});
+
+void test("runEffect resolves success and swallows async failures", async () => {
+  assert.equal(await runEffect("t", Effect.succeed(42)), 42);
+
+  const seen: unknown[] = [];
+  const failed = await runEffect("effect-async-fail", Effect.fail(new LockFileParseError({ reason: "bad" })), (error) => {
+    seen.push(error);
+  });
+  assert.equal(failed, undefined);
+  assert.equal(seen.length, 1);
+  const asyncError = seen[0];
+  assert.ok(asyncError instanceof LockFileParseError);
+  assert.equal(asyncError._tag, "LockFileParseError");
+});
+
+void test("runEffect default log includes tagged error fields", async () => {
+  const original = console.error;
+  const messages: string[] = [];
+  console.error = (...args: unknown[]) => {
+    messages.push(args.map(String).join(" "));
+  };
+  try {
+    const result = await runEffect(
+      "effect-tagged-async",
+      Effect.fail(new LockFileParseError({ path: "/tmp/z.lock", reason: "missing host" })),
+    );
+    assert.equal(result, undefined);
+  } finally {
+    console.error = original;
+  }
+  assert.ok(
+    messages.some(
+      (message) =>
+        message.includes("effect-tagged-async") &&
+        message.includes("LockFileParseError") &&
+        message.includes("missing host") &&
+        message.includes("/tmp/z.lock"),
+    ),
+  );
+});
+
+void test("runEffectOrThrow propagates failures and preserves tagged identity", async () => {
+  await assert.rejects(
+    () => runEffectOrThrow(Effect.fail(new Error("must throw"))),
+    (error: unknown) => error instanceof Error && error.message === "must throw",
+  );
+
+  await assert.rejects(
+    () => runEffectOrThrow(Effect.fail(new LockFileParseError({ reason: "nope" }))),
+    (error: unknown) =>
+      error instanceof LockFileParseError && error._tag === "LockFileParseError" && error.reason === "nope",
+  );
 });
