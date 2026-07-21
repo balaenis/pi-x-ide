@@ -3,6 +3,7 @@
 import { execFile } from "node:child_process";
 import { createConnection } from "node:net";
 import { promisify } from "node:util";
+import * as Effect from "effect/Effect";
 import type { IdeLockFile } from "../shared/protocol.js";
 import { resolvePiConfigEnv } from "../shared/config.js";
 import { isWsl } from "../shared/platform.js";
@@ -19,24 +20,37 @@ export interface ResolveIdeHostOptions {
   timeoutMs?: number;
 }
 
-export async function resolveIdeHost(lock: IdeLockFile, options: ResolveIdeHostOptions = {}): Promise<string> {
-  const env = resolvePiConfigEnv(options.env ?? process.env);
-  const override = env[PI_X_IDE_HOST_OVERRIDE_ENV]?.trim();
-  if (override) return override;
+export function resolveIdeHostEffect(
+  lock: IdeLockFile,
+  options: ResolveIdeHostOptions = {},
+): Effect.Effect<string, never, never> {
+  return Effect.gen(function* () {
+    const env = resolvePiConfigEnv(options.env ?? process.env);
+    const override = env[PI_X_IDE_HOST_OVERRIDE_ENV]?.trim();
+    if (override) return override;
 
-  if (lock.runningInWindows === true && isWsl(env)) {
-    const gateway = await resolveWslDefaultGateway(options.runCommand ?? defaultRunCommand);
-    if (gateway) {
-      const reachable = await (options.tcpProbe ?? tcpReachable)(
-        gateway,
-        lock.port,
-        options.timeoutMs ?? IDE_HOST_TCP_PROBE_TIMEOUT_MS,
+    if (lock.runningInWindows === true && isWsl(env)) {
+      const gateway = yield* Effect.promise(() =>
+        resolveWslDefaultGateway(options.runCommand ?? defaultRunCommand),
       );
-      if (reachable) return gateway;
+      if (gateway) {
+        const reachable = yield* Effect.promise(() =>
+          (options.tcpProbe ?? tcpReachable)(
+            gateway,
+            lock.port,
+            options.timeoutMs ?? IDE_HOST_TCP_PROBE_TIMEOUT_MS,
+          ),
+        );
+        if (reachable) return gateway;
+      }
     }
-  }
 
-  return lock.host || "127.0.0.1";
+    return lock.host || "127.0.0.1";
+  });
+}
+
+export async function resolveIdeHost(lock: IdeLockFile, options: ResolveIdeHostOptions = {}): Promise<string> {
+  return Effect.runPromise(resolveIdeHostEffect(lock, options));
 }
 
 export async function resolveWslDefaultGateway(
