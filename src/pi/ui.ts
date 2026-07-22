@@ -3,7 +3,7 @@
 import type { ExtensionContext, ThemeColor } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
-import { logExtensionError } from "../shared/errors.js";
+import { isStaleContextError, logExtensionError } from "../shared/errors.js";
 import { describeRanges } from "../shared/format.js";
 import { basename } from "node:path";
 import { EXT_CONFIG_NAME, readPiConfigStatusDisplay } from "../shared/config.js";
@@ -47,7 +47,9 @@ function getActiveUiContext(ctx: ExtensionContext | undefined): ActiveUiContext 
     if (!ctx.hasUI) return undefined;
     return { cwd: ctx.cwd, ui: ctx.ui };
   } catch (error) {
-    logExtensionError("read active Pi UI context", error);
+    // Stale ctx (post reload/session swap) is an expected signal, not a fault;
+    // logging it would spam on every UI refresh. Surface only real failures.
+    if (!isStaleContextError(error)) logExtensionError("read active Pi UI context", error);
     return undefined;
   }
 }

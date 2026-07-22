@@ -128,7 +128,7 @@ void test("clears stale editor selection state", () => {
   assert.equal(runtime.attachState, "idle");
 });
 
-void test("logs stale extension ctx while updating selection UI", () => {
+void test("ignores stale extension ctx while updating selection UI", () => {
   const runtime = createRuntime();
   runtime.ctx = {
     get hasUI(): boolean {
@@ -141,8 +141,7 @@ void test("logs stale extension ctx while updating selection UI", () => {
   });
   assert.equal(runtime.latestSelection, snapshot);
   assert.equal(runtime.attachState, "pending");
-  assert.equal(errors.length, 1);
-  assert.match(errors[0] ?? "", /read active Pi UI context: This extension ctx is stale/);
+  assert.equal(errors.length, 0);
 });
 
 void test("logs non-stale extension ctx errors while updating selection UI", () => {
