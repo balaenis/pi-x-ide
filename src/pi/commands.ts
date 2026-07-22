@@ -6,7 +6,6 @@ import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@e
 import { resolvePiConfigEnv } from "../shared/config.js";
 import { formatRangeMention } from "../shared/format.js";
 import type { LockFileCandidate } from "../shared/protocol.js";
-import { showIdeSettings } from "./config-ui.js";
 import type { PiIdeRuntime } from "./state.js";
 import { runPiBoundary, runPiBoundaryAsync } from "./safety.js";
 import { buildWidget, updateIdeUi } from "./ui.js";
@@ -102,9 +101,12 @@ export function registerIdeCommand(
             case "install":
               await actions.installExtension(ctx);
               return;
-            case "settings":
+            case "settings": {
+              // Keep SettingsList / pi-tui off the static shell import graph.
+              const { showIdeSettings } = await import("./config-ui.js");
               await showIdeSettings(runtime, ctx);
               return;
+            }
             default:
               ctx.ui.notify("Usage: /ide [status|list|auto|off|attach|install|settings]", "warning");
           }

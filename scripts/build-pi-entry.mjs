@@ -1,5 +1,5 @@
 // ABOUTME: Bundles the Pi extension entry with esbuild code-splitting for fast startup.
-// ABOUTME: Validates entry topology/size so Effect stays off the static shell import graph.
+// ABOUTME: Bans Pi host-package runtime external edges so jiti aliases cannot be bypassed.
 import * as esbuild from "esbuild";
 import { access, mkdir, readdir, rm, stat } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
@@ -13,8 +13,17 @@ const ENTRY_OUT = join(OUT_DIR, "index.js");
 const ENTRY_MAP_OUT = join(OUT_DIR, "index.js.map");
 const CHUNKS_DIR = join(OUT_DIR, "chunks");
 
+// Host packages that must never appear as runtime external edges in generated output.
+// coding-agent stays in esbuild `external` for future safety checks (type-only imports
+// erase); pi-tui is intentionally NOT external so the lazy config-ui chunk bundles it.
 const PI_HOST_PACKAGES = ["@earendil-works/pi-coding-agent", "@earendil-works/pi-tui"];
-const HEAVY_INPUT_MARKERS = ["node_modules/effect/", "node_modules/ws/", "node:sqlite"];
+const PI_HOST_EXTERNAL_ALLOWLIST = ["@earendil-works/pi-coding-agent"];
+const HEAVY_INPUT_MARKERS = [
+  "node_modules/effect/",
+  "node_modules/ws/",
+  "node:sqlite",
+  "node_modules/@earendil-works/pi-tui/",
+];
 const MAX_ENTRY_BYTES = 100 * 1024;
 const MAX_TOTAL_PI_ENTRY_BYTES = 1.5 * 1024 * 1024;
 
@@ -40,7 +49,7 @@ async function main() {
     outdir: OUT_DIR,
     entryNames: "index",
     chunkNames: "chunks/[name]-[hash]",
-    external: [...PI_HOST_PACKAGES],
+    external: [...PI_HOST_EXTERNAL_ALLOWLIST],
     banner: {
       js: nodeCreateRequireBanner,
     },
@@ -61,7 +70,7 @@ async function cleanPreviousOutputs() {
   await rm(CHUNKS_DIR, { recursive: true, force: true });
 }
 
-function validateMetafile(metafile) {
+export function validateMetafile(metafile) {
   const outputs = metafile.outputs;
   const entryKey = Object.keys(outputs).find((key) => {
     const output = outputs[key];
@@ -72,88 +81,95 @@ function validateMetafile(metafile) {
     throw new Error("esbuild metafile is missing the Pi entry output for src/pi/index.ts");
   }
 
-  const entryOutput = outputs[entryKey];
-  const heavyStaticEdges = [];
-
-  for (const edge of entryOutput.imports ?? []) {
-    if (edge.external) continue;
-    if (edge.kind !== "import-statement") continue;
-
-    const depKey = resolveOutputKey(entryKey, edge.path, outputs);
-    if (!depKey) continue;
-    const depOutput = outputs[depKey];
-    if (!depOutput) continue;
-
-    if (outputHasHeavyInputs(depOutput, metafile)) {
-      heavyStaticEdges.push({
-        from: entryKey,
-        to: depKey,
-        kind: edge.kind,
-        heavyInputs: listHeavyInputs(depOutput, metafile),
-      });
+  const heavyStaticOutputs = [];
+  for (const outputKey of collectStaticOutputKeys(entryKey, outputs)) {
+    const heavyInputs = listHeavyInputs(outputs[outputKey]);
+    if (heavyInputs.length > 0) {
+      heavyStaticOutputs.push({ output: outputKey, heavyInputs });
     }
   }
 
-  if (heavyStaticEdges.length > 0) {
+  if (heavyStaticOutputs.length > 0) {
     throw new Error(
       [
-        "Pi entry topology regression: static entry imports a heavy chunk.",
-        ...heavyStaticEdges.map(
-          (edge) => `- ${edge.from} --${edge.kind}--> ${edge.to} (heavy: ${edge.heavyInputs.join(", ")})`,
-        ),
+        "Pi entry topology regression: static entry graph contains heavy inputs.",
+        ...heavyStaticOutputs.map((item) => `- ${item.output} (heavy: ${item.heavyInputs.join(", ")})`),
       ].join("\n"),
     );
   }
 
-  const hostExternalInChunks = [];
+  // Ban host-package runtime external edges from every generated Pi entry JS output
+  // (static entry and lazy chunks). Native ESM does not inherit Pi jiti aliases, so any
+  // remaining external edge would reintroduce dual host-package loads.
+  const hostExternalEdges = [];
   for (const [outputKey, output] of Object.entries(outputs)) {
-    if (outputKey === entryKey) continue;
-    if (!normalizePath(outputKey).includes("/chunks/")) continue;
+    if (!normalizePath(outputKey).endsWith(".js")) continue;
 
     for (const edge of output.imports ?? []) {
       if (!edge.external) continue;
-      if (PI_HOST_PACKAGES.some((pkg) => edge.path === pkg || edge.path.startsWith(`${pkg}/`))) {
-        hostExternalInChunks.push({ chunk: outputKey, path: edge.path });
+      if (isHostPackagePath(edge.path)) {
+        hostExternalEdges.push({ output: outputKey, path: edge.path, kind: edge.kind });
       }
     }
   }
 
-  if (hostExternalInChunks.length > 0) {
+  if (hostExternalEdges.length > 0) {
     throw new Error(
       [
-        "Pi entry topology regression: lazy chunk has Pi host-package external edge.",
-        ...hostExternalInChunks.map((item) => `- ${item.chunk} -> ${item.path}`),
+        "Pi entry topology regression: generated output has Pi host-package runtime external edge.",
+        ...hostExternalEdges.map((item) => `- ${item.output} --${item.kind}--> ${item.path}`),
       ].join("\n"),
     );
   }
 }
 
-function outputHasHeavyInputs(output, metafile) {
-  return listHeavyInputs(output, metafile).length > 0;
+function isHostPackagePath(importPath) {
+  return PI_HOST_PACKAGES.some((pkg) => importPath === pkg || importPath.startsWith(`${pkg}/`));
 }
 
-function listHeavyInputs(output, metafile) {
+function collectStaticOutputKeys(entryKey, outputs) {
+  const visited = new Set();
+  const pending = [entryKey];
+
+  while (pending.length > 0) {
+    const outputKey = pending.pop();
+    if (!outputKey || visited.has(outputKey)) continue;
+    visited.add(outputKey);
+
+    for (const edge of outputs[outputKey]?.imports ?? []) {
+      if (edge.external || edge.kind === "dynamic-import") continue;
+      const dependencyKey = resolveOutputKey(outputKey, edge.path, outputs);
+      if (dependencyKey && !visited.has(dependencyKey)) pending.push(dependencyKey);
+    }
+  }
+
+  return visited;
+}
+
+function listHeavyInputs(output) {
   const hits = new Set();
   for (const inputPath of Object.keys(output.inputs ?? {})) {
     const normalized = normalizePath(inputPath);
     for (const marker of HEAVY_INPUT_MARKERS) {
       if (normalized.includes(marker)) hits.add(marker);
     }
+  }
 
-    const inputMeta = metafile.inputs[inputPath];
-    for (const edge of inputMeta?.imports ?? []) {
-      const edgePath = normalizePath(edge.path ?? "");
-      if (edgePath === "node:sqlite" || edgePath.includes("node:sqlite")) {
-        hits.add("node:sqlite");
-      }
-      if (edgePath.includes("node_modules/effect/") || edgePath.startsWith("effect/")) {
-        hits.add("effect");
-      }
-      if (edgePath === "ws" || edgePath.includes("node_modules/ws/")) {
-        hits.add("ws");
-      }
+  for (const edge of output.imports ?? []) {
+    if (edge.kind === "dynamic-import") continue;
+    const edgePath = normalizePath(edge.path ?? "");
+    if (edgePath === "node:sqlite" || edgePath.includes("node:sqlite")) hits.add("node:sqlite");
+    if (edgePath.includes("node_modules/effect/") || edgePath.startsWith("effect/")) hits.add("effect");
+    if (edgePath === "ws" || edgePath.includes("node_modules/ws/")) hits.add("ws");
+    if (
+      edgePath.includes("node_modules/@earendil-works/pi-tui/") ||
+      edgePath === "@earendil-works/pi-tui" ||
+      edgePath.startsWith("@earendil-works/pi-tui/")
+    ) {
+      hits.add("pi-tui");
     }
   }
+
   return [...hits];
 }
 
@@ -208,7 +224,19 @@ function normalizePath(value) {
   return value.replaceAll("\\", "/");
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exit(1);
-});
+function isExecutedDirectly() {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return resolve(entry) === fileURLToPath(import.meta.url);
+  } catch {
+    return false;
+  }
+}
+
+if (isExecutedDirectly()) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  });
+}

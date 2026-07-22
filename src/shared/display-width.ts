@@ -2,6 +2,8 @@
 // ABOUTME: Handles wide CJK/Hangul/emoji graphemes so TUI widgets fit terminal columns.
 const ESC = String.fromCharCode(27);
 const ANSI_PATTERN = new RegExp(`${ESC}\\[[0-?]*[ -/]*[@-~]`, "g");
+const EMOJI_VARIATION_SELECTOR = 0xfe0f;
+const COMBINING_ENCLOSING_KEYCAP = 0x20e3;
 
 const graphemeSegmenter =
   typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : undefined;
@@ -69,6 +71,7 @@ function graphemeWidth(grapheme: string): number {
   const codePoints = [...grapheme].map((char) => char.codePointAt(0)).filter((value) => value !== undefined);
   if (codePoints.every(isZeroWidthCodePoint)) return 0;
   if (codePoints.every(isControlCodePoint)) return 0;
+  if (codePoints.includes(EMOJI_VARIATION_SELECTOR) || codePoints.includes(COMBINING_ENCLOSING_KEYCAP)) return 2;
   return codePoints.some(isWideCodePoint) ? 2 : 1;
 }
 
@@ -99,6 +102,7 @@ function isWideCodePoint(codePoint: number): boolean {
     (codePoint >= 0xfe30 && codePoint <= 0xfe6f) ||
     (codePoint >= 0xff00 && codePoint <= 0xff60) ||
     (codePoint >= 0xffe0 && codePoint <= 0xffe6) ||
+    (codePoint >= 0x1f1e6 && codePoint <= 0x1f1ff) ||
     (codePoint >= 0x1f300 && codePoint <= 0x1faff) ||
     (codePoint >= 0x20000 && codePoint <= 0x3fffd)
   );

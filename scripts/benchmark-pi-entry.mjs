@@ -1,28 +1,29 @@
 // ABOUTME: Benchmarks Pi extension entry import+factory cost via Pi's real loader.
-// ABOUTME: Spawns a fresh Node process per sample and reports median/min/max timings.
+// ABOUTME: Spawns a fresh Node process per sample; supports an explicit --loader path.
 import { spawn } from "node:child_process";
+import { constants as fsConstants } from "node:fs";
 import { access } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { constants as fsConstants } from "node:fs";
 
 const DEFAULT_RUNS = 7;
 const MIN_RUNS = 3;
 
-async function main(argv) {
+export async function main(argv) {
   const options = parseArgs(argv);
   if (options.worker) {
-    await runWorker(options.entry);
+    await runWorker(options.entry, options.loader);
     return;
   }
   await runParent(options);
 }
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   let entry;
   let runs = DEFAULT_RUNS;
   let worker = false;
+  let loader;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -32,6 +33,15 @@ function parseArgs(argv) {
     }
     if (arg === "--entry") {
       entry = argv[index + 1];
+      index += 1;
+      continue;
+    }
+    if (arg === "--loader") {
+      const value = argv[index + 1];
+      if (value === undefined || value.startsWith("--")) {
+        throw new Error("Missing value for --loader <path>");
+      }
+      loader = value;
       index += 1;
       continue;
     }
@@ -51,24 +61,42 @@ function parseArgs(argv) {
   if (!entry) {
     throw new Error("Missing required --entry <path>");
   }
+  if (loader !== undefined && loader.trim() === "") {
+    throw new Error("Missing value for --loader <path>");
+  }
 
   const resolvedEntry = isAbsolute(entry) ? entry : resolve(process.cwd(), entry);
-  return { entry: resolvedEntry, runs, worker };
+  const resolvedLoader =
+    loader === undefined ? undefined : isAbsolute(loader) ? loader : resolve(process.cwd(), loader);
+
+  return { entry: resolvedEntry, runs, worker, loader: resolvedLoader };
 }
 
-async function resolveLoadExtensions() {
+/**
+ * Resolve the Pi extension loader module.
+ * Default: sibling of the package main under the repository-pinned coding-agent.
+ * Explicit: absolute/relative path passed via --loader (e.g. a global Pi install).
+ */
+export async function resolveLoadExtensions(loaderPath) {
+  if (loaderPath) {
+    return import(pathToFileURL(loaderPath).href);
+  }
+
   // Public package entry does not re-export loadExtensions in 0.80.1, and package
   // exports block deep subpath imports. Resolve the package main, then load the
   // sibling loader module by absolute file URL.
   const packageMain = fileURLToPath(import.meta.resolve("@earendil-works/pi-coding-agent"));
-  const loaderPath = join(dirname(packageMain), "core/extensions/loader.js");
-  return import(pathToFileURL(loaderPath).href);
+  const defaultLoaderPath = join(dirname(packageMain), "core/extensions/loader.js");
+  return import(pathToFileURL(defaultLoaderPath).href);
 }
 
-async function runWorker(entry) {
+async function runWorker(entry, loaderPath) {
   await assertEntryExists(entry);
+  if (loaderPath) {
+    await assertLoaderExists(loaderPath);
+  }
 
-  const { loadExtensions } = await resolveLoadExtensions();
+  const { loadExtensions } = await resolveLoadExtensions(loaderPath);
 
   const started = performance.now();
   const result = await loadExtensions([entry], process.cwd());
@@ -87,16 +115,20 @@ async function runWorker(entry) {
 
 async function runParent(options) {
   await assertEntryExists(options.entry);
+  if (options.loader) {
+    await assertLoaderExists(options.loader);
+  }
 
   const samples = [];
   for (let run = 0; run < options.runs; run += 1) {
-    const sample = await spawnWorkerSample(options.entry);
+    const sample = await spawnWorkerSample(options.entry, options.loader);
     samples.push(sample);
   }
 
   const sorted = [...samples].sort((left, right) => left - right);
   const summary = {
     entry: options.entry,
+    loader: options.loader ?? "(package-pinned default)",
     runs: options.runs,
     medianMs: median(sorted),
     minMs: sorted[0],
@@ -107,6 +139,7 @@ async function runParent(options) {
   process.stdout.write(
     [
       `entry: ${summary.entry}`,
+      `loader: ${summary.loader}`,
       `runs: ${summary.runs}`,
       `median: ${formatMs(summary.medianMs)} ms`,
       `min: ${formatMs(summary.minMs)} ms`,
@@ -116,9 +149,14 @@ async function runParent(options) {
   );
 }
 
-function spawnWorkerSample(entry) {
+function spawnWorkerSample(entry, loaderPath) {
   return new Promise((resolveSample, rejectSample) => {
-    const child = spawn(process.execPath, [fileURLToPath(import.meta.url), "--worker", "--entry", entry], {
+    const args = [fileURLToPath(import.meta.url), "--worker", "--entry", entry];
+    if (loaderPath) {
+      args.push("--loader", loaderPath);
+    }
+
+    const child = spawn(process.execPath, args, {
       cwd: process.cwd(),
       env: process.env,
       stdio: ["ignore", "pipe", "pipe"],
@@ -184,6 +222,14 @@ async function assertEntryExists(entry) {
   }
 }
 
+async function assertLoaderExists(loaderPath) {
+  try {
+    await access(loaderPath, fsConstants.F_OK);
+  } catch {
+    throw new Error(`Loader not found: ${loaderPath}`);
+  }
+}
+
 function median(sorted) {
   const middle = Math.floor(sorted.length / 2);
   if (sorted.length % 2 === 0) {
@@ -196,7 +242,19 @@ function formatMs(value) {
   return value.toFixed(2);
 }
 
-main(process.argv.slice(2)).catch((error) => {
-  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-  process.exit(1);
-});
+function isExecutedDirectly() {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return pathToFileURL(resolve(entry)).href === import.meta.url;
+  } catch {
+    return false;
+  }
+}
+
+if (isExecutedDirectly()) {
+  main(process.argv.slice(2)).catch((error) => {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(1);
+  });
+}

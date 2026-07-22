@@ -3,11 +3,11 @@
 import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
-import { DynamicBorder } from "@earendil-works/pi-coding-agent";
 import {
   Container,
   Key,
   matchesKey,
+  setKeybindings,
   SettingsList,
   Text,
   type SettingItem,
@@ -19,11 +19,7 @@ import {
   type ConfigScope,
   type IdeConfigSettings,
 } from "../shared/config.js";
-import {
-  DEFAULT_STATUS_DISPLAY,
-  STATUS_DISPLAY_VALUES,
-  type StatusDisplay,
-} from "../shared/config-options.js";
+import { DEFAULT_STATUS_DISPLAY, STATUS_DISPLAY_VALUES, type StatusDisplay } from "../shared/config-options.js";
 import { logExtensionError } from "../shared/errors.js";
 import type { PiIdeRuntime } from "./state.js";
 import { updateIdeUi } from "./ui.js";
@@ -31,10 +27,11 @@ import { updateIdeUi } from "./ui.js";
 const DISPLAY_SETTING_ID = "display";
 const AUTO_INSTALL_SETTING_ID = "autoInstall";
 const BOOLEAN_SETTING_VALUES = ["true", "false"] as const;
+const BORDER_CHAR = "\u2500";
+const SETTINGS_LIST_MAX_VISIBLE_ROWS = 10;
+const SETTINGS_LIST_EXTRA_ROWS = 2;
 
-type ConfigDialogResult =
-  | { action: "save"; settings: IdeConfigSettings; scope: ConfigScope }
-  | { action: "cancel" };
+type ConfigDialogResult = { action: "save"; settings: IdeConfigSettings; scope: ConfigScope } | { action: "cancel" };
 
 /** @deprecated Prefer showIdeSettings. */
 export async function showStatusDisplayConfig(
@@ -60,7 +57,11 @@ export async function showIdeSettings(
   options: { home?: string } = {},
 ): Promise<void> {
   const resolved = resolveIdeConfigSettings({ projectDir: ctx.cwd, home: options.home });
-  const result = await ctx.ui.custom<ConfigDialogResult>((tui, theme, _keybindings, done) => {
+  const result = await ctx.ui.custom<ConfigDialogResult>((tui, theme, keybindings, done) => {
+    // SettingsList reads a module-local manager. This pi-tui copy is bundled in the
+    // lazy chunk, so seed it with the host manager supplied to ctx.ui.custom().
+    setKeybindings(keybindings);
+
     const draft: IdeConfigSettings = {
       display: resolved.settings.display ?? DEFAULT_STATUS_DISPLAY,
       autoInstall: resolved.settings.autoInstall,
@@ -85,7 +86,7 @@ export async function showIdeSettings(
 
     const settingsList = new SettingsList(
       items,
-      Math.min(items.length + 2, 10),
+      Math.min(items.length + SETTINGS_LIST_EXTRA_ROWS, SETTINGS_LIST_MAX_VISIBLE_ROWS),
       createSettingsListTheme(theme),
       (id, newValue) => {
         if (id === DISPLAY_SETTING_ID && isStatusDisplayValue(newValue)) {
@@ -101,12 +102,10 @@ export async function showIdeSettings(
     );
 
     const title = theme.fg("accent", theme.bold("Settings:"));
-    const help = theme.fg(
-      "dim",
-      "↑↓ navigate · space cycle · ctrl+s save global · ctrl+p save project · esc cancel",
-    );
+    const help = theme.fg("dim", "↑↓ navigate · space cycle · ctrl+s save global · ctrl+p save project · esc cancel");
 
     const container = new Container();
+    // Local border avoids a coding-agent value import (host package runtime edge).
     container.addChild(new DynamicBorder((text: string) => theme.fg("accent", text)));
     container.addChild(new Text(title, 1, 0));
     container.addChild(settingsList);
@@ -158,10 +157,7 @@ export async function showIdeSettings(
     );
   } catch (error) {
     logExtensionError("save ide settings", error);
-    ctx.ui.notify(
-      `Failed to save settings: ${error instanceof Error ? error.message : String(error)}`,
-      "error",
-    );
+    ctx.ui.notify(`Failed to save settings: ${error instanceof Error ? error.message : String(error)}`, "error");
   }
 }
 
@@ -181,4 +177,24 @@ function createSettingsListTheme(theme: Theme): SettingsListTheme {
     cursor: theme.fg("accent", "→ "),
     hint: (text) => theme.fg("dim", text),
   };
+}
+
+/**
+ * Width-adaptive horizontal border for settings dialogs.
+ * Local copy of Pi's DynamicBorder so config-ui never value-imports coding-agent.
+ */
+export class DynamicBorder {
+  private readonly color: (text: string) => string;
+
+  constructor(color: (text: string) => string) {
+    this.color = color;
+  }
+
+  invalidate(): void {
+    // No cached state.
+  }
+
+  render(width: number): string[] {
+    return [this.color(BORDER_CHAR.repeat(Math.max(0, width)))];
+  }
 }
