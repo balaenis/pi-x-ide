@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.2](https://github.com/balaenis/pi-x-ide/compare/v1.19.1...v1.19.2) (2026-07-22)
+
+
+### Bug Fixes
+
+* **pi:** stop stale extension ctx from spamming the console ([a2b557e](https://github.com/balaenis/pi-x-ide/commit/a2b557ef90fadf9ebaa80de98cdbfc5f9a90ccdb))
+* **pi:** stop stale extension ctx from spamming the console ([#43](https://github.com/balaenis/pi-x-ide/issues/43)) ([a2b557e](https://github.com/balaenis/pi-x-ide/commit/a2b557ef90fadf9ebaa80de98cdbfc5f9a90ccdb))
+
 ## [1.19.1](https://github.com/balaenis/pi-x-ide/compare/v1.19.0...v1.19.1) (2026-07-22)
 
 
