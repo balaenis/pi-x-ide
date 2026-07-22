@@ -1,6 +1,6 @@
 {
   "name": "pi-x-ide",
-  "version": "1.19.0",
+  "version": "1.19.1",
   "description": "Pi extension package for IDE selection context integration.",
   "files": [
     "dist/src",
