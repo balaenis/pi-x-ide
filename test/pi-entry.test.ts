@@ -1,7 +1,7 @@
 // ABOUTME: Covers the lightweight Pi extension shell, cached runtime loader, and lifecycle races.
 // ABOUTME: Ensures commands register before heavy runtime settles and shutdown cancels stale starts.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -14,6 +14,11 @@ import { createRuntimeServicesLoaderForTests, type RuntimeServicesModule } from 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 // Compiled tests live in dist/test; safety.js is emitted next to other Pi modules.
 const SAFETY_JS_PATH = join(TEST_DIR, "../src/pi/safety.js");
+const PI_ENTRY_JS_PATH = join(TEST_DIR, "../src/pi/index.js");
+const PI_CHUNKS_DIR = join(TEST_DIR, "../src/pi/chunks");
+const COMMANDS_SOURCE_PATH = join(TEST_DIR, "../../src/pi/commands.ts");
+const HOST_PACKAGE_RUNTIME_IMPORT_RE =
+  /(?:\bfrom\s*|\bimport\s*(?:\(\s*)?|\brequire\s*\(\s*)["']@earendil-works\/(?:pi-coding-agent|pi-tui)(?:\/[^"']*)?["']/;
 
 void test("compiled safety.js stays Effect-free", async () => {
   const source = await readFile(SAFETY_JS_PATH, "utf8");
@@ -62,6 +67,32 @@ void test("factory registers commands before runtime-services settles", async ()
 
   resolveModule(createFakeRuntimeServices());
   await pending;
+});
+
+void test("commands.ts keeps config-ui behind a dynamic import boundary", async () => {
+  const source = await readFile(COMMANDS_SOURCE_PATH, "utf8");
+  assert.doesNotMatch(source, /import\s*\{[^}]*showIdeSettings[^}]*\}\s*from\s*["']\.\/config-ui\.js["']/);
+  assert.match(source, /await\s+import\(\s*["']\.\/config-ui\.js["']\s*\)/);
+});
+
+void test("bundled Pi entry outputs have no host-package runtime imports", async () => {
+  const entrySource = await readFile(PI_ENTRY_JS_PATH, "utf8");
+  assert.doesNotMatch(entrySource, HOST_PACKAGE_RUNTIME_IMPORT_RE);
+  // Settings / pi-tui must not be a static edge from the shell.
+  assert.doesNotMatch(entrySource, /from\s*["'][^"']*config-ui[^"']*["']/);
+  assert.doesNotMatch(entrySource, /@earendil-works\/pi-tui/);
+
+  const chunkNames = (await readdir(PI_CHUNKS_DIR)).filter((name) => name.endsWith(".js"));
+  assert.ok(chunkNames.length > 0, "expected esbuild to emit lazy Pi entry chunks");
+
+  for (const name of chunkNames) {
+    const chunkSource = await readFile(join(PI_CHUNKS_DIR, name), "utf8");
+    assert.doesNotMatch(
+      chunkSource,
+      HOST_PACKAGE_RUNTIME_IMPORT_RE,
+      `chunk ${name} must not externalize Pi host packages`,
+    );
+  }
 });
 
 void test("session_start bumps generation before load and calls startSession once", async () => {

@@ -31,21 +31,22 @@ full lock JSON into logs, Effect error messages, or `scope` strings.
 
 ## Module map
 
-| Module                                                                           | Role                                                                             |
-| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `src/shared/effect-errors.ts`                                                    | `Data.TaggedError` domain errors with readable `message` getters                 |
-| `src/shared/effect-runtime.ts`                                                   | `runEffect` / `runEffectSync` (log-and-swallow); `runEffectOrThrow` (tests)      |
-| `src/shared/effect-schema.ts`                                                    | Effect Schema definitions + `decode*` helpers                                    |
-| `src/shared/schema.ts`                                                           | Stable `is*` / `parse*` facades over Schema decode                               |
-| `src/shared/jsonrpc-guard.ts`                                                    | Effect-free `isJsonRpcRequest` for the VS Code `ide-server` import graph         |
-| `src/pi/index.ts`, `commands.ts`, `context.ts`, `ui.ts`, `state.ts`, `safety.ts` | Lightweight static shell: registration, status UI, error containment (no Effect) |
-| `src/pi/runtime-loader.ts`                                                       | Only dynamic boundary: cached `import("./runtime-services.js")`                  |
-| `src/pi/runtime-services.ts`                                                     | Heavy lifecycle: discovery/install/connect/reconnect/Zed (may import Effect)     |
-| `src/pi/effect-boundary.ts`                                                      | `runPiEffect` → `containPiError` + UI status (Effect runtime import)             |
-| `src/pi/safety.ts`                                                               | Effect-free `containPiError`, `runPiBoundary`, `runPiBoundaryAsync`              |
-| `src/pi/discovery.ts`, `ide-host.ts`, `install.ts`                               | Effect programs + Promise facades                                                |
-| `src/pi/connection.ts`                                                           | Connect handshake Effect; maps tagged timeout → `IdeConnectionTimeoutError`      |
-| `src/pi/reconnect.ts`, `zed.ts`                                                  | Interruptible fibers for reconnect delay and Zed poll                            |
+| Module                                                                                                     | Role                                                                                                                   |
+| ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `src/shared/effect-errors.ts`                                                                              | `Data.TaggedError` domain errors with readable `message` getters                                                       |
+| `src/shared/effect-runtime.ts`                                                                             | `runEffect` / `runEffectSync` (log-and-swallow); `runEffectOrThrow` (tests)                                            |
+| `src/shared/effect-schema.ts`                                                                              | Effect Schema definitions + `decode*` helpers                                                                          |
+| `src/shared/schema.ts`                                                                                     | Stable `is*` / `parse*` facades over Schema decode                                                                     |
+| `src/shared/jsonrpc-guard.ts`                                                                              | Effect-free `isJsonRpcRequest` for the VS Code `ide-server` import graph                                               |
+| `src/pi/index.ts`, `commands.ts`, `context.ts`, `ui.ts`, `state.ts`, `safety.ts`, `diagnostic-renderer.ts` | Lightweight static shell: registration, status UI, local diagnostic renderer, error containment (no Effect, no pi-tui) |
+| `src/pi/config-ui.ts`                                                                                      | Settings dialog (pi-tui); loaded only via dynamic import from `/ide settings`                                          |
+| `src/pi/runtime-loader.ts`                                                                                 | Heavy-runtime dynamic boundary: cached `import("./runtime-services.js")`                                               |
+| `src/pi/runtime-services.ts`                                                                               | Heavy lifecycle: discovery/install/connect/reconnect/Zed (may import Effect)                                           |
+| `src/pi/effect-boundary.ts`                                                                                | `runPiEffect` → `containPiError` + UI status (Effect runtime import)                                                   |
+| `src/pi/safety.ts`                                                                                         | Effect-free `containPiError`, `runPiBoundary`, `runPiBoundaryAsync`                                                    |
+| `src/pi/discovery.ts`, `ide-host.ts`, `install.ts`                                                         | Effect programs + Promise facades                                                                                      |
+| `src/pi/connection.ts`                                                                                     | Connect handshake Effect; maps tagged timeout → `IdeConnectionTimeoutError`                                            |
+| `src/pi/reconnect.ts`, `zed.ts`                                                                            | Interruptible fibers for reconnect delay and Zed poll                                                                  |
 
 VS Code still imports `@shared/*` pieces that must stay Effect-free on the hot
 path (`jsonrpc-guard`, protocol, lock-file helpers). Pulling `effect-schema` into
@@ -56,11 +57,30 @@ split guards if bundle size grows.
 
 - The published Pi entry is an esbuild code-split ESM shell (`dist/src/pi/index.js`)
   with Effect/`ws`/`node:sqlite` only on **dynamic-import** edges into lazy chunks.
-- `runtime-loader.ts` is the only dynamic boundary. `runtime-services.ts` and
-  `effect-boundary.ts` may import Effect; the static shell must not.
-- Adding a static Effect or heavy-runtime import to the shell is a **startup
-  regression**. The bundler metafile topology/size gates fail the build if the
-  static entry gains a heavy static dependency.
+- `runtime-loader.ts` is the only dynamic boundary for the heavy lifecycle
+  (`runtime-services.ts`). `effect-boundary.ts` may import Effect; the static
+  shell must not.
+- `/ide settings` is a second lazy boundary: `commands.ts` dynamically imports
+  `config-ui.ts` only when the settings subcommand runs. That keeps `pi-tui`
+  (SettingsList and friends) out of the static shell graph. Because the lazy
+  chunk bundles its own pi-tui code, it seeds that copy with the keybinding
+  manager injected by `ctx.ui.custom()` so user remappings still apply.
+- The diagnostic message renderer is a **local** Component-shaped helper
+  (`render` / `invalidate`) so the shell never takes a runtime edge into
+  `@earendil-works/pi-tui`. Config UI uses a local `DynamicBorder` for the same
+  reason — no coding-agent value import for borders.
+- **Host package runtime edge ban:** every generated Pi entry JS output (static
+  entry and lazy chunks) must have **zero** runtime external imports of
+  `@earendil-works/pi-coding-agent` or `@earendil-works/pi-tui`. Type-only imports
+  are fine; value imports of host packages in native ESM bypass Pi's jiti aliases
+  and can double-load host copies. The bundler metafile gate fails the build on
+  any remaining host external edge. `pi-tui` is bundled into the settings lazy
+  chunk; coding-agent stays listed as esbuild `external` for future checks but
+  must not appear as a runtime edge in outputs.
+- Adding a static Effect, heavy-runtime, or host-package value import to the
+  shell is a **startup regression**. Topology/size gates fail the build if the
+  static entry gains a heavy static dependency or if any output reintroduces a
+  host runtime external edge.
 
 ## Import style
 
