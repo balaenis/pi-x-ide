@@ -5,6 +5,10 @@ export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+export function isStaleContextError(error: unknown): boolean {
+  return errorMessage(error).includes("stale after session replacement or reload");
+}
+
 export function toError(error: unknown, prefix?: string): Error {
   if (error instanceof Error) {
     if (!prefix) return error;
