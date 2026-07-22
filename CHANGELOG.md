@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.1](https://github.com/balaenis/pi-x-ide/compare/v1.19.0...v1.19.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* **pi:** eliminate host-package runtime imports from compiled output ([bde0c10](https://github.com/balaenis/pi-x-ide/commit/bde0c102917b3dc7da7825c14f2d3f585fd443d1))
+
 ## [1.19.0](https://github.com/balaenis/pi-x-ide/compare/v1.18.0...v1.19.0) (2026-07-22)
 
 
