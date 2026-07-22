@@ -5,20 +5,12 @@ import type { ExtensionAPI, Theme, ThemeColor } from "@earendil-works/pi-coding-
 };
 import { Box, Text, type Component } from "@earendil-works/pi-tui";
 
-import type { DiagnosticFixRequestedParams, IdeDiagnostic, Position } from "../shared/protocol.js";
 import { toRelativeDisplayPath } from "../shared/paths.js";
+import type { IdeDiagnostic } from "../shared/protocol.js";
 import { formatDiagnosticCode, formatRange } from "./diagnostics.js";
+import { DIAGNOSTIC_FIX_CUSTOM_TYPE, type DiagnosticFixDetails } from "./diagnostic-types.js";
 
-export const DIAGNOSTIC_FIX_CUSTOM_TYPE = "pi-x-ide/diagnostic-fix";
-
-export interface DiagnosticFixDetails {
-  source: DiagnosticFixRequestedParams["source"];
-  filePath: string;
-  workspaceFolder?: string;
-  triggerRange: { start: Position; end: Position };
-  diagnostics: IdeDiagnostic[];
-  cwd?: string;
-}
+export { DIAGNOSTIC_FIX_CUSTOM_TYPE, type DiagnosticFixDetails } from "./diagnostic-types.js";
 
 export function registerDiagnosticRenderer(pi: ExtensionAPI): void {
   pi.registerMessageRenderer<DiagnosticFixDetails>(DIAGNOSTIC_FIX_CUSTOM_TYPE, (message, { expanded }, theme) => {

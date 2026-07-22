@@ -21,19 +21,29 @@ Effect 不是产品功能，终端用户无需配置。
 
 ## 模块地图
 
-| 模块                                               | 作用                                                                        |
-| -------------------------------------------------- | --------------------------------------------------------------------------- |
-| `src/shared/effect-errors.ts`                      | `Data.TaggedError` 领域错误（可读 `message`）                               |
-| `src/shared/effect-runtime.ts`                     | `runEffect` / `runEffectSync`（吞失败并打日志）；`runEffectOrThrow`（测试） |
-| `src/shared/effect-schema.ts`                      | Effect Schema 定义与 `decode*`                                              |
-| `src/shared/schema.ts`                             | 稳定的 `is*` / `parse*` 门面                                                |
-| `src/shared/jsonrpc-guard.ts`                      | 无 Effect 的 `isJsonRpcRequest`，供 VS Code `ide-server` 依赖图使用         |
-| `src/pi/safety.ts`                                 | `runPiEffect` → `containPiError` + UI 状态                                  |
-| `src/pi/discovery.ts`、`ide-host.ts`、`install.ts` | Effect 程序 + Promise 门面                                                  |
-| `src/pi/connection.ts`                             | 连接握手 Effect；tagged timeout 映射为 `IdeConnectionTimeoutError`          |
-| `src/pi/reconnect.ts`、`zed.ts`                    | reconnect 延迟与 Zed 轮询的可中断 fiber                                     |
+| 模块                                                                             | 作用                                                                        |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `src/shared/effect-errors.ts`                                                    | `Data.TaggedError` 领域错误（可读 `message`）                               |
+| `src/shared/effect-runtime.ts`                                                   | `runEffect` / `runEffectSync`（吞失败并打日志）；`runEffectOrThrow`（测试） |
+| `src/shared/effect-schema.ts`                                                    | Effect Schema 定义与 `decode*`                                              |
+| `src/shared/schema.ts`                                                           | 稳定的 `is*` / `parse*` 门面                                                |
+| `src/shared/jsonrpc-guard.ts`                                                    | 无 Effect 的 `isJsonRpcRequest`，供 VS Code `ide-server` 依赖图使用         |
+| `src/pi/index.ts`、`commands.ts`、`context.ts`、`ui.ts`、`state.ts`、`safety.ts` | 轻量静态壳：注册、状态 UI、错误收敛（无 Effect）                            |
+| `src/pi/runtime-loader.ts`                                                       | 唯一动态边界：缓存的 `import("./runtime-services.js")`                      |
+| `src/pi/runtime-services.ts`                                                     | 重型生命周期：discovery/install/connect/reconnect/Zed（可导入 Effect）      |
+| `src/pi/effect-boundary.ts`                                                      | `runPiEffect` → `containPiError` + UI 状态（导入 Effect runtime）           |
+| `src/pi/safety.ts`                                                               | 无 Effect 的 `containPiError`、`runPiBoundary`、`runPiBoundaryAsync`        |
+| `src/pi/discovery.ts`、`ide-host.ts`、`install.ts`                               | Effect 程序 + Promise 门面                                                  |
+| `src/pi/connection.ts`                                                           | 连接握手 Effect；tagged timeout 映射为 `IdeConnectionTimeoutError`          |
+| `src/pi/reconnect.ts`、`zed.ts`                                                  | reconnect 延迟与 Zed 轮询的可中断 fiber                                     |
 
 VS Code 仍通过 `@shared/*` 引入必须保持无 Effect 的路径（`jsonrpc-guard`、protocol、lock-file 辅助）。若把 `effect-schema` 拉进 VS Code 包体，属于 escape hatch 失败：解码应留在 Pi 侧，或在包体膨胀时拆分 guard。
+
+### Pi 启动壳与重型 runtime
+
+- 发布的 Pi 入口是 esbuild code-split ESM 壳（`dist/src/pi/index.js`），Effect / `ws` / `node:sqlite` 只出现在指向 lazy chunk 的 **dynamic-import** 边上。
+- `runtime-loader.ts` 是唯一动态边界。`runtime-services.ts` 与 `effect-boundary.ts` 可导入 Effect；静态壳不得导入。
+- 在静态壳中新增 Effect 或重型 runtime 的静态导入属于**启动回归**。bundler 的 metafile topology / size gate 会在静态入口出现重型静态依赖时让构建失败。
 
 ## 导入风格
 
@@ -59,7 +69,7 @@ import * as Fiber from "effect/Fiber";
 - VS Code extension activation 与共享 IDE WebSocket server。
 - 纯函数：排序、版本比较、路径匹配、Zed snapshot SQL。
 
-`src/pi/index.ts` 的调用点应继续使用 Promise 门面，除非某条路径明确改用 `runPiEffect`。
+重型 runtime（`runtime-services.ts` 及其下游）的调用点应继续使用 Promise 门面，除非某条路径明确改用 `effect-boundary.ts` 中的 `runPiEffect`。轻量静态壳不得导入 `effect-boundary.ts` 或 Effect 模块。
 
 ## 非目标
 

@@ -16,7 +16,7 @@ import {
   scheduleReconnect,
   stopReconnectScheduling,
 } from "../src/pi/reconnect.js";
-import { runPiEffect } from "../src/pi/safety.js";
+import { runPiEffect } from "../src/pi/effect-boundary.js";
 import { createRuntime } from "../src/pi/state.js";
 import {
   AUTH_HEADER,

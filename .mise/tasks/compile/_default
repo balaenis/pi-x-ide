@@ -4,3 +4,4 @@
 set -euo pipefail
 
 bunx tsc -p tsconfig.json
+bun run scripts/build-pi-entry.mjs

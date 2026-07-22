@@ -11,6 +11,9 @@ import type { PiIdeRuntime } from "./state.js";
 import { runPiBoundary, runPiBoundaryAsync } from "./safety.js";
 import { buildWidget, updateIdeUi } from "./ui.js";
 
+// Note: early `/ide off` or disconnect may await the heavy runtime preload
+// (one cached promise) and must remain cancel-safe via session generation.
+
 export const PI_X_IDE_ATTACH_SHORTCUT_ENV = "PI_X_IDE_ATTACH_SHORTCUT";
 export const DEFAULT_ATTACH_SHORTCUT = "ctrl+alt+k";
 
@@ -22,7 +25,11 @@ export interface IdeCommandActions {
   refreshCandidates: (ctx: ExtensionCommandContext) => Promise<LockFileCandidate[]>;
   connectAuto: (ctx: ExtensionCommandContext) => Promise<void>;
   connectCandidate: (candidate: LockFileCandidate, ctx: ExtensionCommandContext) => Promise<void>;
-  disconnect: (ctx: ExtensionCommandContext, disabled?: boolean) => void;
+  /**
+   * Disconnect or disable IDE integration.
+   * May wait for the already-started heavy runtime preload; always reuses one module promise.
+   */
+  disconnect: (ctx: ExtensionCommandContext, disabled?: boolean) => Promise<void>;
   installExtension: (ctx: ExtensionCommandContext) => Promise<void>;
 }
 
@@ -87,7 +94,7 @@ export function registerIdeCommand(
               await actions.connectAuto(ctx);
               return;
             case "off":
-              actions.disconnect(ctx, true);
+              await actions.disconnect(ctx, true);
               return;
             case "attach":
               attachLatest(runtime, ctx);
@@ -125,7 +132,7 @@ async function showPicker(
   const choice = await ctx.ui.select("Select IDE connection", labels);
   if (!choice) return;
   if (choice === "Disable IDE integration") {
-    actions.disconnect(ctx, true);
+    await actions.disconnect(ctx, true);
     return;
   }
 

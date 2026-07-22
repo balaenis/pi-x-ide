@@ -29,6 +29,10 @@ export interface PiIdeRuntime {
   zedPollIntervalMs?: number;
   installingIdeIds: Set<string>;
   sessionGeneration: number;
+  /** True while the current session_start handler is in progress (not factory preload). */
+  sessionStarting: boolean;
+  /** In-flight session startup task; shutdown awaits this when present. */
+  startupTask?: Promise<void>;
 }
 
 export function createRuntime(): PiIdeRuntime {
@@ -40,5 +44,6 @@ export function createRuntime(): PiIdeRuntime {
     reconnectAttempts: 0,
     installingIdeIds: new Set<string>(),
     sessionGeneration: 0,
+    sessionStarting: false,
   };
 }

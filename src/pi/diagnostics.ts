@@ -3,7 +3,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent" with { "resolution-mode": "import" };
 import { readPiConfigFixPrompt } from "../shared/config.js";
 
-import { DIAGNOSTIC_FIX_CUSTOM_TYPE, type DiagnosticFixDetails } from "./diagnostic-renderer.js";
+import { DIAGNOSTIC_FIX_CUSTOM_TYPE, type DiagnosticFixDetails } from "./diagnostic-types.js";
 import type { DiagnosticFixRequestedParams, IdeDiagnosticCode, Position } from "../shared/protocol.js";
 import type { PiIdeRuntime } from "./state.js";
 
