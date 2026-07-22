@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/balaenis/pi-x-ide/compare/v1.18.0...v1.19.0) (2026-07-22)
+
+
+### Features
+
+* **pi:** split extension into lightweight shell and heavy runtime via code splitting ([4c25cdc](https://github.com/balaenis/pi-x-ide/commit/4c25cdcddc16a4b39c1fddf83a0d052d5a8432ee))
+
 ## [1.18.0](https://github.com/balaenis/pi-x-ide/compare/v1.17.0...v1.18.0) (2026-07-21)
 
 
