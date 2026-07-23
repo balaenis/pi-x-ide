@@ -2,16 +2,16 @@
 
 Pi × IDE 在 Pi TUI 中注册 `/ide` 命令族，用于管理 IDE 连接。
 
-| 命令           | 行为                                                |
-| -------------- | --------------------------------------------------- |
-| `/ide`         | 打开 TUI 选择器，列出可用 IDE 连接。                |
-| `/ide status`  | 显示当前连接、workspace 和最近选区。                |
-| `/ide list`    | 列出 lock 目录中的候选连接。                        |
-| `/ide auto`    | 重新按 cwd 自动匹配，匹配成功时连接。               |
-| `/ide off`     | 断开并关闭自动上下文附加。                          |
-| `/ide attach`  | 手动把最新选区范围插入输入框。                      |
-| `/ide install` | 通过支持的 IDE CLI 安装或更新 `balaenis.pi-x-ide`。 |
-| `/ide settings`  | 打开 IDE 设置（`Display`、`AutoInstall` 等）。      |
+| 命令            | 行为                                                |
+| --------------- | --------------------------------------------------- |
+| `/ide`          | 打开 TUI 选择器，列出可用 IDE 连接。                |
+| `/ide status`   | 显示当前连接、workspace 和最近选区。                |
+| `/ide list`     | 列出 lock 目录中的候选连接。                        |
+| `/ide auto`     | 重新按 cwd 自动匹配，匹配成功时连接。               |
+| `/ide off`      | 断开并关闭自动上下文附加。                          |
+| `/ide attach`   | 手动把最新选区范围插入输入框。                      |
+| `/ide install`  | 通过支持的 IDE CLI 安装或更新 `balaenis.pi-x-ide`。 |
+| `/ide settings` | 打开 IDE 设置（`Display`、`AutoInstall` 等）。      |
 
 ### `/ide settings`
 
@@ -23,20 +23,20 @@ Settings:
   AutoInstall   true        启动时自动安装 VS Code 系扩展
 ```
 
-| 设置          | 取值                   | 配置键 / 环境变量           | 默认     |
-| ------------- | ---------------------- | --------------------------- | -------- |
+| 设置          | 取值                    | 配置键 / 环境变量           | 默认     |
+| ------------- | ----------------------- | --------------------------- | -------- |
 | `Display`     | `widget` / `statusline` | `status_display`            | `widget` |
-| `AutoInstall` | `true` / `false`       | `env.PI_X_IDE_AUTO_INSTALL` | `true`   |
+| `AutoInstall` | `true` / `false`        | `env.PI_X_IDE_AUTO_INSTALL` | `true`   |
 
 快捷键：
 
-| 按键     | 行为                         |
-| -------- | ---------------------------- |
-| `↑`/`↓`  | 在设置项之间移动             |
-| `Space`  | 切换当前设置项的值           |
-| `Ctrl+S` | 将全部设置保存到全局配置     |
-| `Ctrl+P` | 将全部设置保存到项目配置     |
-| `Esc`    | 取消，不保存                 |
+| 按键     | 行为                     |
+| -------- | ------------------------ |
+| `↑`/`↓`  | 在设置项之间移动         |
+| `Space`  | 切换当前设置项的值       |
+| `Ctrl+S` | 将全部设置保存到全局配置 |
+| `Ctrl+P` | 将全部设置保存到项目配置 |
+| `Esc`    | 取消，不保存             |
 
 - **全局：** `~/.pi/pi-x-ide/config.json`
 - **项目：** `<cwd>/.pi/pi-x-ide/config.json`（覆盖全局）

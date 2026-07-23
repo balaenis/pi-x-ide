@@ -251,10 +251,7 @@ void test("registerPiIdeExtension routes session boundary failures through pi ui
   assert.match(runtime.connectionMessage ?? "", /start-boom/);
   assert.equal(notifications.length, 1);
   assert.equal(notifications[0]?.type, "error");
-  assert.equal(
-    notifications[0]?.message,
-    formatExtensionError("Pi session start", new Error("start-boom")),
-  );
+  assert.equal(notifications[0]?.message, formatExtensionError("Pi session start", new Error("start-boom")));
   assert.equal(runtime.pendingExtensionErrors.length, 0);
 });
 
@@ -289,10 +286,7 @@ void test("preload failure notifies once session_start provides UI context", asy
   assert.equal(runtime.pendingExtensionErrors.length, 0);
   assert.equal(notifications.length, 1);
   assert.equal(notifications[0]?.type, "error");
-  assert.equal(
-    notifications[0]?.message,
-    formatExtensionError("Pi runtime preload", new Error("preload-boom")),
-  );
+  assert.equal(notifications[0]?.message, formatExtensionError("Pi runtime preload", new Error("preload-boom")));
 });
 
 function createFakeRuntimeServices(overrides: Partial<RuntimeServicesModule> = {}): RuntimeServicesModule {

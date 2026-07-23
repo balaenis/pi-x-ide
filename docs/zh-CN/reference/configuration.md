@@ -74,21 +74,21 @@ require("pi_x_ide").setup({
 
 ## Pi 侧环境变量
 
-| 变量                            | 默认值       | 说明                                                                        |
-| ------------------------------- | ------------ | --------------------------------------------------------------------------- |
+| 变量                            | 默认值       | 说明                                                                                                            |
+| ------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------- |
 | `PI_X_IDE_AUTO_INSTALL`         | `1`          | Pi 启动时自动安装 VS Code 扩展。设为 `0`/`false`/`off` 可禁用。也可在 `/ide settings` 中以 `AutoInstall` 配置。 |
-| `PI_X_IDE_ATTACH_SHORTCUT`      | `ctrl+alt+k` | Pi TUI 的 `/ide attach` 快捷键。设为 `off`、`none`、`false` 或 `0` 可禁用。 |
-| `PI_X_IDE_HOST_OVERRIDE`        | （未设置）   | 覆盖 Pi 连接 IDE WebSocket 时使用的 host。适用于 WSL2 网络场景。            |
-| `PI_X_IDE_ZED_DB`               | （自动检测） | 覆盖 Zed SQLite 数据库路径。                                                |
-| `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`       | Zed SQLite 轮询间隔（毫秒），限制在 100–2000 范围。                         |
+| `PI_X_IDE_ATTACH_SHORTCUT`      | `ctrl+alt+k` | Pi TUI 的 `/ide attach` 快捷键。设为 `off`、`none`、`false` 或 `0` 可禁用。                                     |
+| `PI_X_IDE_HOST_OVERRIDE`        | （未设置）   | 覆盖 Pi 连接 IDE WebSocket 时使用的 host。适用于 WSL2 网络场景。                                                |
+| `PI_X_IDE_ZED_DB`               | （自动检测） | 覆盖 Zed SQLite 数据库路径。                                                                                    |
+| `PI_X_IDE_ZED_POLL_INTERVAL_MS` | `1000`       | Zed SQLite 轮询间隔（毫秒），限制在 100–2000 范围。                                                             |
 
 ## 顶层选项
 
 <a id="顶层选项"></a>
 
-| 选项             | 默认值                                                                                          | 说明                                                                                                                                            |
-| ---------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fixPrompt`      | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | 请求修复 IDE 诊断信息时的自定义 prompt 前缀。使用 `{DIAGNOSTIC}` 作为诊断上下文的占位符。如果未包含占位符，诊断上下文会拼接在你的 prompt 之后。 |
+| 选项             | 默认值                                                                                          | 说明                                                                                                                                                                                    |
+| ---------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fixPrompt`      | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | 请求修复 IDE 诊断信息时的自定义 prompt 前缀。使用 `{DIAGNOSTIC}` 作为诊断上下文的占位符。如果未包含占位符，诊断上下文会拼接在你的 prompt 之后。                                         |
 | `status_display` | `widget`                                                                                        | 在 Pi TUI 中显示 IDE 连接状态的位置。默认 `widget`（编辑器上方）；`statusline` 使用页脚状态行。同一时间只启用一种显示方式。项目配置覆盖全局。可在 `/ide settings` 中以 `Display` 设置。 |
 
 `fixPrompt` 控制 VS Code **Pi: Fix it** Quick Fix 使用的 prompt。见 [安装 VS Code 扩展](../how-to/install-vscode.md#诊断-quick-fix)。

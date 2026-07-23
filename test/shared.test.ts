@@ -43,20 +43,11 @@ import {
 } from "../src/shared/schema.js";
 import { LockFileParseError } from "../src/shared/effect-errors.js";
 import { runEffect, runEffectOrThrow, runEffectSync } from "../src/shared/effect-runtime.js";
-import {
-  formatExtensionError,
-  logExtensionError,
-  setExtensionErrorReporter,
-} from "../src/shared/errors.js";
+import { formatExtensionError, logExtensionError, setExtensionErrorReporter } from "../src/shared/errors.js";
 import * as Effect from "effect/Effect";
 import { discoverIdeCandidates } from "../src/pi/discovery.js";
 import { clearLatestSelection, setLatestSelection } from "../src/pi/context.js";
-import {
-  bindPiUiContext,
-  flushPendingPiErrors,
-  installPiErrorReporter,
-  notifyPiError,
-} from "../src/pi/safety.js";
+import { bindPiUiContext, flushPendingPiErrors, installPiErrorReporter, notifyPiError } from "../src/pi/safety.js";
 import { createRuntime } from "../src/pi/state.js";
 import { updateIdeUi } from "../src/pi/ui.js";
 
@@ -183,11 +174,7 @@ void test("notifyPiError uses pi ui.notify and skips stale ctx", () => {
   assert.equal(notifications[0]?.type, "error");
   assert.match(notifications[0]?.message ?? "", /\[pi-x-ide\] demo scope: boom/);
 
-  notifyPiError(
-    "stale scope",
-    new Error("This extension ctx is stale after session replacement or reload."),
-    ctx,
-  );
+  notifyPiError("stale scope", new Error("This extension ctx is stale after session replacement or reload."), ctx);
   assert.equal(notifications.length, 1, "stale ctx errors must not notify");
 });
 
@@ -203,10 +190,7 @@ void test("installPiErrorReporter queues until bindPiUiContext can notify", () =
     assert.equal(runtime.pendingExtensionErrors[0]?.scope, "preload scope");
 
     // Stale errors must never enter the deferred queue.
-    logExtensionError(
-      "stale scope",
-      new Error("This extension ctx is stale after session replacement or reload."),
-    );
+    logExtensionError("stale scope", new Error("This extension ctx is stale after session replacement or reload."));
     assert.equal(runtime.pendingExtensionErrors.length, 1);
 
     const ctx = {
@@ -458,10 +442,7 @@ void test("writePiConfigSettings merges AutoInstall env without wiping other env
   const projectDir = join(root, "project");
   await mkdir(home, { recursive: true });
 
-  writePiConfigSettings(
-    { display: "widget", autoInstall: false },
-    { scope: "global", home },
-  );
+  writePiConfigSettings({ display: "widget", autoInstall: false }, { scope: "global", home });
   writePiConfigSettings({ autoInstall: true }, { scope: "global", home });
 
   // Preserve unrelated env keys across writes.
@@ -482,10 +463,7 @@ void test("writePiConfigSettings merges AutoInstall env without wiping other env
   assert.equal(after.env?.PI_X_IDE_AUTO_INSTALL, "false");
   assert.equal(after.env?.PI_X_IDE_ATTACH_SHORTCUT, "ctrl+alt+k");
 
-  writePiConfigSettings(
-    { display: "statusline", autoInstall: true },
-    { scope: "project", projectDir },
-  );
+  writePiConfigSettings({ display: "statusline", autoInstall: true }, { scope: "project", projectDir });
   assert.deepEqual(resolveIdeConfigSettings({ projectDir, home }).settings, {
     display: "statusline",
     autoInstall: true,
