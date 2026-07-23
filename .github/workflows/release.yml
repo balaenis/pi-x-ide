@@ -115,15 +115,34 @@ jobs:
         run: mise run package:nvim-sidecar:all
 
       - name: Upload sidecar binaries to release
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ needs.process.outputs.tag_name }}
-          files: |
-            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-linux-x64
-            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-linux-arm64
-            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-darwin-x64
-            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-darwin-arm64
-            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-windows-x64.exe
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ needs.process.outputs.tag_name }}"
+          MAX_ATTEMPTS=3
+          for file in \
+            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-linux-x64 \
+            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-linux-arm64 \
+            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-darwin-x64 \
+            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-darwin-arm64 \
+            ide-plugins/nvim/bin/pi-x-ide-nvim-sidecar-windows-x64.exe; do
+            uploaded=false
+            for attempt in $(seq 1 $MAX_ATTEMPTS); do
+              echo "Uploading $file (attempt $attempt/$MAX_ATTEMPTS)..."
+              if gh release upload "$TAG" "$file" --clobber; then
+                uploaded=true
+                break
+              fi
+              if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
+                echo "Upload failed, retrying in 30 seconds..."
+                sleep 30
+              fi
+            done
+            if [ "$uploaded" != "true" ]; then
+              echo "::error::Upload failed after $MAX_ATTEMPTS attempts: $file"
+              exit 1
+            fi
+          done
 
   build-jetbrains-plugin:
     needs: process
