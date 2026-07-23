@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.19.3](https://github.com/balaenis/pi-x-ide/compare/v1.19.2...v1.19.3) (2026-07-23)
+
+
+### Bug Fixes
+
+* **pi-error-routing:** replace console.error with pi ui.notify for extension errors ([dda5c09](https://github.com/balaenis/pi-x-ide/commit/dda5c099de8c9d2321b24e28c1dac64ba516e9c0))
+
+## [1.19.2](https://github.com/balaenis/pi-x-ide/compare/v1.19.1...v1.19.2) (2026-07-22)
+
+
+### Bug Fixes
+
+* **pi:** stop stale extension ctx from spamming the console ([a2b557e](https://github.com/balaenis/pi-x-ide/commit/a2b557ef90fadf9ebaa80de98cdbfc5f9a90ccdb))
+* **pi:** stop stale extension ctx from spamming the console ([#43](https://github.com/balaenis/pi-x-ide/issues/43)) ([a2b557e](https://github.com/balaenis/pi-x-ide/commit/a2b557ef90fadf9ebaa80de98cdbfc5f9a90ccdb))
+
+## [1.19.1](https://github.com/balaenis/pi-x-ide/compare/v1.19.0...v1.19.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* **pi:** eliminate host-package runtime imports from compiled output ([bde0c10](https://github.com/balaenis/pi-x-ide/commit/bde0c102917b3dc7da7825c14f2d3f585fd443d1))
+
+## [1.19.0](https://github.com/balaenis/pi-x-ide/compare/v1.18.0...v1.19.0) (2026-07-22)
+
+
+### Features
+
+* **pi:** split extension into lightweight shell and heavy runtime via code splitting ([4c25cdc](https://github.com/balaenis/pi-x-ide/commit/4c25cdcddc16a4b39c1fddf83a0d052d5a8432ee))
+
 ## [1.18.0](https://github.com/balaenis/pi-x-ide/compare/v1.17.0...v1.18.0) (2026-07-21)
 
 

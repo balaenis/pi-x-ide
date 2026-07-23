@@ -93,6 +93,51 @@ void test("resolves configurable Pi TUI attach shortcut", () => {
   assert.equal(resolveAttachShortcut({ [PI_X_IDE_ATTACH_SHORTCUT_ENV]: "0" }), undefined);
 });
 
+void test("/ide disconnect awaits the async action before completing", async () => {
+  type RegisteredCommand = {
+    handler: (args: string, ctx: ExtensionCommandContext) => Promise<void>;
+  };
+
+  let registered: RegisteredCommand | undefined;
+  let disconnectStarted = false;
+  let resolveDisconnect!: () => void;
+  const disconnectGate = new Promise<void>((resolve) => {
+    resolveDisconnect = resolve;
+  });
+
+  const pi = {
+    registerCommand: (_name: string, command: RegisteredCommand) => {
+      registered = command;
+    },
+    registerShortcut: () => {},
+  } as unknown as ExtensionAPI;
+
+  registerIdeCommand(pi, createRuntime(), {
+    refreshCandidates: () => Promise.resolve([]),
+    connectAuto: () => Promise.resolve(),
+    connectCandidate: () => Promise.resolve(),
+    disconnect: async () => {
+      disconnectStarted = true;
+      await disconnectGate;
+    },
+    installExtension: () => Promise.resolve(),
+  });
+
+  assert.ok(registered);
+  let handlerDone = false;
+  const handlerPromise = registered.handler("off", createCommandContext()).then(() => {
+    handlerDone = true;
+  });
+
+  await Promise.resolve();
+  assert.equal(disconnectStarted, true);
+  assert.equal(handlerDone, false);
+
+  resolveDisconnect();
+  await handlerPromise;
+  assert.equal(handlerDone, true);
+});
+
 void test("/ide install completion and handler are wired", async () => {
   type RegisteredCommand = {
     getArgumentCompletions: (argumentPrefix: string) => { value: string; label: string; description: string }[] | null;
@@ -118,7 +163,7 @@ void test("/ide install completion and handler are wired", async () => {
       refreshCandidates: () => Promise.resolve([]),
       connectAuto: () => Promise.resolve(),
       connectCandidate: () => Promise.resolve(),
-      disconnect: () => {},
+      disconnect: () => Promise.resolve(),
       installExtension: () => {
         installCalled = true;
         return Promise.resolve();

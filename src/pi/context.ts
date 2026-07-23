@@ -1,14 +1,15 @@
 // ABOUTME: Tracks editor selection state and injects selected IDE context into user prompts.
 // ABOUTME: Wraps Pi prompt lifecycle hooks so context formatting failures stay inside the extension.
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent" with {
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
-import { formatEditorContext, snapshotKey, SYSTEM_REMINDER_TAG, SELECTED_CONTEXT_MARKER } from "../shared/format.js";
-import type { EditorSelectionSnapshot } from "../shared/protocol.js";
+import { formatEditorContext, SYSTEM_REMINDER_TAG, SELECTED_CONTEXT_MARKER } from "../shared/format.js";
 import { DIAGNOSTIC_CONTEXT_MARKER } from "./diagnostics.js";
 import { runPiBoundary } from "./safety.js";
 import type { PiIdeRuntime } from "./state.js";
 import { updateIdeUi } from "./ui.js";
+
+export { clearLatestSelection, setLatestSelection } from "./selection.js";
 
 export function registerContextHandlers(pi: ExtensionAPI, runtime: PiIdeRuntime): void {
   pi.on("before_agent_start", (_event, ctx) =>
@@ -52,28 +53,6 @@ export function registerContextHandlers(pi: ExtensionAPI, runtime: PiIdeRuntime)
       ctx,
     ),
   );
-}
-
-export function setLatestSelection(
-  runtime: PiIdeRuntime,
-  snapshot: EditorSelectionSnapshot,
-  ctx?: ExtensionContext,
-): void {
-  const key = snapshotKey(snapshot);
-  runtime.latestSelection = snapshot;
-  if (runtime.latestSelectionKey !== key) {
-    runtime.latestSelectionKey = key;
-    runtime.attachState = "pending";
-  }
-  updateIdeUi(runtime, ctx);
-}
-
-export function clearLatestSelection(runtime: PiIdeRuntime, ctx?: ExtensionContext): void {
-  runtime.latestSelection = undefined;
-  runtime.latestSelectionKey = undefined;
-  runtime.turnSelection = undefined;
-  runtime.attachState = "idle";
-  updateIdeUi(runtime, ctx);
 }
 
 type UserContentBlock =

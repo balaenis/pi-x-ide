@@ -14,7 +14,7 @@ import { resolvePiConfigEnv } from "../shared/config.js";
 import { isWsl, normalizePathForHost } from "../shared/platform.js";
 import { snapshotKey } from "../shared/format.js";
 import { isPathInsideOrEqual } from "../shared/paths.js";
-import { setLatestSelection, clearLatestSelection } from "./context.js";
+import { clearLatestSelection, setLatestSelection } from "./selection.js";
 import type { PiIdeRuntime } from "./state.js";
 import { containPiError } from "./safety.js";
 import { updateIdeUi } from "./ui.js";

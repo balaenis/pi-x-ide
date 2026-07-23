@@ -7,3 +7,4 @@ set -euo pipefail
 # "type") cannot change how Node loads the compiled ESM test/output files.
 rm -rf dist
 bunx tsc -p tsconfig.json
+bun run scripts/build-pi-entry.mjs

@@ -43,9 +43,20 @@ import {
 } from "../src/shared/schema.js";
 import { LockFileParseError } from "../src/shared/effect-errors.js";
 import { runEffect, runEffectOrThrow, runEffectSync } from "../src/shared/effect-runtime.js";
+import {
+  formatExtensionError,
+  logExtensionError,
+  setExtensionErrorReporter,
+} from "../src/shared/errors.js";
 import * as Effect from "effect/Effect";
 import { discoverIdeCandidates } from "../src/pi/discovery.js";
 import { clearLatestSelection, setLatestSelection } from "../src/pi/context.js";
+import {
+  bindPiUiContext,
+  flushPendingPiErrors,
+  installPiErrorReporter,
+  notifyPiError,
+} from "../src/pi/safety.js";
 import { createRuntime } from "../src/pi/state.js";
 import { updateIdeUi } from "../src/pi/ui.js";
 
@@ -64,16 +75,28 @@ const snapshot: EditorSelectionSnapshot = {
   ],
 };
 
-function captureConsoleErrors(action: () => void): string[] {
-  const original = console.error;
+function captureExtensionErrors(action: () => void): string[] {
   const messages: string[] = [];
-  console.error = (...args: unknown[]) => {
-    messages.push(args.map(String).join(" "));
-  };
+  setExtensionErrorReporter((scope, error) => {
+    messages.push(formatExtensionError(scope, error));
+  });
   try {
     action();
   } finally {
-    console.error = original;
+    setExtensionErrorReporter(undefined);
+  }
+  return messages;
+}
+
+async function captureExtensionErrorsAsync(action: () => Promise<void>): Promise<string[]> {
+  const messages: string[] = [];
+  setExtensionErrorReporter((scope, error) => {
+    messages.push(formatExtensionError(scope, error));
+  });
+  try {
+    await action();
+  } finally {
+    setExtensionErrorReporter(undefined);
   }
   return messages;
 }
@@ -128,7 +151,7 @@ void test("clears stale editor selection state", () => {
   assert.equal(runtime.attachState, "idle");
 });
 
-void test("logs stale extension ctx while updating selection UI", () => {
+void test("ignores stale extension ctx while updating selection UI", () => {
   const runtime = createRuntime();
   runtime.ctx = {
     get hasUI(): boolean {
@@ -136,13 +159,88 @@ void test("logs stale extension ctx while updating selection UI", () => {
     },
   } as NonNullable<typeof runtime.ctx>;
 
-  const errors = captureConsoleErrors(() => {
+  const errors = captureExtensionErrors(() => {
     assert.doesNotThrow(() => setLatestSelection(runtime, snapshot));
   });
   assert.equal(runtime.latestSelection, snapshot);
   assert.equal(runtime.attachState, "pending");
-  assert.equal(errors.length, 1);
-  assert.match(errors[0] ?? "", /read active Pi UI context: This extension ctx is stale/);
+  assert.equal(errors.length, 0);
+});
+
+void test("notifyPiError uses pi ui.notify and skips stale ctx", () => {
+  const notifications: Array<{ message: string; type?: string }> = [];
+  const ctx = {
+    hasUI: true,
+    ui: {
+      notify: (message: string, type?: string) => {
+        notifications.push({ message, type });
+      },
+    },
+  } as unknown as NonNullable<ReturnType<typeof createRuntime>["ctx"]>;
+
+  notifyPiError("demo scope", new Error("boom"), ctx);
+  assert.equal(notifications.length, 1);
+  assert.equal(notifications[0]?.type, "error");
+  assert.match(notifications[0]?.message ?? "", /\[pi-x-ide\] demo scope: boom/);
+
+  notifyPiError(
+    "stale scope",
+    new Error("This extension ctx is stale after session replacement or reload."),
+    ctx,
+  );
+  assert.equal(notifications.length, 1, "stale ctx errors must not notify");
+});
+
+void test("installPiErrorReporter queues until bindPiUiContext can notify", () => {
+  const notifications: Array<{ message: string; type?: string }> = [];
+  const runtime = createRuntime();
+  installPiErrorReporter(runtime);
+
+  try {
+    logExtensionError("preload scope", new Error("preload-boom"));
+    assert.equal(notifications.length, 0);
+    assert.equal(runtime.pendingExtensionErrors.length, 1);
+    assert.equal(runtime.pendingExtensionErrors[0]?.scope, "preload scope");
+
+    // Stale errors must never enter the deferred queue.
+    logExtensionError(
+      "stale scope",
+      new Error("This extension ctx is stale after session replacement or reload."),
+    );
+    assert.equal(runtime.pendingExtensionErrors.length, 1);
+
+    const ctx = {
+      hasUI: true,
+      ui: {
+        notify: (message: string, type?: string) => {
+          notifications.push({ message, type });
+        },
+      },
+    } as unknown as NonNullable<typeof runtime.ctx>;
+
+    bindPiUiContext(runtime, ctx);
+    assert.equal(runtime.pendingExtensionErrors.length, 0);
+    assert.equal(notifications.length, 1);
+    assert.equal(notifications[0]?.type, "error");
+    assert.match(notifications[0]?.message ?? "", /\[pi-x-ide\] preload scope: preload-boom/);
+
+    // With ctx bound, subsequent reports deliver immediately.
+    logExtensionError("live scope", new Error("live-boom"));
+    assert.equal(notifications.length, 2);
+    assert.match(notifications[1]?.message ?? "", /\[pi-x-ide\] live scope: live-boom/);
+    assert.equal(runtime.pendingExtensionErrors.length, 0);
+
+    // Manual flush is a no-op when the queue is empty.
+    flushPendingPiErrors(runtime);
+    assert.equal(notifications.length, 2);
+  } finally {
+    setExtensionErrorReporter(undefined);
+  }
+});
+
+void test("logExtensionError is silent when no reporter is installed", () => {
+  setExtensionErrorReporter(undefined);
+  assert.doesNotThrow(() => logExtensionError("no-reporter", new Error("ignored")));
 });
 
 void test("logs non-stale extension ctx errors while updating selection UI", () => {
@@ -153,7 +251,7 @@ void test("logs non-stale extension ctx errors while updating selection UI", () 
     },
   } as NonNullable<typeof runtime.ctx>;
 
-  const errors = captureConsoleErrors(() => {
+  const errors = captureExtensionErrors(() => {
     assert.doesNotThrow(() => setLatestSelection(runtime, snapshot));
   });
   assert.equal(runtime.latestSelection, snapshot);
@@ -192,7 +290,7 @@ void test("logs IDE widget render errors without throwing", () => {
     },
   );
 
-  const errors = captureConsoleErrors(() => {
+  const errors = captureExtensionErrors(() => {
     assert.deepEqual(widget.render(10), []);
   });
   assert.equal(errors.length, 1);
@@ -859,7 +957,7 @@ void test("runEffectSync returns success values", () => {
 });
 
 void test("runEffectSync swallows failures and logs by default", () => {
-  const messages = captureConsoleErrors(() => {
+  const messages = captureExtensionErrors(() => {
     const result = runEffectSync("effect-sync-fail", Effect.fail(new Error("boom")));
     assert.equal(result, undefined);
   });
@@ -889,7 +987,7 @@ void test("LockFileParseError carries Effect tag and readable message", () => {
 });
 
 void test("runEffectSync default log includes tagged error fields", () => {
-  const messages = captureConsoleErrors(() => {
+  const messages = captureExtensionErrors(() => {
     const result = runEffectSync(
       "effect-tagged-sync",
       Effect.fail(new LockFileParseError({ path: "/tmp/y.lock", reason: "truncated" })),
@@ -926,20 +1024,13 @@ void test("runEffect resolves success and swallows async failures", async () => 
 });
 
 void test("runEffect default log includes tagged error fields", async () => {
-  const original = console.error;
-  const messages: string[] = [];
-  console.error = (...args: unknown[]) => {
-    messages.push(args.map(String).join(" "));
-  };
-  try {
+  const messages = await captureExtensionErrorsAsync(async () => {
     const result = await runEffect(
       "effect-tagged-async",
       Effect.fail(new LockFileParseError({ path: "/tmp/z.lock", reason: "missing host" })),
     );
     assert.equal(result, undefined);
-  } finally {
-    console.error = original;
-  }
+  });
   assert.ok(
     messages.some(
       (message) =>

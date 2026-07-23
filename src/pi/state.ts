@@ -5,6 +5,12 @@ import type { RuntimeFiber } from "effect/Fiber";
 import type { AttachState, EditorSelectionSnapshot, LockFileCandidate } from "../shared/protocol.js";
 import type { IdeConnection } from "./connection.js";
 
+/** Contained failure held until a Pi UI context can deliver it. */
+export type PendingExtensionError = {
+  scope: string;
+  error: unknown;
+};
+
 export interface PiIdeRuntime {
   ctx?: ExtensionContext;
   cwd?: string;
@@ -29,6 +35,15 @@ export interface PiIdeRuntime {
   zedPollIntervalMs?: number;
   installingIdeIds: Set<string>;
   sessionGeneration: number;
+  /** True while the current session_start handler is in progress (not factory preload). */
+  sessionStarting: boolean;
+  /** In-flight session startup task; shutdown awaits this when present. */
+  startupTask?: Promise<void>;
+  /**
+   * Errors deferred because no Pi UI context was available yet (e.g. factory preload).
+   * Flushed by bindPiUiContext / flushPendingPiErrors once ctx can notify.
+   */
+  pendingExtensionErrors: PendingExtensionError[];
 }
 
 export function createRuntime(): PiIdeRuntime {
@@ -40,5 +55,7 @@ export function createRuntime(): PiIdeRuntime {
     reconnectAttempts: 0,
     installingIdeIds: new Set<string>(),
     sessionGeneration: 0,
+    sessionStarting: false,
+    pendingExtensionErrors: [],
   };
 }
