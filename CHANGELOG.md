@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.3](https://github.com/balaenis/pi-x-ide/compare/v1.19.2...v1.19.3) (2026-07-23)
+
+
+### Bug Fixes
+
+* **pi-error-routing:** replace console.error with pi ui.notify for extension errors ([dda5c09](https://github.com/balaenis/pi-x-ide/commit/dda5c099de8c9d2321b24e28c1dac64ba516e9c0))
+
 ## [1.19.2](https://github.com/balaenis/pi-x-ide/compare/v1.19.1...v1.19.2) (2026-07-22)
 
 
