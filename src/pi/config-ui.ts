@@ -156,8 +156,8 @@ export async function showIdeSettings(
       "info",
     );
   } catch (error) {
+    // logExtensionError routes through pi ui.notify via the installed reporter.
     logExtensionError("save ide settings", error);
-    ctx.ui.notify(`Failed to save settings: ${error instanceof Error ? error.message : String(error)}`, "error");
   }
 }
 

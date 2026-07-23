@@ -12,7 +12,7 @@ import {
   preloadRuntimeServices as defaultPreloadRuntimeServices,
   type RuntimeServicesModule,
 } from "./runtime-loader.js";
-import { runPiBoundaryAsync } from "./safety.js";
+import { bindPiUiContext, installPiErrorReporter, runPiBoundaryAsync } from "./safety.js";
 import { createRuntime, type PiIdeRuntime } from "./state.js";
 import { clearIdeUi } from "./ui.js";
 
@@ -38,6 +38,9 @@ export function registerPiIdeExtension(pi: ExtensionAPI, options: RegisterPiIdeE
   const runtime = createRuntime();
   const loadRuntimeServices = options.runtimeLoader?.loadRuntimeServices ?? defaultLoadRuntimeServices;
   const preloadRuntimeServices = options.runtimeLoader?.preloadRuntimeServices ?? defaultPreloadRuntimeServices;
+
+  // Route contained failures through pi ui.notify instead of console.error.
+  installPiErrorReporter(runtime);
 
   registerContextHandlers(pi, runtime);
   registerDiagnosticRenderer(pi);
@@ -69,7 +72,8 @@ export function registerPiIdeExtension(pi: ExtensionAPI, options: RegisterPiIdeE
         // Session startup begins here (not at factory preload).
         runtime.sessionGeneration += 1;
         const generation = runtime.sessionGeneration;
-        runtime.ctx = ctx;
+        // Bind UI first so deferred preload failures can notify once.
+        bindPiUiContext(runtime, ctx);
         runtime.cwd = ctx.cwd;
         runtime.sessionStarting = true;
 
@@ -103,7 +107,7 @@ export function registerPiIdeExtension(pi: ExtensionAPI, options: RegisterPiIdeE
         // Bump generation before any await so delayed startups observe staleness.
         runtime.sessionGeneration += 1;
         runtime.sessionStarting = false;
-        runtime.ctx = ctx;
+        bindPiUiContext(runtime, ctx);
 
         const pendingStartup = runtime.startupTask;
         if (pendingStartup) {
@@ -144,6 +148,6 @@ async function withRuntimeServices<T>(
   action: (services: RuntimeServicesModule) => Promise<T>,
 ): Promise<T> {
   const services = await loadRuntimeServices();
-  runtime.ctx = ctx;
+  bindPiUiContext(runtime, ctx);
   return action(services);
 }

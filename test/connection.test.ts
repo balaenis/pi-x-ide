@@ -27,14 +27,14 @@ import {
   type LockFileCandidate,
 } from "../src/shared/protocol.js";
 import { decodeRawData } from "../src/shared/ws.js";
+import { formatExtensionError, setExtensionErrorReporter } from "../src/shared/errors.js";
 
 void test("runPiEffect contains failures and updates runtime error status", async () => {
   const runtime = createRuntime();
   const messages: string[] = [];
-  const original = console.error;
-  console.error = (...args: unknown[]) => {
-    messages.push(args.map(String).join(" "));
-  };
+  setExtensionErrorReporter((scope, error) => {
+    messages.push(formatExtensionError(scope, error));
+  });
   try {
     const failed = await runPiEffect("pi-effect-fail", runtime, Effect.fail(new Error("boom")));
     assert.equal(failed, undefined);
@@ -45,7 +45,7 @@ void test("runPiEffect contains failures and updates runtime error status", asyn
     const ok = await runPiEffect("pi-effect-ok", runtime, Effect.succeed(7));
     assert.equal(ok, 7);
   } finally {
-    console.error = original;
+    setExtensionErrorReporter(undefined);
   }
 });
 

@@ -22,8 +22,8 @@ Effect is not a product feature. End users never configure it.
 - **Never** throw Effect failures into Pi host callbacks or VS Code activation.
 - Exit Effects with `Effect.runPromise` / `Effect.runSync`, Phase 1 runners
   (`runEffect` / `runEffectSync`), or Pi helpers (`runPiEffect`).
-- On failure at a Pi boundary: log via `logExtensionError` / `containPiError`;
-  optionally set `runtime.connectionStatus = "error"`.
+- On failure at a Pi boundary: report via `logExtensionError` / `containPiError`
+  (pi `ui.notify`, not `console`); optionally set `runtime.connectionStatus = "error"`.
 - **Interrupt** (reconnect / Zed poll fibers) is cancellation, not a UI error.
 
 Auth tokens stay in WebSocket upgrade headers only. Do not put `authToken` or
