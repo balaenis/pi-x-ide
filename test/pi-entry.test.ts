@@ -10,6 +10,7 @@ import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@e
 };
 import { registerPiIdeExtension } from "../src/pi/index.js";
 import { createRuntimeServicesLoaderForTests, type RuntimeServicesModule } from "../src/pi/runtime-loader.js";
+import { formatExtensionError } from "../src/shared/errors.js";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 // Compiled tests live in dist/test; safety.js is emitted next to other Pi modules.
@@ -229,6 +230,71 @@ void test("/ide disconnect awaits async action including pending preload", async
   assert.equal(disconnectResolved, true);
 });
 
+void test("registerPiIdeExtension routes session boundary failures through pi ui.notify", async () => {
+  const notifications: Array<{ message: string; type?: string }> = [];
+  const services = createFakeRuntimeServices({
+    startSession: () => Promise.reject(new Error("start-boom")),
+  });
+  const loader = {
+    loadRuntimeServices: () => Promise.resolve(services),
+    preloadRuntimeServices: () => Promise.resolve(services),
+  };
+
+  const fake = createFakeExtensionApi();
+  const runtime = registerPiIdeExtension(fake.api, { runtimeLoader: loader });
+
+  // Must go through the bundled session boundary: external logExtensionError imports
+  // a different module instance than the esbuild Pi entry embeds.
+  await fake.sessionStart?.({}, createExtensionContext("/repo", notifications));
+
+  assert.equal(runtime.connectionStatus, "error");
+  assert.match(runtime.connectionMessage ?? "", /start-boom/);
+  assert.equal(notifications.length, 1);
+  assert.equal(notifications[0]?.type, "error");
+  assert.equal(
+    notifications[0]?.message,
+    formatExtensionError("Pi session start", new Error("start-boom")),
+  );
+  assert.equal(runtime.pendingExtensionErrors.length, 0);
+});
+
+void test("preload failure notifies once session_start provides UI context", async () => {
+  const notifications: Array<{ message: string; type?: string }> = [];
+  let rejectPreload!: (error: Error) => void;
+  const preloadFailure = new Promise<RuntimeServicesModule>((_resolve, reject) => {
+    rejectPreload = reject;
+  });
+  // Prevent unhandled rejection noise from the test-controlled reject.
+  preloadFailure.catch(() => undefined);
+
+  const services = createFakeRuntimeServices();
+  const loader = {
+    loadRuntimeServices: () => Promise.resolve(services),
+    preloadRuntimeServices: () => preloadFailure,
+  };
+
+  const fake = createFakeExtensionApi();
+  const runtime = registerPiIdeExtension(fake.api, { runtimeLoader: loader });
+
+  rejectPreload(new Error("preload-boom"));
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.equal(notifications.length, 0, "no UI context yet — must not notify");
+  assert.equal(runtime.pendingExtensionErrors.length, 1);
+  assert.equal(runtime.pendingExtensionErrors[0]?.scope, "Pi runtime preload");
+
+  await fake.sessionStart?.({}, createExtensionContext("/repo", notifications));
+
+  assert.equal(runtime.pendingExtensionErrors.length, 0);
+  assert.equal(notifications.length, 1);
+  assert.equal(notifications[0]?.type, "error");
+  assert.equal(
+    notifications[0]?.message,
+    formatExtensionError("Pi runtime preload", new Error("preload-boom")),
+  );
+});
+
 function createFakeRuntimeServices(overrides: Partial<RuntimeServicesModule> = {}): RuntimeServicesModule {
   return {
     startSession: () => Promise.resolve(),
@@ -288,12 +354,17 @@ function createFakeExtensionApi(): {
   };
 }
 
-function createExtensionContext(cwd: string): ExtensionContext {
+function createExtensionContext(
+  cwd: string,
+  notifications?: Array<{ message: string; type?: string }>,
+): ExtensionContext {
   return {
     cwd,
     hasUI: true,
     ui: {
-      notify: () => {},
+      notify: (message: string, type?: string) => {
+        notifications?.push({ message, type });
+      },
       setWidget: () => {},
       setStatus: () => {},
       pasteToEditor: () => {},

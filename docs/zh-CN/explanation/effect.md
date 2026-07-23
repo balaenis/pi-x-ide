@@ -14,7 +14,7 @@ Effect 不是产品功能，终端用户无需配置。
 
 - **禁止** 把 Effect 失败抛进 Pi host 回调或 VS Code activation。
 - 在边界用 `Effect.runPromise` / `Effect.runSync`、Phase 1 runner（`runEffect` / `runEffectSync`）或 Pi 助手（`runPiEffect`）退出 Effect。
-- Pi 边界失败时：经 `logExtensionError` / `containPiError` 记录；可选设置 `runtime.connectionStatus = "error"`。
+- Pi 边界失败时：经 `logExtensionError` / `containPiError` 上报（走 pi `ui.notify`，不写 `console`）；可选设置 `runtime.connectionStatus = "error"`。
 - **中断**（reconnect / Zed poll fiber）视为取消，不是 UI error。
 
 `authToken` 只出现在 WebSocket 升级头。不要把 token 或完整 lock JSON 写进日志、Effect 错误消息或 `scope` 字符串。
