@@ -3,5 +3,8 @@
 #MISE depends=["setup"]
 set -euo pipefail
 
+# Wipe dist so stale artifacts (e.g. a leftover package.json with the wrong
+# "type") cannot change how Node loads the compiled ESM test/output files.
+rm -rf dist
 bunx tsc -p tsconfig.json
 bun run scripts/build-pi-entry.mjs
