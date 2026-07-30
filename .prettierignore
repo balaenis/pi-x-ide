@@ -14,3 +14,4 @@ node_modules/
 .pi/
 pnpm-lock.yaml
 *.vsix
+CHANGELOG.md

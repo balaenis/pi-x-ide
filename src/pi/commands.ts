@@ -181,7 +181,7 @@ function attachLatest(runtime: PiIdeRuntime, ctx: ExtensionContext): void {
     return;
   }
   const mention = formatRangeMention(runtime.latestSelection, { cwd: ctx.cwd });
-  ctx.ui.pasteToEditor(mention);
+  ctx.ui.pasteToEditor(mention + "\n");
   runtime.attachState = "pending";
   updateIdeUi(runtime, ctx);
   ctx.ui.notify(`Attached ${mention}`, "info");

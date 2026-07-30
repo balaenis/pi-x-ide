@@ -467,6 +467,6 @@ function handleAtMentioned(runtime: PiIdeRuntime, params: AtMentionedParams): vo
   const ctx = runtime.ctx;
   if (!ctx?.hasUI) return;
   const text = params.rangeText || formatRangeMention(params, { cwd: ctx.cwd });
-  ctx.ui.pasteToEditor(text);
+  ctx.ui.pasteToEditor(text + "\n");
   ctx.ui.notify(`Attached ${text}`, "info");
 }
