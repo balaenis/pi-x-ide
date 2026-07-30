@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.4](https://github.com/balaenis/pi-x-ide/compare/v1.19.3...v1.19.4) (2026-07-30)
+
+
+### Bug Fixes
+
+* **pi:** add trailing newline when pasting selection mention ([a09b159](https://github.com/balaenis/pi-x-ide/commit/a09b159ce42b7191f92e04fde93d153b4ccee193))
+
 ## [1.19.3](https://github.com/balaenis/pi-x-ide/compare/v1.19.2...v1.19.3) (2026-07-23)
 
 

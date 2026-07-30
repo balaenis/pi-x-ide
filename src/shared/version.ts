@@ -2,5 +2,5 @@
 // ABOUTME: Kept in sync by release-please during release PR generation.
 
 // x-release-please-start-version
-export const PI_X_IDE_VERSION = "1.19.3";
+export const PI_X_IDE_VERSION = "1.19.4";
 // x-release-please-end
