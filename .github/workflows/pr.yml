@@ -30,5 +30,6 @@ jobs:
 
       - name: Run Checks
         run: |
+          mise run typecheck
           mise run lint
           mise run test
