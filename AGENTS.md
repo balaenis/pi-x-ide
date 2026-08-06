@@ -10,7 +10,7 @@ Prefer using `mise` as the development environment management tool.
   - `mise run lint`
   - `mise run typecheck`
   - `mise run test`
-  - More details, see `@mise.toml`
+  - More task details can be found in `./mise/tasks`, or by running `mise tasks ls`
 - When writing github/workflows workflows, please prefer using `mise` instead of `bun` or anything else.
 
 ## Dependency packages
