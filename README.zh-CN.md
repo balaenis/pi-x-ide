@@ -1,5 +1,7 @@
 # Pi × IDE
 
+[English](README.md) | **简体中文**
+
 > 用于 IDE 选区上下文集成的 Pi 扩展包。
 
 自动将 VS Code、Zed、Neovim 和 JetBrains IDE 中当前打开或选中的文件与文本范围附加到 Pi TUI，并作为对话上下文提交给 LLM。
@@ -47,8 +49,6 @@ pi
 - [发现机制](docs/zh-CN/explanation/discovery.md)
 - [架构](docs/zh-CN/explanation/architecture.md)
 - [Effect 采用说明（贡献者）](docs/zh-CN/explanation/effect.md)
-
-English: [README.md](README.md).
 
 ## 开发
 

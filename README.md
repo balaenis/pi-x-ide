@@ -1,5 +1,7 @@
 # Pi × IDE
 
+**English** | [简体中文](README.zh-CN.md)
+
 > Pi extension package for IDE selection context integration.
 
 Automatically attaches the currently opened or selected file and text range from
@@ -53,8 +55,6 @@ as `@src/foo.ts#L10-L20`. New to Pi × IDE? Follow the
 - [How discovery works](docs/explanation/discovery.md)
 - [Architecture](docs/explanation/architecture.md)
 - [Effect adoption (contributors)](docs/explanation/effect.md)
-
-中文文档见 [README.zh-CN.md](README.zh-CN.md)。
 
 ## Development
 
