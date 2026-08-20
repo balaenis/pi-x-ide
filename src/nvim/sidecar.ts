@@ -13,6 +13,8 @@ import {
   removeIdeLockFile,
   writeIdeLockFile,
 } from "../shared/lock-file.js";
+import { startLockFileHeartbeat, type LockFileHeartbeatHandle } from "../shared/lock-file-heartbeat.js";
+import { resolveLockDir } from "../shared/paths.js";
 import {
   parseJsonLine,
   parseNvimSidecarMessage,
@@ -24,6 +26,7 @@ export interface NvimSidecarOptions {
   workspaceFolders?: string[];
   name?: string;
   lockDir?: string;
+  heartbeatIntervalMs?: number;
   stdin?: NodeJS.ReadableStream;
   stdout?: NodeJS.WritableStream;
   stderr?: NodeJS.WritableStream;
@@ -40,6 +43,8 @@ interface RuntimeState {
   workspaceFolders: string[];
   lockFile?: IdeLockFile;
   lockFilePath?: string;
+  heartbeat?: LockFileHeartbeatHandle;
+  stopPromise?: Promise<void>;
   stopped: boolean;
 }
 
@@ -57,7 +62,8 @@ export async function startNvimSidecar(options: NvimSidecarOptions = {}): Promis
   );
 
   const port = await server.start();
-  state.lockFilePath = createIdeLockFilePath("nvim", port, undefined, options.lockDir);
+  const lockDir = options.lockDir ?? resolveLockDir();
+  state.lockFilePath = createIdeLockFilePath("nvim", port, undefined, lockDir);
   state.lockFile = createIdeLockFile({
     ide: "nvim",
     name: options.name ?? "Neovim",
@@ -65,20 +71,37 @@ export async function startNvimSidecar(options: NvimSidecarOptions = {}): Promis
     authToken,
     workspaceFolders: state.workspaceFolders,
   });
-  await writeIdeLockFile(state.lockFilePath, state.lockFile);
+  await writeIdeLockFile(state.lockFilePath, state.lockFile, lockDir);
 
   const stdout = options.stdout ?? process.stdout;
-  stdout.write(JSON.stringify({ type: "ready", port, lockFilePath: state.lockFilePath }) + "\n");
-
-  const stop = async () => {
-    if (state.stopped) return;
-    state.stopped = true;
-    await removeIdeLockFile(state.lockFilePath);
-    await server.stop();
-  };
-
   const stdin = options.stdin ?? process.stdin;
   const stderr = options.stderr ?? process.stderr;
+  state.heartbeat = startLockFileHeartbeat(
+    async () => {
+      if (!state.lockFilePath || !state.lockFile) return;
+      state.lockFile = refreshIdeLockFile(state.lockFile, state.workspaceFolders);
+      await writeIdeLockFile(state.lockFilePath, state.lockFile, lockDir);
+    },
+    {
+      intervalMs: options.heartbeatIntervalMs,
+      onError: (error) => {
+        stderr.write(`pi-x-ide nvim sidecar: failed to refresh lock file: ${errorMessage(error)}\n`);
+      },
+    },
+  );
+  stdout.write(JSON.stringify({ type: "ready", port, lockFilePath: state.lockFilePath }) + "\n");
+
+  const stop = (): Promise<void> => {
+    if (!state.stopPromise) {
+      state.stopped = true;
+      state.stopPromise = (async () => {
+        if (state.heartbeat) await state.heartbeat.stop();
+        await removeIdeLockFile(state.lockFilePath);
+        await server.stop();
+      })();
+    }
+    return state.stopPromise;
+  };
   const stopSafely = (reason: string) => {
     void stop().catch((error: unknown) => {
       stderr.write(`pi-x-ide nvim sidecar: failed to stop after ${reason}: ${errorMessage(error)}\n`);
@@ -91,7 +114,7 @@ export async function startNvimSidecar(options: NvimSidecarOptions = {}): Promis
     const parsed = parseJsonLine(trimmed);
     const config = parseSidecarConfig(parsed);
     if (config && !("type" in (parsed as Record<string, unknown>))) {
-      void applyConfig(state, config, stderr).catch((error: unknown) => {
+      void applyWorkspaceUpdate(state, config.workspaceFolders).catch((error: unknown) => {
         stderr.write(`pi-x-ide nvim sidecar: failed to apply config: ${errorMessage(error)}\n`);
       });
       return;
@@ -102,7 +125,7 @@ export async function startNvimSidecar(options: NvimSidecarOptions = {}): Promis
       stderr.write(`pi-x-ide nvim sidecar: ignored malformed message: ${trimmed}\n`);
       return;
     }
-    void handleMessage(state, server, message, stderr, stop).catch((error: unknown) => {
+    void handleMessage(state, server, message, stop).catch((error: unknown) => {
       stderr.write(`pi-x-ide nvim sidecar: failed to handle message: ${errorMessage(error)}\n`);
     });
   });
@@ -116,26 +139,17 @@ export async function startNvimSidecar(options: NvimSidecarOptions = {}): Promis
   return { server, lockFilePath: state.lockFilePath, stop };
 }
 
-async function applyConfig(
-  state: RuntimeState,
-  config: { workspaceFolders?: string[] },
-  stderr: NodeJS.WritableStream,
-) {
-  if (config.workspaceFolders) state.workspaceFolders = normalizeWorkspaceFolders(config.workspaceFolders);
-  if (!state.lockFilePath || !state.lockFile) return;
-  state.lockFile = refreshIdeLockFile(state.lockFile, state.workspaceFolders);
-  try {
-    await writeIdeLockFile(state.lockFilePath, state.lockFile);
-  } catch (error) {
-    stderr.write(`pi-x-ide nvim sidecar: failed to refresh lock file: ${errorMessage(error)}\n`);
-  }
+async function applyWorkspaceUpdate(state: RuntimeState, workspaceFolders: string[] | undefined): Promise<void> {
+  if (state.stopped) return;
+  if (workspaceFolders) state.workspaceFolders = normalizeWorkspaceFolders(workspaceFolders);
+  if (!state.heartbeat) return;
+  await state.heartbeat.refreshNow();
 }
 
 async function handleMessage(
   state: RuntimeState,
   server: IdeWebSocketServer,
   message: NvimSidecarMessage,
-  stderr: NodeJS.WritableStream,
   stop: () => Promise<void>,
 ): Promise<void> {
   switch (message.type) {
@@ -169,7 +183,7 @@ async function handleMessage(
       return;
     }
     case "workspace_changed":
-      await applyConfig(state, { workspaceFolders: message.workspaceFolders }, stderr);
+      await applyWorkspaceUpdate(state, message.workspaceFolders);
       return;
     case "shutdown":
       await stop();

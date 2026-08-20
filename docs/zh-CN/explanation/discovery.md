@@ -30,19 +30,24 @@ Pi 启动时扫描它知道的所有 lock 目录，解析每个文件并为候�
 
 ## lock file 生命周期
 
-lock file 是临时的。Pi 会清理：
+lock file 是临时的。Pi 先解析每个 lock，再应用过期策略。当 Pi 能证明生产者仍在运行时，会在任何年龄保留该 lock。
 
-- **过期：** 超过 24 小时的文件会被删除。
-- **死进程：** 若记录的 PID 已不在运行，lock file 会被删除 - 除非 lock 声明 `runningInWindows: true` 且 Pi 在 WSL 中。此时 Pi 从 Linux 看不到 Windows PID，会先 TCP 探测 host:port 再决定是否删除。
-- **格式错误：** 无法解析的文件会被忽略。
+- **活的本地 PID：** 可用的本地 PID 是正的安全整数。活的可用 PID 会保留 lock。死的可用 PID 会删除 lock。
+- **仅按年龄清理：** 若 PID 缺失或不可用，或禁用了 PID 检查，Pi 按年龄处理。超过 24 小时的文件随后会被删除。
+- **WSL Windows lock：** 当 lock 为 `runningInWindows: true` 且 Pi 在 WSL 中运行时，TCP 可达性是权威依据。可达则保留，不可达则删除。
+- **格式错误：** 无法解析的文件会被删除。
 
-关闭 IDE 时插件会移除自己的 lock file。IDE 崩溃时，Pi 在下次扫描时回收过期文件。
+VS Code、Neovim 和 JetBrains 在活动期间每 15 分钟刷新自己拥有的 lock。刷新会保留端点身份和 auth token，并更新新鲜度数据。若生产者仍在运行时文件被删除，lock 可能直到下一次心跳才重新出现。
+
+Zed 不写入这种 lock file。Pi 从 SQLite 读取 Zed 状态。
+
+关闭 IDE 时插件会移除自己的 lock file。IDE 崩溃时，Pi 在下次扫描中于活性检查失败或仅按年龄清理时回收该文件。
 
 ## WSL2：发现 Windows 上的 IDE
 
 当 Pi 运行在 WSL 内、IDE 运行在原生 Windows 上时，IDE 把 lock file 写到 Windows 用户目录。Pi 同时扫描 Linux home 的 lock 目录 **和** Windows 用户目录（如 `/mnt/c/Users/<user>/.pi/pi-x-ide/lock/`），跳过 Windows 系统配置文件。
 
-Windows lock file 设置 `runningInWindows: true`。Pi 用这个标志避免上面描述的死 PID 误判。
+Windows lock file 设置 `runningInWindows: true`。当 Pi 在 WSL 中运行时，到 Windows 生产者的 TCP 可达性是权威依据。Pi 不把 Windows PID 当作 Linux 进程活性证据。
 
 ### 解析连接 host
 

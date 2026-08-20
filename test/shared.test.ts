@@ -1,7 +1,7 @@
 // ABOUTME: Exercises shared protocol, config, path, and runtime selection helper behavior.
 // ABOUTME: Covers regression cases for stale pi extension context handling.
 import assert from "node:assert/strict";
-import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, utimes, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -857,6 +857,75 @@ void test("discovers candidates across home and WSL Windows lock directories", a
   assert.equal(candidates[1].lock.port, 40000);
 });
 
+void test("keeps an old reachable Windows-side WSL lock", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pi-x-ide-old-windows-wsl-"));
+  const homeLockDir = join(root, "home-lock");
+  const usersRoot = join(root, "Users");
+  const windowsLockDir = join(usersRoot, "julian", CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock");
+  await mkdir(homeLockDir, { recursive: true });
+  await mkdir(windowsLockDir, { recursive: true });
+  const lockPath = join(windowsLockDir, `jetbrains-${NON_RUNNING_LINUX_PID}-${WINDOWS_WSL_TEST_PORT}.lock`);
+  await writeFile(
+    lockPath,
+    JSON.stringify(
+      discoveryTestLock({
+        ide: "jetbrains",
+        name: "Pi x IDE JetBrains",
+        port: WINDOWS_WSL_TEST_PORT,
+        pid: NON_RUNNING_LINUX_PID,
+        runningInWindows: true,
+      }),
+    ),
+  );
+  const nowMs = await ageLockFile(lockPath, OLD_LOCK_AGE_MS);
+
+  const candidates = await discoverIdeCandidates({
+    cwd: "/repo",
+    homeLockDir,
+    windowsUsersRoot: usersRoot,
+    env: { WSL_DISTRO_NAME: "Ubuntu" },
+    now: nowMs,
+    resolveHost: () => Promise.resolve(WINDOWS_WSL_TEST_HOST),
+    tcpProbe: (host, port) => Promise.resolve(host === WINDOWS_WSL_TEST_HOST && port === WINDOWS_WSL_TEST_PORT),
+  });
+  assert.equal(candidates.length, 1);
+  assert.equal(candidates[0]?.path, lockPath);
+  await access(lockPath);
+});
+
+void test("removes an unreachable Windows-side WSL lock despite a Linux PID collision", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pi-x-ide-wsl-pid-collision-"));
+  const homeLockDir = join(root, "home-lock");
+  const usersRoot = join(root, "Users");
+  const windowsLockDir = join(usersRoot, "julian", CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock");
+  await mkdir(homeLockDir, { recursive: true });
+  await mkdir(windowsLockDir, { recursive: true });
+  const lockPath = join(windowsLockDir, `jetbrains-${process.pid}-${WINDOWS_WSL_TEST_PORT}.lock`);
+  await writeFile(
+    lockPath,
+    JSON.stringify(
+      discoveryTestLock({
+        ide: "jetbrains",
+        name: "Pi x IDE JetBrains",
+        port: WINDOWS_WSL_TEST_PORT,
+        pid: process.pid,
+        runningInWindows: true,
+      }),
+    ),
+  );
+
+  const candidates = await discoverIdeCandidates({
+    cwd: "/repo",
+    homeLockDir,
+    windowsUsersRoot: usersRoot,
+    env: { WSL_DISTRO_NAME: "Ubuntu" },
+    resolveHost: () => Promise.resolve(WINDOWS_WSL_TEST_HOST),
+    tcpProbe: (_host, port) => Promise.resolve(port !== WINDOWS_WSL_TEST_PORT),
+  });
+  assert.equal(candidates.length, 0);
+  await assert.rejects(() => access(lockPath));
+});
+
 void test("keeps Windows-side WSL lock when Linux PID check fails", async () => {
   const root = await mkdtemp(join(tmpdir(), "pi-x-ide-windows-pid-"));
   const homeLockDir = join(root, "home-lock");
@@ -892,6 +961,96 @@ void test("keeps Windows-side WSL lock when Linux PID check fails", async () => 
   assert.equal(candidates.length, 1);
   assert.equal(candidates[0].path, lockPath);
   await access(lockPath);
+});
+
+const LOCK_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const OLD_LOCK_AGE_MS = LOCK_MAX_AGE_MS + 60_000;
+const DEAD_USABLE_PID = 2_147_483_647;
+const WINDOWS_WSL_TEST_HOST = "172.30.96.1";
+const WINDOWS_WSL_TEST_PORT = 48125;
+const NON_RUNNING_LINUX_PID = 999999;
+
+function discoveryTestLock(overrides: Partial<IdeLockFile> = {}): IdeLockFile {
+  return {
+    version: 1,
+    ide: "vscode",
+    name: "VS Code",
+    transport: "ws",
+    host: "127.0.0.1",
+    port: 40000,
+    authToken: "token",
+    workspaceFolders: ["/repo"],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+async function ageLockFile(path: string, ageMs: number, nowMs = Date.now()): Promise<number> {
+  const agedAt = new Date(nowMs - ageMs);
+  await utimes(path, agedAt, agedAt);
+  return nowMs;
+}
+
+void test("keeps an old local lock while its usable PID is alive", async () => {
+  const lockDir = await mkdtemp(join(tmpdir(), "pi-x-ide-live-pid-"));
+  const lockPath = join(lockDir, "vscode-live.lock");
+  await writeFile(lockPath, JSON.stringify(discoveryTestLock({ pid: process.pid })));
+  const nowMs = await ageLockFile(lockPath, OLD_LOCK_AGE_MS);
+
+  const kept = await discoverIdeCandidates({ cwd: "/repo", lockDir, now: nowMs });
+  assert.equal(kept.length, 1);
+  assert.equal(kept[0]?.path, lockPath);
+  await access(lockPath);
+
+  await writeFile(lockPath, JSON.stringify(discoveryTestLock({ pid: DEAD_USABLE_PID })));
+  const removed = await discoverIdeCandidates({ cwd: "/repo", lockDir });
+  assert.equal(removed.length, 0);
+  await assert.rejects(() => access(lockPath));
+});
+
+void test("uses age-only cleanup when no usable local PID exists", async () => {
+  const lockDir = await mkdtemp(join(tmpdir(), "pi-x-ide-age-only-"));
+  const unusablePids = [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1];
+  const freshPaths: string[] = [];
+  for (const [index, pid] of unusablePids.entries()) {
+    const path = join(lockDir, `fresh-${index}.lock`);
+    await writeFile(path, JSON.stringify(discoveryTestLock({ pid, port: 40000 + index })));
+    freshPaths.push(path);
+  }
+
+  const fresh = await discoverIdeCandidates({ cwd: "/repo", lockDir });
+  assert.equal(fresh.length, freshPaths.length);
+  for (const path of freshPaths) await access(path);
+
+  const oldMissingPidPath = join(lockDir, "old-missing-pid.lock");
+  await writeFile(oldMissingPidPath, JSON.stringify(discoveryTestLock({ port: 41000 })));
+  const oldUnusablePidPath = join(lockDir, "old-unusable-pid.lock");
+  await writeFile(oldUnusablePidPath, JSON.stringify(discoveryTestLock({ pid: 1.5, port: 41001 })));
+  const nowMs = Date.now();
+  await ageLockFile(oldMissingPidPath, OLD_LOCK_AGE_MS, nowMs);
+  await ageLockFile(oldUnusablePidPath, OLD_LOCK_AGE_MS, nowMs);
+
+  const afterAge = await discoverIdeCandidates({ cwd: "/repo", lockDir, now: nowMs });
+  assert.equal(afterAge.length, freshPaths.length);
+  for (const path of freshPaths) await access(path);
+  await assert.rejects(() => access(oldMissingPidPath));
+  await assert.rejects(() => access(oldUnusablePidPath));
+
+  const oldLivePidPath = join(lockDir, "old-live-pid.lock");
+  await writeFile(oldLivePidPath, JSON.stringify(discoveryTestLock({ pid: process.pid, port: 41002 })));
+  await ageLockFile(oldLivePidPath, OLD_LOCK_AGE_MS, nowMs);
+  const disabledPidCheck = await discoverIdeCandidates({
+    cwd: "/repo",
+    lockDir,
+    now: nowMs,
+    checkPid: false,
+  });
+  assert.equal(
+    disabledPidCheck.some((candidate) => candidate.path === oldLivePidPath),
+    false,
+  );
+  await assert.rejects(() => access(oldLivePidPath));
 });
 
 void test("removes unreachable Windows-side WSL lock after Linux PID check fails", async () => {
