@@ -5,6 +5,7 @@ package com.balaenis.pixide
 import com.balaenis.pixide.editor.PiXIdeEditorTracker
 import com.balaenis.pixide.editor.PiXIdeSnapshotBuilder
 import com.balaenis.pixide.editor.PiXIdeWorkspace
+import com.balaenis.pixide.lock.PiXIdeLockFileHeartbeat
 import com.balaenis.pixide.lock.PiXIdeLockFileManager
 import com.balaenis.pixide.protocol.EditorSelectionSnapshot
 import com.balaenis.pixide.protocol.SelectionClearedParams
@@ -27,6 +28,7 @@ class PiXIdeProjectService(
     private val started = AtomicBoolean(false)
     private var server: PiXIdeWebSocketServer? = null
     private var editorTracker: PiXIdeEditorTracker? = null
+    private var heartbeat: PiXIdeLockFileHeartbeat? = null
 
     @Volatile
     private var latestSnapshot: EditorSelectionSnapshot? = null
@@ -47,6 +49,7 @@ class PiXIdeProjectService(
             val port = webSocketServer.start()
             server = webSocketServer
             lockFileManager.write(port, token, PiXIdeWorkspace.workspaceFolders(project))
+            heartbeat = PiXIdeLockFileHeartbeat { refreshWorkspaceFolders() }.also { it.start() }
             status = ServiceStatus.Running
 
             editorTracker = PiXIdeEditorTracker(project, this).also { it.start(this) }
@@ -56,6 +59,7 @@ class PiXIdeProjectService(
             LOG.warn("Failed to start Pi x IDE JetBrains integration", error)
             status = ServiceStatus.Failed(error.message ?: error.javaClass.simpleName)
             started.set(false)
+            stopHeartbeat()
             runCatching { lockFileManager.cleanup() }
             runCatching { server?.stop() }
             server = null
@@ -122,6 +126,7 @@ class PiXIdeProjectService(
     override fun dispose() {
         editorTracker?.stop()
         editorTracker = null
+        stopHeartbeat()
         runCatching { lockFileManager.cleanup() }
         runCatching { server?.stop() }
         server = null
@@ -129,6 +134,11 @@ class PiXIdeProjectService(
         status = ServiceStatus.Idle
         started.set(false)
         updateStatusBar()
+    }
+
+    private fun stopHeartbeat() {
+        heartbeat?.dispose()
+        heartbeat = null
     }
 
     private fun currentSnapshot(): EditorSelectionSnapshot? =

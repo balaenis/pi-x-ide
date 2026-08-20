@@ -46,13 +46,17 @@ Pi 仅在终端 `cwd` **位于** IDE workspace 文件夹内时自动连接。如
 
 ## 5. 过期或死进程 lock file
 
-如果上一个 IDE 实例崩溃，lock file 可能残留。Pi 通常会回收超过 24 小时或 PID 已死的文件，但可以强制清理：
+如果上一个 IDE 实例崩溃，lock file 可能残留。当权威的 PID 或 WSL TCP 活性检查成功时，Pi 会保留 lock。仅当权威活性不可用或被禁用时，Pi 才按年龄清理。
+
+活动中的 VS Code、Neovim 或 JetBrains 生产者通常会在下一次 15 分钟心跳时重建被外部删除的 lock。机制说明见 [发现机制](../explanation/discovery.md)。
+
+手动删除 lock file 之前，先确认 IDE 已停止：
 
 ```bash
 rm ~/.pi/pi-x-ide/lock/*.lock
 ```
 
-然后重新加载 IDE 窗口，在 Pi 中运行 `/ide auto`。
+然后重新加载或重启生产者，再运行 `/ide auto`。
 
 > 如果 IDE 仍在 Windows 上运行，**不要**从 WSL 手动删除 Windows 侧的 lock file - Pi 用 `runningInWindows: true` 安全地探测它们。
 

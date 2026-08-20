@@ -31,6 +31,10 @@ function isProcessAlive(pid: number): boolean {
   }
 }
 
+function isUsableLocalPid(pid: number | undefined): pid is number {
+  return typeof pid === "number" && Number.isSafeInteger(pid) && pid > 0;
+}
+
 function bestWorkspaceMatch(
   lock: IdeLockFile,
   cwd: string,
@@ -62,7 +66,7 @@ function removeLockFile(path: string): Effect.Effect<void, never, never> {
   );
 }
 
-function isDeadWindowsPidLockReachable(
+function isWindowsLockReachable(
   lock: IdeLockFile,
   options: DiscoverOptions,
   env: NodeJS.ProcessEnv,
@@ -112,28 +116,29 @@ function discoverIdeCandidatesInDirEffect(
       });
       if (!file) continue;
 
-      if (now - file.mtimeMs > maxAgeMs) {
-        yield* removeLockFile(path);
-        continue;
-      }
-
       const lock = parseLockFileContent(file.content);
       if (!lock) {
         yield* removeLockFile(path);
         continue;
       }
 
-      if (checkPid && typeof lock.pid === "number" && !isProcessAlive(lock.pid)) {
-        if (lock.runningInWindows === true && isWsl(env)) {
-          const reachable = yield* isDeadWindowsPidLockReachable(lock, options, env);
-          if (!reachable) {
-            yield* removeLockFile(path);
-            continue;
-          }
-        } else {
+      const isWindowsSideWsl = lock.runningInWindows === true && isWsl(env);
+      const pid = lock.pid;
+
+      if (checkPid && isWindowsSideWsl) {
+        const reachable = yield* isWindowsLockReachable(lock, options, env);
+        if (!reachable) {
           yield* removeLockFile(path);
           continue;
         }
+      } else if (checkPid && isUsableLocalPid(pid)) {
+        if (!isProcessAlive(pid)) {
+          yield* removeLockFile(path);
+          continue;
+        }
+      } else if (now - file.mtimeMs > maxAgeMs) {
+        yield* removeLockFile(path);
+        continue;
       }
 
       const match = bestWorkspaceMatch(lock, options.cwd, env);

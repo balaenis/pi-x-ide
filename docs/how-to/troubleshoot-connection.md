@@ -54,14 +54,21 @@ reports no connection, run `/ide list` to see the candidate lock files Pi found.
 
 ## 5. Stale or dead lock files
 
-If a previous IDE instance crashed, its lock file may linger. Pi normally reclaims
-files older than 24 hours or whose PID is dead, but you can force a clean state:
+If a previous IDE instance crashed, its lock file may linger. Pi keeps a lock when
+authoritative PID or WSL TCP liveness succeeds. Pi uses age-only cleanup only when
+authoritative liveness is unavailable or disabled.
+
+An active VS Code, Neovim, or JetBrains producer normally recreates an externally
+deleted lock on its next 15-minute heartbeat. For the mechanism, see
+[How discovery works](../explanation/discovery.md).
+
+Confirm the IDE is stopped before you delete lock files manually:
 
 ```bash
 rm ~/.pi/pi-x-ide/lock/*.lock
 ```
 
-Then reload the IDE window and run `/ide auto` in Pi.
+Then reload or restart the producer and run `/ide auto` in Pi.
 
 > Do **not** delete Windows-side lock files manually from WSL if the IDE is still
 > running on Windows - Pi uses `runningInWindows: true` to probe them safely.

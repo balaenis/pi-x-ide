@@ -1,5 +1,7 @@
+// ABOUTME: Exercises the Neovim sidecar public lifecycle through startNvimSidecar().
+// ABOUTME: Covers lock creation, workspace refresh, custom-directory isolation, and stop.
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
@@ -7,8 +9,34 @@ import test from "node:test";
 import WebSocket from "ws";
 import { startNvimSidecar } from "../src/nvim/sidecar.js";
 import { parseNvimSidecarMessage } from "../src/nvim/sidecar-schema.js";
-import { EXT_CONFIG_NAME } from "../src/shared/config.js";
+import { CONFIG_DIR_NAME, EXT_CONFIG_NAME } from "../src/shared/config.js";
 import { AUTH_HEADER, type IdeLockFile } from "../src/shared/protocol.js";
+
+const TEST_SIDECAR_HEARTBEAT_INTERVAL_MS = 40;
+const TEST_SIDECAR_POLL_MS = 10;
+const TEST_SIDECAR_TIMEOUT_MS = 2_000;
+
+async function delay(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitUntil(predicate: () => Promise<boolean>, timeoutMs = TEST_SIDECAR_TIMEOUT_MS): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await predicate()) return;
+    await delay(TEST_SIDECAR_POLL_MS);
+  }
+  throw new Error("Timed out waiting for nvim sidecar condition");
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 void test("validates nvim sidecar messages", () => {
   assert.deepEqual(parseNvimSidecarMessage({ type: "shutdown" }), { type: "shutdown" });
@@ -95,6 +123,74 @@ void test("starts sidecar, writes lock file, initializes websocket, and forwards
     await rm(lockDir, { recursive: true, force: true });
   }
 });
+
+void test(
+  "restores the sidecar lock with latest workspace only in its custom directory",
+  { concurrency: false },
+  async () => {
+    const fakeHome = await mkdtemp(join(tmpdir(), "pi-x-ide-nvim-home-"));
+    const lockDir = await mkdtemp(join(tmpdir(), "pi-x-ide-nvim-custom-lock-"));
+    const defaultLockDir = join(fakeHome, CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock");
+    const previousHome = process.env.HOME;
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    const latestFolders = ["/repo", "/other"];
+    process.env.HOME = fakeHome;
+
+    let handle: Awaited<ReturnType<typeof startNvimSidecar>> | undefined;
+    try {
+      const sidecar = await startNvimSidecar({
+        workspaceFolders: ["/repo"],
+        lockDir,
+        stdin,
+        stdout,
+        stderr,
+        heartbeatIntervalMs: TEST_SIDECAR_HEARTBEAT_INTERVAL_MS,
+      });
+      handle = sidecar;
+      assert.equal(await pathExists(defaultLockDir), false);
+
+      stdin.write(JSON.stringify({ type: "workspace_changed", workspaceFolders: latestFolders }) + "\n");
+      await waitUntil(async () => {
+        try {
+          const current = JSON.parse(await readFile(sidecar.lockFilePath, "utf8")) as IdeLockFile;
+          return current.workspaceFolders.join("\0") === latestFolders.join("\0");
+        } catch {
+          return false;
+        }
+      });
+
+      const beforeDelete = JSON.parse(await readFile(sidecar.lockFilePath, "utf8")) as IdeLockFile;
+      await rm(sidecar.lockFilePath, { force: true });
+      await waitUntil(() => pathExists(sidecar.lockFilePath));
+      assert.equal(await pathExists(defaultLockDir), false);
+
+      const restored = JSON.parse(await readFile(sidecar.lockFilePath, "utf8")) as IdeLockFile;
+      assert.equal(restored.ide, beforeDelete.ide);
+      assert.equal(restored.port, beforeDelete.port);
+      assert.equal(restored.pid, beforeDelete.pid);
+      assert.equal(restored.authToken, beforeDelete.authToken);
+      assert.equal(restored.createdAt, beforeDelete.createdAt);
+      assert.deepEqual(restored.workspaceFolders, latestFolders);
+
+      await sidecar.stop();
+      assert.equal(await pathExists(sidecar.lockFilePath), false);
+      await delay(TEST_SIDECAR_HEARTBEAT_INTERVAL_MS * 2 + TEST_SIDECAR_POLL_MS);
+      assert.equal(await pathExists(sidecar.lockFilePath), false);
+      assert.equal(await pathExists(defaultLockDir), false);
+    } finally {
+      if (previousHome === undefined) delete process.env.HOME;
+      else process.env.HOME = previousHome;
+      await handle?.stop();
+      stdin.destroy();
+      stdout.destroy();
+      stderr.destroy();
+      await rm(lockDir, { recursive: true, force: true });
+      await rm(fakeHome, { recursive: true, force: true });
+    }
+  },
+);
 
 function connect(port: number, token: string): Promise<WebSocket> {
   return new Promise((resolve, reject) => {

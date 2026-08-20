@@ -34,7 +34,13 @@ Rules:
 - Writers should write a temp file and rename it into place.
 - `host` remains required for compatibility, but Pi may resolve a different connection host before opening the WebSocket.
 - `runningInWindows` is optional and backward-compatible. When present and `true`, it declares that the IDE server process is running on native Windows.
-- Pi ignores malformed, stale, unmatched, and dead-process lock files. When Pi runs in WSL and sees `runningInWindows: true`, it does not delete the lock file merely because the Windows PID is not visible from Linux.
+- A consumer must not remove a lock only because of age after it proves the producer is live.
+- A usable local PID is a positive safe integer. When PID checking is enabled, keep a lock with a live usable PID at any age, and remove a lock with a dead usable PID at any age.
+- If the PID is missing or unusable, or if PID checking is disabled, use age-only cleanup.
+- When Pi runs in WSL and a lock has `runningInWindows: true`, TCP reachability is authoritative while PID checking is enabled. Keep the lock if the host and port are reachable. Remove the lock if the probe fails or throws.
+- Malformed lock files remain removable.
+- Repository lock producers for VS Code, Neovim, and JetBrains refresh owned locks every 15 minutes while active. Refresh preserves endpoint identity and the auth token, updates freshness data, and can recreate an externally deleted owned lock.
+- TypeScript producers drain every accepted refresh before they remove the lock. JetBrains stops its EDT timer synchronously before cleanup.
 
 ## WSL2 discovery and host resolution
 
