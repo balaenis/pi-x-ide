@@ -24,8 +24,7 @@ pi
 ```
 
 Open a file, select some text, and press `Ctrl+Alt+K` in the Pi TUI to attach it
-as `@src/foo.ts#L10-L20`. New to Pi × IDE? Follow the
-[5-minute tutorial](docs/tutorials/get-started.md).
+as `@src/foo.ts#L10-L20`.
 
 ## Documentation
 

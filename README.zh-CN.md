@@ -20,7 +20,7 @@ pi install npm:pi-x-ide
 pi
 ```
 
-打开文件、选中文本，在 Pi TUI 中按 `Ctrl+Alt+K` 即可将其作为 `@src/foo.ts#L10-L20` 附加。初次使用？跟着 [5 分钟教程](docs/zh-CN/tutorials/get-started.md) 走一遍。
+打开文件、选中文本，在 Pi TUI 中按 `Ctrl+Alt+K` 即可将其作为 `@src/foo.ts#L10-L20` 附加。
 
 ## 文档
 
