@@ -5,6 +5,7 @@ import { PROTOCOL_VERSION } from "@shared/protocol";
 import { formatRangeMention } from "@shared/format";
 import { errorMessage, logExtensionError, safeRun, safeRunAsync } from "@shared/errors";
 import { registerDiagnosticQuickFixes } from "./diagnostics";
+import { startLockFileHeartbeat, type LockFileHeartbeatHandle } from "@shared/lock-file-heartbeat";
 import {
   createAuthToken,
   createLockFile,
@@ -23,6 +24,8 @@ const USE_TMUX_CONFIG_KEY = "useTmux";
 let server: IdeWebSocketServer | undefined;
 let lockFilePath: string | undefined;
 let lockFile = undefined as ReturnType<typeof createLockFile> | undefined;
+let heartbeat: LockFileHeartbeatHandle | undefined;
+let cleanupPromise: Promise<void> | undefined;
 let debounceTimer: NodeJS.Timeout | undefined;
 let status: vscode.StatusBarItem | undefined;
 let tmuxSessionCounter = 0;
@@ -50,6 +53,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 async function activateExtension(context: vscode.ExtensionContext): Promise<void> {
+  cleanupPromise = undefined;
   const packageJson = context.extension.packageJSON as { version?: string };
   const authToken = createAuthToken();
 
@@ -66,6 +70,14 @@ async function activateExtension(context: vscode.ExtensionContext): Promise<void
   lockFilePath = createLockFilePath(port);
   lockFile = createLockFile(port, authToken);
   await writeIdeLockFile(lockFilePath, lockFile);
+  heartbeat = startLockFileHeartbeat(
+    async () => {
+      if (!lockFilePath || !lockFile) return;
+      lockFile = refreshLockFile(lockFile);
+      await writeIdeLockFile(lockFilePath, lockFile);
+    },
+    { onError: handleRefreshLockError },
+  );
 
   status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   status.name = "Pi x IDE";
@@ -80,7 +92,7 @@ async function activateExtension(context: vscode.ExtensionContext): Promise<void
     vscode.window.onDidChangeTextEditorSelection(() => scheduleSelectionBroadcast()),
     vscode.window.tabGroups.onDidChangeTabs(() => scheduleSelectionBroadcast()),
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
-      refreshLock().catch((error: unknown) => handleRefreshLockError(error));
+      void heartbeat?.refreshNow();
       scheduleSelectionBroadcast();
     }),
     vscode.commands.registerCommand("pi-x-ide.attachSelection", () =>
@@ -99,21 +111,24 @@ export async function deactivate(): Promise<void> {
   await runVscodeAsync("deactivate", cleanup);
 }
 
-async function cleanup(): Promise<void> {
-  if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = undefined;
-  await removeIdeLockFile(lockFilePath);
-  lockFilePath = undefined;
-  await server?.stop();
-  server = undefined;
-  status?.dispose();
-  status = undefined;
-}
-
-async function refreshLock(): Promise<void> {
-  if (!lockFilePath || !lockFile) return;
-  lockFile = refreshLockFile(lockFile);
-  await writeIdeLockFile(lockFilePath, lockFile);
+function cleanup(): Promise<void> {
+  if (!cleanupPromise) {
+    const handle = heartbeat;
+    heartbeat = undefined;
+    cleanupPromise = (async () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = undefined;
+      if (handle) await handle.stop();
+      await removeIdeLockFile(lockFilePath);
+      lockFilePath = undefined;
+      lockFile = undefined;
+      await server?.stop();
+      server = undefined;
+      status?.dispose();
+      status = undefined;
+    })();
+  }
+  return cleanupPromise;
 }
 
 function handleRefreshLockError(error: unknown): void {

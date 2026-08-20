@@ -44,17 +44,27 @@ choose one manually, or `/ide auto` to re-attempt matching.
 
 ## Lock file lifecycle
 
-Lock files are ephemeral. Pi cleans them up:
+Lock files are ephemeral. Pi parses each lock before it applies stale-file policy.
+When Pi proves that a producer is live, it keeps the lock at any age.
 
-- **Stale:** files older than 24 hours are deleted.
-- **Dead process:** if the recorded PID is no longer running, the lock file is
-  deleted - unless the lock declares `runningInWindows: true` and Pi is in WSL.
-  In that case Pi cannot see Windows PIDs from Linux, so it TCP-probes the host
-  and port before deciding to delete.
-- **Malformed:** unparseable files are ignored.
+- **Live local PID:** a usable local PID is a positive safe integer. A live usable
+  PID keeps the lock. A dead usable PID removes the lock.
+- **Age-only cleanup:** if the PID is missing or unusable, or if PID checking is
+  disabled, Pi uses age. Files older than 24 hours are then deleted.
+- **WSL Windows locks:** for `runningInWindows: true` when Pi runs in WSL, TCP
+  reachability is authoritative. Pi keeps a reachable lock and removes an
+  unreachable lock.
+- **Malformed:** unparseable files are removed.
+
+VS Code, Neovim, and JetBrains refresh owned locks every 15 minutes while they
+are active. Refresh keeps the endpoint identity and the auth token, and it updates
+freshness data. If the file is deleted while the producer is still active, the
+lock can stay missing until the next heartbeat.
+
+Zed does not write this lock file. Pi reads Zed state from SQLite.
 
 When you close your IDE, the plugin removes its lock file. If the IDE crashes, Pi
-reclaims the stale file on its next scan.
+reclaims the file on the next scan when liveness fails or age-only cleanup applies.
 
 ## WSL2: discovering an IDE on Windows
 
@@ -63,8 +73,9 @@ lock file to the Windows user profile. Pi scans both the Linux home lock directo
 **and** Windows user profiles such as
 `/mnt/c/Users/<user>/.pi/pi-x-ide/lock/`, skipping Windows system profiles.
 
-A Windows lock file sets `runningInWindows: true`. Pi uses this flag to avoid the
-dead-PID false positive described above.
+A Windows lock file sets `runningInWindows: true`. When Pi runs in WSL,
+TCP reachability to the Windows producer is authoritative. Pi does not use
+the Windows PID as Linux process-liveness evidence.
 
 ### Resolving the connection host
 
