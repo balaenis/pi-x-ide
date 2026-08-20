@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.5](https://github.com/balaenis/pi-x-ide/compare/v1.19.4...v1.19.5) (2026-08-20)
+
+
+### Bug Fixes
+
+* **discovery:** keep live IDE locks and refresh owned locks via heartbeat ([bd5e98a](https://github.com/balaenis/pi-x-ide/commit/bd5e98a704fb7eb33fcae37d45c40d87a337e465)), closes [#50](https://github.com/balaenis/pi-x-ide/issues/50)
+* preserve live IDE locks across long sessions ([8ffa912](https://github.com/balaenis/pi-x-ide/commit/8ffa9120bd447cc2caecbc995695819b7b638d3b))
+
 ## [1.19.4](https://github.com/balaenis/pi-x-ide/compare/v1.19.3...v1.19.4) (2026-07-30)
 
 
