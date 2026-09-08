@@ -8,9 +8,11 @@ import test from "node:test";
 import {
   CONFIG_DIR_NAME,
   EXT_CONFIG_NAME,
+  readPiConfigContextPlacement,
   readPiConfigEnv,
   readPiConfigFixPrompt,
   readPiConfigStatusDisplay,
+  resolvePiConfigContextPlacement,
   resolvePiConfigEnv,
   resolveIdeConfigSettings,
   resolvePiConfigAutoInstall,
@@ -46,7 +48,7 @@ import { runEffect, runEffectOrThrow, runEffectSync } from "../src/shared/effect
 import { formatExtensionError, logExtensionError, setExtensionErrorReporter } from "../src/shared/errors.js";
 import * as Effect from "effect/Effect";
 import { discoverIdeCandidates } from "../src/pi/discovery.js";
-import { clearLatestSelection, setLatestSelection } from "../src/pi/context.js";
+import { clearLatestSelection, mergeIntoUserMessage, setLatestSelection } from "../src/pi/context.js";
 import { bindPiUiContext, flushPendingPiErrors, installPiErrorReporter, notifyPiError } from "../src/pi/safety.js";
 import { createRuntime } from "../src/pi/state.js";
 import { updateIdeUi } from "../src/pi/ui.js";
@@ -117,6 +119,26 @@ void test("formats bounded editor context", () => {
   assert.match(context, /src\/main\.ts/);
   assert.match(context, /L10-L20/);
   assert.match(context, /truncated/i);
+});
+
+void test("merges editor context before the prompt by default", () => {
+  const merged = mergeIntoUserMessage({ role: "user", content: "hello" }, "<reminder>\n");
+  assert.deepEqual(merged.content, [
+    { type: "text", text: "<reminder>\n" },
+    { type: "text", text: "hello" },
+  ]);
+});
+
+void test("merges editor context after the prompt when placement is append", () => {
+  const message: { role: "user"; content: { type: "text"; text: string }[] } = {
+    role: "user",
+    content: [{ type: "text", text: "hello" }],
+  };
+  const merged = mergeIntoUserMessage(message, "<reminder>\n", "append");
+  assert.deepEqual(merged.content, [
+    { type: "text", text: "hello" },
+    { type: "text", text: "<reminder>\n" },
+  ]);
 });
 
 void test("validates selection cleared params", () => {
@@ -401,6 +423,59 @@ void test("reads status_display from pi config", async () => {
 
   await writeFile(configPath, JSON.stringify({ status_display: 1 }));
   assert.equal(readPiConfigStatusDisplay(configPath), "widget");
+});
+
+void test("reads contextPlacement from pi config", async () => {
+  const home = await mkdtemp(join(tmpdir(), "pi-x-ide-config-"));
+  const configDir = join(home, CONFIG_DIR_NAME);
+  const configPath = join(configDir, "config.json");
+  await mkdir(configDir, { recursive: true });
+
+  assert.equal(readPiConfigContextPlacement(configPath), "prepend");
+
+  await writeFile(configPath, JSON.stringify({ contextPlacement: "append" }));
+  assert.equal(readPiConfigContextPlacement(configPath), "append");
+
+  await writeFile(configPath, JSON.stringify({ contextPlacement: "prepend" }));
+  assert.equal(readPiConfigContextPlacement(configPath), "prepend");
+
+  await writeFile(configPath, JSON.stringify({ contextPlacement: "before" }));
+  assert.equal(readPiConfigContextPlacement(configPath), "prepend");
+
+  await writeFile(configPath, JSON.stringify({ contextPlacement: 1 }));
+  assert.equal(readPiConfigContextPlacement(configPath), "prepend");
+});
+
+void test("project contextPlacement overrides global config", async () => {
+  const root = await mkdtemp(join(tmpdir(), "pi-x-ide-config-scope-"));
+  const home = join(root, "home");
+  const projectDir = join(root, "project");
+  await mkdir(home, { recursive: true });
+  await mkdir(projectDir, { recursive: true });
+
+  const globalPath = join(home, CONFIG_DIR_NAME, EXT_CONFIG_NAME, "config.json");
+  await mkdir(dirname(globalPath), { recursive: true });
+  await writeFile(globalPath, JSON.stringify({ contextPlacement: "prepend" }));
+
+  assert.deepEqual(resolvePiConfigContextPlacement({ projectDir, home }), {
+    value: "prepend",
+    scope: "global",
+    path: globalPath,
+  });
+
+  const projectPath = join(projectDir, CONFIG_DIR_NAME, EXT_CONFIG_NAME, "config.json");
+  await mkdir(dirname(projectPath), { recursive: true });
+  await writeFile(projectPath, JSON.stringify({ contextPlacement: "append" }));
+  assert.equal(readPiConfigContextPlacement({ projectDir, home }), "append");
+  assert.deepEqual(resolvePiConfigContextPlacement({ projectDir, home }), {
+    value: "append",
+    scope: "project",
+    path: projectPath,
+  });
+
+  // Invalid project values fall through to the global file.
+  await writeFile(projectPath, JSON.stringify({ contextPlacement: "middle" }));
+  assert.equal(readPiConfigContextPlacement({ projectDir, home }), "prepend");
 });
 
 void test("project status_display overrides global config", async () => {
