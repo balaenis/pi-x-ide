@@ -4,9 +4,12 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import {
+  CONTEXT_PLACEMENT_VALUES,
+  DEFAULT_CONTEXT_PLACEMENT,
   DEFAULT_STATUS_DISPLAY,
   isConfigEnvValue,
   STATUS_DISPLAY_VALUES,
+  type ContextPlacement,
   type StatusDisplay,
 } from "./config-options.js";
 
@@ -14,12 +17,19 @@ export const EXT_CONFIG_NAME = "pi-x-ide";
 export const CONFIG_DIR_NAME = ".pi";
 export const PI_CONFIG_FILE = "config.json";
 export const STATUS_DISPLAY_CONFIG_KEY = "status_display";
+export const CONTEXT_PLACEMENT_CONFIG_KEY = "contextPlacement";
 export const AUTO_INSTALL_ENV_KEY = "PI_X_IDE_AUTO_INSTALL";
 
 export type ConfigScope = "global" | "project";
 
 export interface StatusDisplayResolution {
   value: StatusDisplay;
+  scope: ConfigScope | "default";
+  path?: string;
+}
+
+export interface ContextPlacementResolution {
+  value: ContextPlacement;
   scope: ConfigScope | "default";
   path?: string;
 }
@@ -167,6 +177,45 @@ export function resolvePiConfigStatusDisplay(
   return { value: DEFAULT_STATUS_DISPLAY, scope: "default" };
 }
 
+/**
+ * Read contextPlacement.
+ * - string path: read only that file (tests / explicit path)
+ * - options: project config overrides global; missing values fall back to default
+ */
+export function readPiConfigContextPlacement(
+  configPathOrOptions: string | { projectDir?: string; home?: string } = {},
+): ContextPlacement {
+  return resolvePiConfigContextPlacement(configPathOrOptions).value;
+}
+
+export function resolvePiConfigContextPlacement(
+  configPathOrOptions: string | { projectDir?: string; home?: string } = {},
+): ContextPlacementResolution {
+  if (typeof configPathOrOptions === "string") {
+    const value = readContextPlacementFromFile(configPathOrOptions);
+    return value === undefined
+      ? { value: DEFAULT_CONTEXT_PLACEMENT, scope: "default" }
+      : { value, scope: "global", path: configPathOrOptions };
+  }
+
+  const projectDir = configPathOrOptions.projectDir;
+  if (projectDir) {
+    const projectPath = resolvePiProjectConfigPath(projectDir);
+    const projectValue = readContextPlacementFromFile(projectPath);
+    if (projectValue !== undefined) {
+      return { value: projectValue, scope: "project", path: projectPath };
+    }
+  }
+
+  const globalPath = resolvePiGlobalConfigPath(configPathOrOptions.home);
+  const globalValue = readContextPlacementFromFile(globalPath);
+  if (globalValue !== undefined) {
+    return { value: globalValue, scope: "global", path: globalPath };
+  }
+
+  return { value: DEFAULT_CONTEXT_PLACEMENT, scope: "default" };
+}
+
 export function resolvePiConfigAutoInstall(
   configPathOrOptions: string | { projectDir?: string; home?: string } = {},
 ): AutoInstallResolution {
@@ -259,6 +308,13 @@ function readStatusDisplayFromFile(configPath: string): StatusDisplay | undefine
   return isStatusDisplay(value) ? value : undefined;
 }
 
+function readContextPlacementFromFile(configPath: string): ContextPlacement | undefined {
+  const parsed = readPiConfigFile(configPath);
+  if (!parsed || typeof parsed[CONTEXT_PLACEMENT_CONFIG_KEY] !== "string") return undefined;
+  const value = parsed[CONTEXT_PLACEMENT_CONFIG_KEY];
+  return isContextPlacement(value) ? value : undefined;
+}
+
 function readEnvValueFromFile(configPath: string, key: string): string | undefined {
   const env = readPiConfigEnv(configPath);
   return env[key];
@@ -266,6 +322,10 @@ function readEnvValueFromFile(configPath: string, key: string): string | undefin
 
 function isStatusDisplay(value: string): value is StatusDisplay {
   return (STATUS_DISPLAY_VALUES as readonly string[]).includes(value);
+}
+
+function isContextPlacement(value: string): value is ContextPlacement {
+  return (CONTEXT_PLACEMENT_VALUES as readonly string[]).includes(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

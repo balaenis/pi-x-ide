@@ -20,6 +20,15 @@
         "statusline"
       ]
     },
+    "contextPlacement": {
+      "type": "string",
+      "description": "Where to place the editor context system-reminder relative to your prompt. Use \"prepend\" to put it before your prompt text (default), or \"append\" to put it after so your prompt stays first in transcript views.",
+      "default": "prepend",
+      "enum": [
+        "prepend",
+        "append"
+      ]
+    },
     "env": {
       "type": "object",
       "description": "Pi-side environment variables. Real environment variables override these values.",
@@ -66,6 +75,7 @@
     {
       "fixPrompt": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
       "status_display": "widget",
+      "contextPlacement": "prepend",
       "env": {
         "PI_X_IDE_AUTO_INSTALL": "0",
         "PI_X_IDE_ATTACH_SHORTCUT": "ctrl+alt+k",

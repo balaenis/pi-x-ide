@@ -14,6 +14,7 @@ Pi 侧变量可设为真实环境变量 **或** 写入 config 的 `env`。真实
   "$schema": "https://raw.githubusercontent.com/balaenis/pi-x-ide/refs/heads/main/schemas/config.json",
   "fixPrompt": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
   "status_display": "widget",
+  "contextPlacement": "prepend",
   "env": {
     "PI_X_IDE_AUTO_INSTALL": "1",
     "PI_X_IDE_ATTACH_SHORTCUT": "ctrl+alt+k"
@@ -86,9 +87,10 @@ require("pi_x_ide").setup({
 
 <a id="顶层选项"></a>
 
-| 选项             | 默认值                                                                                          | 说明                                                                                                                                                                                    |
-| ---------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fixPrompt`      | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | 请求修复 IDE 诊断信息时的自定义 prompt 前缀。使用 `{DIAGNOSTIC}` 作为诊断上下文的占位符。如果未包含占位符，诊断上下文会拼接在你的 prompt 之后。                                         |
-| `status_display` | `widget`                                                                                        | 在 Pi TUI 中显示 IDE 连接状态的位置。默认 `widget`（编辑器上方）；`statusline` 使用页脚状态行。同一时间只启用一种显示方式。项目配置覆盖全局。可在 `/ide settings` 中以 `Display` 设置。 |
+| 选项               | 默认值                                                                                          | 说明                                                                                                                                                                                    |
+| ------------------ | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fixPrompt`        | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | 请求修复 IDE 诊断信息时的自定义 prompt 前缀。使用 `{DIAGNOSTIC}` 作为诊断上下文的占位符。如果未包含占位符，诊断上下文会拼接在你的 prompt 之后。                                         |
+| `status_display`   | `widget`                                                                                        | 在 Pi TUI 中显示 IDE 连接状态的位置。默认 `widget`（编辑器上方）；`statusline` 使用页脚状态行。同一时间只启用一种显示方式。项目配置覆盖全局。可在 `/ide settings` 中以 `Display` 设置。 |
+| `contextPlacement` | `prepend`                                                                                       | 编辑器上下文 `<system-reminder>` 相对于你提示文本的位置。默认 `prepend` 将其放在提示之前；`append` 将其放在提示之后，使你的提示在会话树等转录视图中保持在前。项目配置覆盖全局。         |
 
 `fixPrompt` 控制 VS Code **Pi: Fix it** Quick Fix 使用的 prompt。见 [安装 VS Code 扩展](../how-to/install-vscode.md#诊断-quick-fix)。
