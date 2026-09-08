@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.20.0](https://github.com/balaenis/pi-x-ide/compare/v1.19.5...v1.20.0) (2026-09-08)
+
+
+### Features
+
+* add contextPlacement option to control editor context reminder placement ([34f20ab](https://github.com/balaenis/pi-x-ide/commit/34f20ab6add40c05e22d830409b9aa0aa44ec5cf))
+* add contextPlacement option to control editor context reminder placement ([7aadd0f](https://github.com/balaenis/pi-x-ide/commit/7aadd0f0b7d1bc9d477cfff90f653173f5352f60))
+
 ## [1.19.5](https://github.com/balaenis/pi-x-ide/compare/v1.19.4...v1.19.5) (2026-08-20)
 
 
