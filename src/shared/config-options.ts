@@ -58,6 +58,10 @@ export const STATUS_DISPLAY_VALUES = ["widget", "statusline"] as const;
 export type StatusDisplay = (typeof STATUS_DISPLAY_VALUES)[number];
 export const DEFAULT_STATUS_DISPLAY: StatusDisplay = "widget";
 
+export const CONTEXT_PLACEMENT_VALUES = ["prepend", "append"] as const;
+export type ContextPlacement = (typeof CONTEXT_PLACEMENT_VALUES)[number];
+export const DEFAULT_CONTEXT_PLACEMENT: ContextPlacement = "prepend";
+
 export const CONFIG_OPTIONS = {
   fixPrompt: {
     type: ["string"],
@@ -71,5 +75,12 @@ export const CONFIG_OPTIONS = {
     enum: STATUS_DISPLAY_VALUES,
     description:
       'Where to show IDE connection status. Use "widget" for the above-editor widget (default), or "statusline" for the default footer status line.',
+  },
+  contextPlacement: {
+    type: ["string"],
+    default: DEFAULT_CONTEXT_PLACEMENT,
+    enum: CONTEXT_PLACEMENT_VALUES,
+    description:
+      'Where to place the editor context system-reminder relative to your prompt. Use "prepend" to put it before your prompt text (default), or "append" to put it after so your prompt stays first in transcript views.',
   },
 } as const satisfies Record<string, ConfigOption>;

@@ -17,6 +17,7 @@ Pi-side variables can be set as real environment variables **or** in config
   "$schema": "https://raw.githubusercontent.com/balaenis/pi-x-ide/refs/heads/main/schemas/config.json",
   "fixPrompt": "Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}",
   "status_display": "widget",
+  "contextPlacement": "prepend",
   "env": {
     "PI_X_IDE_AUTO_INSTALL": "1",
     "PI_X_IDE_ATTACH_SHORTCUT": "ctrl+alt+k"
@@ -92,10 +93,11 @@ custom command. See
 
 <a id="top-level-options"></a>
 
-| Option           | Default                                                                                         | Description                                                                                                                                                                                                                                  |
-| ---------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fixPrompt`      | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | Custom prompt prefix when requesting a fix for IDE diagnostics. Use `{DIAGNOSTIC}` as a placeholder for the diagnostic context. If the placeholder is omitted, the diagnostic context is appended after your prompt.                         |
-| `status_display` | `widget`                                                                                        | Where to show IDE connection status in the Pi TUI. Default `widget` (above-editor); `statusline` uses the footer status line. Only one placement is active at a time. Project config overrides global. Set as `Display` via `/ide settings`. |
+| Option             | Default                                                                                         | Description                                                                                                                                                                                                                                  |
+| ------------------ | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fixPrompt`        | `Analyze the errors and warnings at the following location, and try to fix them:\n{DIAGNOSTIC}` | Custom prompt prefix when requesting a fix for IDE diagnostics. Use `{DIAGNOSTIC}` as a placeholder for the diagnostic context. If the placeholder is omitted, the diagnostic context is appended after your prompt.                         |
+| `status_display`   | `widget`                                                                                        | Where to show IDE connection status in the Pi TUI. Default `widget` (above-editor); `statusline` uses the footer status line. Only one placement is active at a time. Project config overrides global. Set as `Display` via `/ide settings`. |
+| `contextPlacement` | `prepend`                                                                                       | Where to place the editor context `<system-reminder>` relative to your prompt text. Default `prepend` puts it before your prompt; `append` puts it after so your prompt stays first in transcript views. Project config overrides global.    |
 
 The `fixPrompt` controls the prompt used by the VS Code **Pi: Fix it** Quick Fix
 action. See [Install the VS Code extension](../how-to/install-vscode.md#diagnostic-quick-fix).

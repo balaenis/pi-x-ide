@@ -4,6 +4,8 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent" with {
   "resolution-mode": "import",
 };
 import { formatEditorContext, SYSTEM_REMINDER_TAG, SELECTED_CONTEXT_MARKER } from "../shared/format.js";
+import { readPiConfigContextPlacement } from "../shared/config.js";
+import { DEFAULT_CONTEXT_PLACEMENT, type ContextPlacement } from "../shared/config-options.js";
 import { DIAGNOSTIC_CONTEXT_MARKER } from "./diagnostics.js";
 import { runPiBoundary } from "./safety.js";
 import type { PiIdeRuntime } from "./state.js";
@@ -44,7 +46,8 @@ export function registerContextHandlers(pi: ExtensionAPI, runtime: PiIdeRuntime)
         }
 
         const text = `${formatEditorContext(runtime.turnSelection)}\n`;
-        const message = mergeIntoUserMessage(event.message, text);
+        const placement = readPiConfigContextPlacement({ projectDir: ctx?.cwd ?? runtime.cwd });
+        const message = mergeIntoUserMessage(event.message, text, placement);
         runtime.attachState = "sent";
         runtime.turnSelection = undefined;
         updateIdeUi(runtime, ctx);
@@ -64,10 +67,17 @@ type MergeableUserMessage = {
   content: string | UserContentBlock[];
 };
 
-function mergeIntoUserMessage<T extends MergeableUserMessage>(message: T, text: string): T {
+// Exported for tests: placement ordering is the contract the contextPlacement option controls.
+export function mergeIntoUserMessage<T extends MergeableUserMessage>(
+  message: T,
+  text: string,
+  placement: ContextPlacement = DEFAULT_CONTEXT_PLACEMENT,
+): T {
+  const block: UserContentBlock = { type: "text", text };
+  const content = normalizeUserContent(message.content);
   return {
     ...message,
-    content: [{ type: "text", text }, ...normalizeUserContent(message.content)],
+    content: placement === "append" ? [...content, block] : [block, ...content],
   };
 }
 
