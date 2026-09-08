@@ -45,8 +45,9 @@ User selects text in the IDE
 │ Pi prompt lifecycle  (src/pi/context.ts)                 │
 │                                                          │
 │  before_agent_start: snapshots the pending selection.    │
-│  message_end: wraps it in <selected-context> and         │
-│  prepends it to the user message. attachState = "sent".  │
+│  message_end: wraps it in <selected-context>, then       │
+│  places it before or after the prompt based on           │
+│  contextPlacement. attachState = "sent".                 │
 └──────────────────────────────────────────────────────────┘
 ```
 
