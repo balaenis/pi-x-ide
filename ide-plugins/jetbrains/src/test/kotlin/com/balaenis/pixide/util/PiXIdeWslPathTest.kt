@@ -56,7 +56,26 @@ class PiXIdeWslPathTest {
 
     @Test
     fun keepsWindowsNativeTerminalCommandOutsideWslProjects() {
-        assertEquals(listOf("pi"), terminalCommandForProject("C:\\Users\\julian\\repo", osName = "Windows 11"))
+        assertEquals(
+            listOf("C:\\Windows\\system32\\cmd.exe", "/d", "/c", "pi"),
+            terminalCommandForProject(
+                "C:\\Users\\julian\\repo",
+                osName = "Windows 11",
+                cmdExe = "C:\\Windows\\system32\\cmd.exe",
+            ),
+        )
+    }
+
+    @Test
+    fun fallsBackToCmdExeWhenComSpecIsUnsetForWindowsProjects() {
+        assertEquals(
+            listOf("cmd.exe", "/d", "/c", "pi"),
+            terminalCommandForProject("C:\\Users\\julian\\repo", osName = "Windows 11", cmdExe = null),
+        )
+        assertEquals(
+            listOf("cmd.exe", "/d", "/c", "pi"),
+            terminalCommandForProject("C:\\Users\\julian\\repo", osName = "Windows 11", cmdExe = "  "),
+        )
     }
 
     @Test

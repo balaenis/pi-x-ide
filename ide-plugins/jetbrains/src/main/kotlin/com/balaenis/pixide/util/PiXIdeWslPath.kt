@@ -37,6 +37,7 @@ fun terminalCommandForProject(
     basePath: String?,
     osName: String = System.getProperty("os.name").orEmpty(),
     shellPath: String? = System.getenv("SHELL"),
+    cmdExe: String? = System.getenv("ComSpec"),
 ): List<String> {
     val wslPath = parseWslUncPath(basePath)
     return when {
@@ -51,10 +52,15 @@ fun terminalCommandForProject(
             "-lc",
             RUN_PI_IN_LOGIN_SHELL.trim(),
         )
-        osName.startsWith("Windows", ignoreCase = true) -> listOf("pi")
+        osName.startsWith("Windows", ignoreCase = true) -> windowsPiCommand(cmdExe)
         else -> loginShellCommand(shellPath)
     }
 }
+
+// `pi` is a .cmd shim on Windows, and CreateProcessW only appends `.exe` when resolving a
+// bare command, so the terminal must go through the command interpreter to find it.
+private fun windowsPiCommand(cmdExe: String?): List<String> =
+    listOf(cmdExe?.takeIf { it.isNotBlank() } ?: "cmd.exe", "/d", "/c", "pi")
 
 fun terminalWorkingDirectoryForProject(
     basePath: String?,

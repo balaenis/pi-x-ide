@@ -7,7 +7,7 @@ JetBrains plugin for Pi x IDE. It exposes the active file, selected text ranges,
 - JDK 21 (the Gradle build uses a Java 21 toolchain and can download it automatically through Foojay)
 - Gradle wrapper (`./gradlew`, included in this directory)
 - IntelliJ IDEA 2026.1.3 target downloaded by the IntelliJ Platform Gradle Plugin
-- `pi` available on `PATH` if you use **Pi x IDE: Open Pi Terminal**. Native Linux/macOS projects run `pi` through your login shell, and Windows WSL UNC projects run it through the target WSL distro login shell.
+- `pi` available on `PATH` if you use **Pi x IDE: Open Pi Terminal**. Native Linux/macOS projects run `pi` through your login shell, native Windows projects run it through `cmd.exe` (so npm's `pi.cmd` shim is found), and Windows WSL UNC projects run it through the target WSL distro login shell.
 
 The build downloads the configured IntelliJ IDEA target automatically. To reuse an existing local IDE, pass `-PlocalIdePath=/path/to/idea` or set `ORG_GRADLE_PROJECT_localIdePath=/path/to/idea`.
 
