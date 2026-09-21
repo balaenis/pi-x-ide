@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.20.1](https://github.com/balaenis/pi-x-ide/compare/v1.20.0...v1.20.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* **jetbrains:** run pi through cmd.exe in native Windows projects ([a3c4581](https://github.com/balaenis/pi-x-ide/commit/a3c45816ad03beda2937a4ed5825e838e8447b87))
+* **jetbrains:** run pi through cmd.exe in native Windows projects ([f7ba6a2](https://github.com/balaenis/pi-x-ide/commit/f7ba6a211032a201ce49f0ca7df41f76795998df))
+
 ## [1.20.0](https://github.com/balaenis/pi-x-ide/compare/v1.19.5...v1.20.0) (2026-09-08)
 
 
