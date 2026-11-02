@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import test, { after } from "node:test";
 import { DatabaseSync } from "node:sqlite";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent" with {
@@ -70,15 +70,28 @@ void test("normalizeZedPathForHost leaves other distro UNC paths untouched", () 
   assert.equal(normalizeZedPathForHost(path, { WSL_DISTRO_NAME: "Ubuntu" }), path);
 });
 
+const LOCAL_APP_DATA_SEGMENTS = ["AppData", "Local"] as const;
+const ZED_STABLE_DB_SEGMENTS = ["Zed", "db", "0-stable", "db.sqlite"] as const;
+const NORMALIZED_FIXTURE_ROOT_LEVELS = LOCAL_APP_DATA_SEGMENTS.length + ZED_STABLE_DB_SEGMENTS.length;
+
 void test("resolveZedDbPath detects Windows LOCALAPPDATA path in WSL", async () => {
   const root = await mkdtemp(join(tmpdir(), "pi-x-ide-zed-localappdata-"));
-  const localAppData = join(root, "AppData", "Local");
-  const dbPath = join(localAppData, "Zed", "db", "0-stable", "db.sqlite");
-  await mkdir(join(localAppData, "Zed", "db", "0-stable"), { recursive: true });
+  const localAppData = join(root, ...LOCAL_APP_DATA_SEGMENTS);
+  const env = { WSL_DISTRO_NAME: "Ubuntu", LOCALAPPDATA: localAppData };
+  // WSL rewrites a Windows drive path before the existence check. Create the fixture there.
+  const dbPath = resolve(normalizeZedPathForHost(localAppData, env), ...ZED_STABLE_DB_SEGMENTS);
+  const fixtureRoot = ancestorDirectory(dbPath, NORMALIZED_FIXTURE_ROOT_LEVELS);
+  assert.equal(basename(fixtureRoot), basename(root));
+  await mkdir(dirname(dbPath), { recursive: true });
   await writeFile(dbPath, "{}");
-  after(() => rm(root, { recursive: true, force: true }).catch(() => undefined));
+  after(() =>
+    Promise.all([
+      rm(root, { recursive: true, force: true }).catch(() => undefined),
+      rm(fixtureRoot, { recursive: true, force: true }).catch(() => undefined),
+    ]),
+  );
 
-  assert.equal(resolveZedDbPath({ WSL_DISTRO_NAME: "Ubuntu", LOCALAPPDATA: localAppData }, "/home/test"), dbPath);
+  assert.equal(resolveZedDbPath(env, "/home/test"), dbPath);
 });
 
 void test("resolveZedDbPath respects env override", async () => {
@@ -639,6 +652,12 @@ function createContext(cwd = "/tmp"): ExtensionContext {
   } as unknown as ExtensionContext;
 }
 
+function ancestorDirectory(path: string, levels: number): string {
+  let current = path;
+  for (let level = 0; level < levels; level += 1) current = dirname(current);
+  return current;
+}
+
 function createCandidate(workspaceFolder = "/tmp"): LockFileCandidate {
   return {
     path: "/tmp/stale.lock",
@@ -667,11 +686,21 @@ void test("startZedPolling returns false when not in Zed terminal", () => {
   assert.equal(runtime.zedPollFiber, undefined);
 });
 
-void test("startZedPolling returns false when DB path not found", () => {
+void test("startZedPolling returns false when DB path not found", async () => {
   const runtime = createRuntime();
-  const result = startZedPolling(runtime, createContext(), { env: { ZED_TERM: "true" } });
-  assert.equal(result, false);
-  assert.equal(runtime.zedPollFiber, undefined);
+  const root = await mkdtemp(join(tmpdir(), "pi-x-ide-zed-missing-"));
+  const missingDbPath = join(root, "db.sqlite");
+  after(() => rm(root, { recursive: true, force: true }).catch(() => undefined));
+  try {
+    // A missing override returns before the home-directory scan.
+    const result = startZedPolling(runtime, createContext(), {
+      env: { ZED_TERM: "true", [PI_X_IDE_ZED_DB_ENV]: missingDbPath },
+    });
+    assert.equal(result, false);
+    assert.equal(runtime.zedPollFiber, undefined);
+  } finally {
+    stopZedPolling(runtime);
+  }
 });
 
 void test("startZedPolling clamps configured poll interval", async () => {
