@@ -73,3 +73,13 @@ ip route show | grep default
 
 - 来自 Windows IDE 的路径会先规范化为 Linux 路径再匹配 workspace，所以 `/mnt/c/...` 和 `C:\...` 都能匹配你的 WSL 项目目录。
 - 运行在 Windows 上的 Zed 也可跨 WSL 发现；其数据库从 `/mnt/c/Users/<user>/AppData/Local/Zed/db/0-stable/db.sqlite` 读取。需要时用 `PI_X_IDE_ZED_DB` 覆盖。
+
+## 启动性能
+
+发现与连接现在在后台执行：Pi 的 TUI 立刻可用，不再等待 IDE 扫描（见 [启动与 TUI 事件循环](../explanation/architecture.md#启动与-tui-事件循环)）。WSL 下仍然耗时的地方：
+
+- **陈旧 lock file。** 每个 `runningInWindows: true` 的 Windows 侧 lock 在发现阶段都要付一次 TCP 探测（500 ms 超时）。启动或 `/ide` 感觉慢时可用 `rm /mnt/c/Users/*/.pi/pi-x-ide/lock/*.lock` 清理。
+- **网关探测。** 设置 `PI_X_IDE_HOST_OVERRIDE` 可跳过 `ip route show` 查询和网关探测。
+- **自动安装。** `PI_X_IDE_AUTO_INSTALL=off` 可避免启动期间拉起 Windows 侧 IDE CLI。
+- **Zed 轮询。** 当 Zed 数据库在 `/mnt/c` 下时，调大 `PI_X_IDE_ZED_POLL_INTERVAL_MS`（例如 `2000`）以降低快照频率。
+- **项目位置。** 把仓库放在 WSL 文件系统内（`~/project`）而不是 `/mnt/c`，仍是收益最大的一项。

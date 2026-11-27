@@ -91,7 +91,7 @@ void test("resolveZedDbPath detects Windows LOCALAPPDATA path in WSL", async () 
     ]),
   );
 
-  assert.equal(resolveZedDbPath(env, "/home/test"), dbPath);
+  assert.equal(await resolveZedDbPath(env, "/home/test"), dbPath);
 });
 
 void test("resolveZedDbPath respects env override", async () => {
@@ -99,7 +99,7 @@ void test("resolveZedDbPath respects env override", async () => {
   await writeFile(pkgPath, "{}");
   after(() => rm(pkgPath, { force: true }).catch(() => undefined));
 
-  const result = resolveZedDbPath({ [PI_X_IDE_ZED_DB_ENV]: pkgPath }, "/home/test");
+  const result = await resolveZedDbPath({ [PI_X_IDE_ZED_DB_ENV]: pkgPath }, "/home/test");
   assert.equal(result, pkgPath);
 });
 
@@ -113,12 +113,12 @@ void test("resolveZedDbPath respects pi config env override", async () => {
   await writeFile(configPath, JSON.stringify({ env: { [PI_X_IDE_ZED_DB_ENV]: dbPath } }));
   after(() => rm(root, { recursive: true, force: true }).catch(() => undefined));
 
-  assert.equal(resolveZedDbPath(resolvePiConfigEnv({}, { configPath }), "/home/test"), dbPath);
+  assert.equal(await resolveZedDbPath(resolvePiConfigEnv({}, { configPath }), "/home/test"), dbPath);
 });
 
-void test("resolveZedDbPath ignores missing env override", () => {
+void test("resolveZedDbPath ignores missing env override", async () => {
   const missingPath = join(tmpdir(), "pi-x-ide-zed-missing-db.sqlite");
-  const result = resolveZedDbPath({ [PI_X_IDE_ZED_DB_ENV]: missingPath }, "/home/test");
+  const result = await resolveZedDbPath({ [PI_X_IDE_ZED_DB_ENV]: missingPath }, "/home/test");
   assert.equal(result, undefined);
 });
 
@@ -129,11 +129,11 @@ void test("resolveZedDbPath detects Windows default path", async () => {
   await writeFile(dbPath, "{}");
   after(() => rm(home, { recursive: true, force: true }).catch(() => undefined));
 
-  assert.equal(resolveZedDbPath({}, home), dbPath);
+  assert.equal(await resolveZedDbPath({}, home), dbPath);
 });
 
-void test("resolveZedDbPath returns undefined when no DB exists", () => {
-  const result = resolveZedDbPath({}, "/nonexistent-home");
+void test("resolveZedDbPath returns undefined when no DB exists", async () => {
+  const result = await resolveZedDbPath({}, "/nonexistent-home");
   assert.equal(result, undefined);
 });
 
@@ -302,7 +302,7 @@ void test("returns active editor snapshot with selected text", async () => {
   insertSelection(db, "i1", "w1", 0, 5);
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir, now: 12345 });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir, now: 12345 });
   assert.ok(snapshot);
   assert.equal(snapshot.receivedAt, 12345);
   assert.equal(snapshot.source, "zed");
@@ -330,7 +330,7 @@ void test("returns active editor snapshot with numeric IDs (real Zed schema)", a
   db.prepare("INSERT INTO editor_selections VALUES (?, ?, ?, ?)").run(1, 1, 0, 5);
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir, now: 12345 });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir, now: 12345 });
   assert.ok(snapshot);
   assert.equal(snapshot.source, "zed");
   assert.equal(snapshot.ranges[0].text, "hello");
@@ -348,7 +348,7 @@ void test("matches Windows workspace paths when running in WSL", async () => {
   insertSelection(db, "i1", "w1", 0, 7);
   db.close();
 
-  const snapshot = resolveZedSelection({
+  const snapshot = await resolveZedSelection({
     dbPath,
     cwd: "/mnt/c/Users/czllo/project",
     env: { WSL_DISTRO_NAME: "Ubuntu" },
@@ -372,7 +372,7 @@ void test("matches WSL UNC workspace paths when running in WSL", async () => {
   insertSelection(db, "i1", "w1", 0, 3);
   db.close();
 
-  const snapshot = resolveZedSelection({
+  const snapshot = await resolveZedSelection({
     dbPath,
     cwd: "/home/julian/project",
     env: { WSL_DISTRO_NAME: "Ubuntu" },
@@ -396,7 +396,7 @@ void test("returns snapshot with ranges [] when selection is empty caret", async
   insertSelection(db, "i1", "w1", 3, 3);
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir });
   assert.ok(snapshot);
   assert.equal(snapshot.ranges.length, 0);
 });
@@ -412,7 +412,7 @@ void test("returns active empty file snapshot", async () => {
   insertEditor(db, "i1", "w1", join(dir, "empty.ts"), "");
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir, readFile: () => "" });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir, readFile: () => "" });
   assert.ok(snapshot);
   assert.equal(snapshot.filePath, join(dir, "empty.ts"));
   assert.equal(snapshot.ranges.length, 0);
@@ -426,7 +426,7 @@ void test("returns undefined when schema is missing", async () => {
   db.exec("CREATE TABLE unrelated (id TEXT)");
   db.close();
 
-  assert.equal(resolveZedSelection({ dbPath, cwd: dir }), undefined);
+  assert.equal(await resolveZedSelection({ dbPath, cwd: dir }), undefined);
 });
 
 void test("skips Terminal items", async () => {
@@ -439,7 +439,7 @@ void test("skips Terminal items", async () => {
   insertItem(db, "i1", "w1", "p1", "Terminal", 1);
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir });
   assert.equal(snapshot, undefined);
 });
 
@@ -447,7 +447,7 @@ void test("returns undefined when DB is empty", async () => {
   const { dir, dbPath, cleanup } = await createFixture();
   after(cleanup);
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir });
   assert.equal(snapshot, undefined);
 });
 
@@ -473,7 +473,7 @@ void test("picks workspace with longest matching path", async () => {
 
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: child });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: child });
   assert.ok(snapshot);
   assert.equal(snapshot.ranges[0].text, "na"); // w-narrow wins
 });
@@ -491,7 +491,7 @@ void test("normalizes reversed selections", async () => {
   insertSelection(db, "i1", "w1", 5, 1);
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir });
   assert.ok(snapshot);
   assert.equal(snapshot.ranges[0].text, "bcde"); // chars at bytes 1-5
   assert.equal(snapshot.ranges[0].selection.start.character, 1);
@@ -513,7 +513,7 @@ void test("converts UTF-8 multi-byte offsets in selection", async () => {
   insertSelection(db, "i1", "w1", 1, 9);
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir });
   assert.ok(snapshot);
   // should be "€c🌟" — chars from index 1 to index 4
   assert.equal(snapshot.ranges[0].text, "€c🌟");
@@ -537,7 +537,7 @@ void test("handles multi-byte emoji selection at boundary", async () => {
   insertSelection(db, "i1", "w1", 6, 10);
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir });
   assert.ok(snapshot);
   assert.equal(snapshot.ranges[0].text, "🎉");
   assert.equal(snapshot.ranges[0].selection.start.line, 0);
@@ -559,7 +559,7 @@ void test("falls back to contents column when file does not exist on disk", asyn
   insertSelection(db, "i1", "w1", 0, 6);
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir });
   assert.ok(snapshot);
   assert.equal(snapshot.ranges[0].text, "inline");
 });
@@ -578,7 +578,7 @@ void test("handles multi-line selection", async () => {
   insertSelection(db, "i1", "w1", 8, 17);
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir });
   assert.ok(snapshot);
   assert.equal(snapshot.ranges[0].text, "ne2\nline3");
   assert.equal(snapshot.ranges[0].selection.start.line, 1);
@@ -601,7 +601,7 @@ void test("handles multiple selections (multi-cursor)", async () => {
   insertSelection(db, "i1", "w1", 5, 6);
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir });
   assert.ok(snapshot);
   assert.equal(snapshot.ranges.length, 2);
   assert.equal(snapshot.ranges[0].text, "a");
@@ -620,7 +620,7 @@ void test("newline workspace paths are parsed", async () => {
   insertSelection(db, "i1", "w1", 0, 1);
   db.close();
 
-  const snapshot = resolveZedSelection({ dbPath, cwd: dir });
+  const snapshot = await resolveZedSelection({ dbPath, cwd: dir });
   assert.ok(snapshot);
   assert.equal(snapshot.workspaceFolder, dir);
 });
@@ -679,9 +679,9 @@ function createCandidate(workspaceFolder = "/tmp"): LockFileCandidate {
   };
 }
 
-void test("startZedPolling returns false when not in Zed terminal", () => {
+void test("startZedPolling returns false when not in Zed terminal", async () => {
   const runtime = createRuntime();
-  const result = startZedPolling(runtime, createContext(), { env: {} });
+  const result = await startZedPolling(runtime, createContext(), { env: {} });
   assert.equal(result, false);
   assert.equal(runtime.zedPollFiber, undefined);
 });
@@ -693,7 +693,7 @@ void test("startZedPolling returns false when DB path not found", async () => {
   after(() => rm(root, { recursive: true, force: true }).catch(() => undefined));
   try {
     // A missing override returns before the home-directory scan.
-    const result = startZedPolling(runtime, createContext(), {
+    const result = await startZedPolling(runtime, createContext(), {
       env: { ZED_TERM: "true", [PI_X_IDE_ZED_DB_ENV]: missingDbPath },
     });
     assert.equal(result, false);
@@ -718,7 +718,7 @@ void test("startZedPolling clamps configured poll interval", async () => {
     assert.equal(resolveZedPollIntervalMs(env), expected);
 
     const runtime = createRuntime();
-    const started = startZedPolling(runtime, createContext(dir), {
+    const started = await startZedPolling(runtime, createContext(dir), {
       dbPath,
       env,
     });
@@ -739,7 +739,7 @@ void test("startZedPolling clears stale WebSocket candidate state", async () => 
   runtime.currentCandidate = createCandidate(dir);
   runtime.connectionStatus = "error";
 
-  const started = startZedPolling(runtime, createContext(dir), {
+  const started = await startZedPolling(runtime, createContext(dir), {
     dbPath,
     env: { ZED_TERM: "true" },
     intervalMs: 999_999,

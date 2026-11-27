@@ -1,6 +1,6 @@
 // ABOUTME: Resolves and compares filesystem paths for IDE discovery and display.
 // ABOUTME: Applies host-aware normalization so WSL, Windows, and Linux paths can match safely.
-import { realpathSync } from "node:fs";
+import { realpath } from "node:fs/promises";
 import { homedir } from "node:os";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import { CONFIG_DIR_NAME, EXT_CONFIG_NAME } from "./config.js";
@@ -17,24 +17,27 @@ export interface ResolveLockDirsOptions {
   windowsUsersRoot?: string;
 }
 
-export function resolveLockDirs(options: ResolveLockDirsOptions = {}): string[] {
+/** Resolve every lock directory Pi scans. Async: the Windows profile scan and the
+ *  dedupe realpath both cross into drvfs on WSL, where a synchronous call would
+ *  block the TUI event loop. */
+export async function resolveLockDirs(options: ResolveLockDirsOptions = {}): Promise<string[]> {
   if (options.lockDir) return [resolve(options.lockDir)];
 
   const dirs = [resolve(options.homeLockDir ?? resolveLockDir())];
-  for (const profileDir of windowsUserProfileDirs(options.windowsUsersRoot, options.env)) {
+  for (const profileDir of await windowsUserProfileDirs(options.windowsUsersRoot, options.env)) {
     dirs.push(resolve(profileDir, CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock"));
   }
   return dedupePaths(dirs);
 }
 
-function dedupePaths(paths: string[]): string[] {
+async function dedupePaths(paths: string[]): Promise<string[]> {
   const seen = new Set<string>();
   const deduped: string[] = [];
   for (const path of paths) {
     const resolved = resolve(path);
     let key = resolved;
     try {
-      key = realpathSync(resolved);
+      key = await realpath(resolved);
     } catch {
       // The lock directory may not exist yet; resolved path is good enough.
     }

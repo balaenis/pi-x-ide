@@ -88,3 +88,22 @@ See [Configuration](../reference/configuration.md) for the full env reference.
 - Zed running on Windows is also discovered across WSL; its database is read from
   `/mnt/c/Users/<user>/AppData/Local/Zed/db/0-stable/db.sqlite`. Override with
   `PI_X_IDE_ZED_DB` if needed.
+
+## Startup performance
+
+Discovery and connect run in the background: Pi's TUI is usable immediately and
+no longer waits for the IDE scan (see
+[Startup and the TUI event loop](../explanation/architecture.md#startup-and-the-tui-event-loop)).
+What still costs time on WSL:
+
+- **Stale lock files.** Every Windows-side lock with `runningInWindows: true`
+  costs a TCP probe (500 ms timeout) during discovery. Clean them with
+  `rm /mnt/c/Users/*/.pi/pi-x-ide/lock/*.lock` if startup or `/ide` feels slow.
+- **Gateway probing.** Setting `PI_X_IDE_HOST_OVERRIDE` skips the `ip route show`
+  lookup and the gateway probe.
+- **Auto-install.** `PI_X_IDE_AUTO_INSTALL=off` avoids spawning the Windows IDE
+  CLI during startup.
+- **Zed polling.** When Zed's database lives on `/mnt/c`, raise
+  `PI_X_IDE_ZED_POLL_INTERVAL_MS` (for example `2000`) to snapshot it less often.
+- **Project location.** Keeping the repository inside the WSL filesystem
+  (`~/project`) instead of `/mnt/c` remains the single biggest win.

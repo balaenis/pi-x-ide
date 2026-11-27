@@ -1,6 +1,6 @@
 // ABOUTME: Resolves and reads/writes pi-x-ide config under global and project scopes.
 // ABOUTME: Merges env overlays and top-level options like status_display and fixPrompt.
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import {
@@ -55,6 +55,24 @@ export interface IdeConfigSettingsResolution {
 const processEnvOverlays = new WeakSet<NodeJS.ProcessEnv>();
 const AUTO_INSTALL_DISABLED_VALUES = new Set(["0", "false", "off"]);
 
+// Parsed config snapshots keyed by path and validated with stat, so repeated reads
+// inside hot paths (WSL detection, UI updates, discovery) cost one stat instead of
+// an open+read+parse. On WSL a project config may live on drvfs, where every real
+// read is a round trip that blocks the TUI event loop.
+interface CachedConfigFile {
+  mtimeMs: number;
+  size: number;
+  parsed: Record<string, unknown> | undefined;
+}
+
+const configFileCache = new Map<string, CachedConfigFile>();
+let configEpoch = 0;
+
+/** Monotonic counter bumped on every config write; lets callers cache derived values. */
+export function getConfigEpoch(): number {
+  return configEpoch;
+}
+
 export function resolvePiConfigPath(home: string = homedir()): string {
   return resolvePiGlobalConfigPath(home);
 }
@@ -68,13 +86,37 @@ export function resolvePiProjectConfigPath(projectDir: string): string {
 }
 
 export function readPiConfigFile(configPath: string): Record<string, unknown> | undefined {
+  const stats = configFileStat(configPath);
+  if (!stats) {
+    configFileCache.delete(configPath);
+    return undefined;
+  }
+
+  const cached = configFileCache.get(configPath);
+  if (cached && cached.mtimeMs === stats.mtimeMs && cached.size === stats.size) {
+    return cached.parsed;
+  }
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(readFileSync(configPath, "utf8")) as unknown;
   } catch {
+    configFileCache.set(configPath, { ...stats, parsed: undefined });
     return undefined;
   }
-  return isRecord(parsed) ? parsed : undefined;
+
+  const value = isRecord(parsed) ? parsed : undefined;
+  configFileCache.set(configPath, { ...stats, parsed: value });
+  return value;
+}
+
+function configFileStat(configPath: string): { mtimeMs: number; size: number } | undefined {
+  try {
+    const stats = statSync(configPath);
+    return { mtimeMs: stats.mtimeMs, size: stats.size };
+  } catch {
+    return undefined;
+  }
 }
 
 export function writePiConfigFile(partial: Record<string, unknown>, configPath: string): void {
@@ -89,6 +131,9 @@ export function writePiConfigFile(partial: Record<string, unknown>, configPath: 
   }
   mkdirSync(dirname(configPath), { recursive: true });
   writeFileSync(configPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
+  // Invalidate the snapshot and bump the epoch so derived caches (e.g. status display) refresh.
+  configFileCache.delete(configPath);
+  configEpoch += 1;
 }
 
 export function readPiConfigEnv(configPath: string = resolvePiConfigPath()): NodeJS.ProcessEnv {

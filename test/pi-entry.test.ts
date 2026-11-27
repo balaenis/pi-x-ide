@@ -116,6 +116,12 @@ void test("session_start bumps generation before load and calls startSession onc
   assert.equal(runtime.sessionStarting, true);
   assert.equal(calls.length, 0);
 
+  // session_start must not wait for the heavy runtime: the handler returns immediately.
+  await startPromise;
+  assert.equal(calls.length, 0, "startSession must run in the background");
+  const startupTask = runtime.startupTask;
+  assert.ok(startupTask, "expected a tracked background startup task");
+
   resolveModule(
     createFakeRuntimeServices({
       startSession: (_pi, sessionRuntime, sessionCtx) => {
@@ -125,9 +131,10 @@ void test("session_start bumps generation before load and calls startSession onc
     }),
   );
 
-  await startPromise;
+  await startupTask;
   assert.deepEqual(calls, [{ generation: 1, cwd: "/repo" }]);
   assert.equal(runtime.sessionStarting, false);
+  assert.equal(runtime.startupTask, undefined);
 });
 
 void test("session_start resolves while auto-install task remains pending", async () => {
@@ -246,6 +253,7 @@ void test("registerPiIdeExtension routes session boundary failures through pi ui
   // Must go through the bundled session boundary: external logExtensionError imports
   // a different module instance than the esbuild Pi entry embeds.
   await fake.sessionStart?.({}, createExtensionContext("/repo", notifications));
+  await flushAsyncTasks();
 
   assert.equal(runtime.connectionStatus, "error");
   assert.match(runtime.connectionMessage ?? "", /start-boom/);
@@ -288,6 +296,10 @@ void test("preload failure notifies once session_start provides UI context", asy
   assert.equal(notifications[0]?.type, "error");
   assert.equal(notifications[0]?.message, formatExtensionError("Pi runtime preload", new Error("preload-boom")));
 });
+
+function flushAsyncTasks(): Promise<void> {
+  return new Promise((resolve) => setImmediate(resolve));
+}
 
 function createFakeRuntimeServices(overrides: Partial<RuntimeServicesModule> = {}): RuntimeServicesModule {
   return {

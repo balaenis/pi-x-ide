@@ -825,8 +825,8 @@ void test("isWsl detects WSL env markers without touching the host", () => {
   assert.equal(isWsl({}), false);
 });
 
-void test("windowsUserProfileDirs returns empty outside WSL", () => {
-  assert.deepEqual(windowsUserProfileDirs("/mnt/c/Users", {}), []);
+void test("windowsUserProfileDirs returns empty outside WSL", async () => {
+  assert.deepEqual(await windowsUserProfileDirs("/mnt/c/Users", {}), []);
 });
 
 void test("resolveLockDirs includes Windows user lock dirs under WSL", async () => {
@@ -837,15 +837,15 @@ void test("resolveLockDirs includes Windows user lock dirs under WSL", async () 
   await mkdir(join(usersRoot, "Default User"), { recursive: true });
   const homeLockDir = join(root, "home-lock");
 
-  assert.deepEqual(resolveLockDirs({ homeLockDir, windowsUsersRoot: usersRoot, env: { WSL_DISTRO_NAME: "Ubuntu" } }), [
-    resolve(homeLockDir),
-    resolve(usersRoot, "julian", CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock"),
-  ]);
+  assert.deepEqual(
+    await resolveLockDirs({ homeLockDir, windowsUsersRoot: usersRoot, env: { WSL_DISTRO_NAME: "Ubuntu" } }),
+    [resolve(homeLockDir), resolve(usersRoot, "julian", CONFIG_DIR_NAME, EXT_CONFIG_NAME, "lock")],
+  );
 });
 
-void test("resolveLockDirs lockDir override scans only the provided directory", () => {
+void test("resolveLockDirs lockDir override scans only the provided directory", async () => {
   assert.deepEqual(
-    resolveLockDirs({
+    await resolveLockDirs({
       lockDir: "/tmp/custom-lock",
       homeLockDir: "/tmp/home-lock",
       windowsUsersRoot: "/mnt/c/Users",

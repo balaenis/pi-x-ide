@@ -97,6 +97,28 @@ Pi reads Zed's state database directly (`src/pi/zed.ts`). On each poll (default
 3. Score candidates by workspace match and pick the best.
 4. Convert UTF-8 byte offsets to VS Code/LSP-style line/character positions.
 
+## Startup and the TUI event loop
+
+Pi awaits every `session_start` handler before its own init completes, and the
+TUI cannot repaint or accept input while the single-threaded event loop is busy.
+Two rules keep the extension from making Pi feel frozen — both matter most on
+WSL, where `/mnt/c` is a 9P mount and every call is a round trip:
+
+1. **`session_start` never awaits discovery or connect.** `src/pi/index.ts`
+   starts `startSession` as a background task (`runtime.startupTask`) and returns
+   immediately; `session_shutdown` still awaits that task. The status widget
+   shows a spinner first, so the wait is visible instead of silent.
+2. **No synchronous filesystem calls on cross-OS mounts.** Lock directories,
+   Windows user profiles (`/mnt/c/Users`), the Zed database, and config files are
+   read with `fs/promises`. A synchronous `readdir`, `realpath`, or `copyFile`
+   there blocks input and rendering for the whole 9P round trip. Config reads are
+   cached and validated by `stat`, so the hot paths (WSL detection, discovery,
+   widget updates) do not re-read the file on every call.
+
+Discovery is still sequential per lock file, and each Windows-side lock on WSL
+costs a TCP probe (500 ms timeout). Many stale locks therefore add up: clean
+`/mnt/c/Users/<you>/.pi/pi-x-ide/lock/` if startup feels slow.
+
 ## Authentication model
 
 Each IDE process generates a fresh token per session using

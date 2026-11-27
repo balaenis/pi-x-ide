@@ -159,12 +159,14 @@ export function discoverIdeCandidatesEffect(
 ): Effect.Effect<LockFileCandidate[], never, never> {
   return Effect.gen(function* () {
     const env = options.env ?? process.env;
-    const lockDirs = resolveLockDirs({
-      lockDir: options.lockDir,
-      homeLockDir: options.homeLockDir,
-      env,
-      windowsUsersRoot: options.windowsUsersRoot,
-    });
+    const lockDirs = yield* Effect.promise(() =>
+      resolveLockDirs({
+        lockDir: options.lockDir,
+        homeLockDir: options.homeLockDir,
+        env,
+        windowsUsersRoot: options.windowsUsersRoot,
+      }),
+    );
 
     const candidates: LockFileCandidate[] = [];
     for (const lockDir of lockDirs) {

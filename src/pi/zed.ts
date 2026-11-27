@@ -1,6 +1,6 @@
 // ABOUTME: Provides Zed editor integration by polling Zed's local SQLite state.
 // ABOUTME: Normalizes Zed paths and selections while containing polling failures.
-import { copyFileSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { copyFile, mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -42,12 +42,15 @@ export function normalizeZedPathForHost(input: string, env: NodeJS.ProcessEnv = 
 
 // ── DB path resolution ─────────────────────────────────────────
 
-export function resolveZedDbPath(env: NodeJS.ProcessEnv = process.env, home: string = homedir()): string | undefined {
+export async function resolveZedDbPath(
+  env: NodeJS.ProcessEnv = process.env,
+  home: string = homedir(),
+): Promise<string | undefined> {
   const configuredEnv = resolvePiConfigEnv(env);
   const override = configuredEnv[PI_X_IDE_ZED_DB_ENV]?.trim();
   if (override) {
     const normalizedOverride = normalizeZedPathForHost(override, configuredEnv);
-    return isFile(normalizedOverride) ? normalizedOverride : undefined;
+    return (await isFile(normalizedOverride)) ? normalizedOverride : undefined;
   }
 
   const candidates = [
@@ -55,10 +58,13 @@ export function resolveZedDbPath(env: NodeJS.ProcessEnv = process.env, home: str
     resolve(home, "Library", "Application Support", "Zed", "db", "0-stable", "db.sqlite"), // macOS
     resolve(home, "AppData", "Local", "Zed", "db", "0-stable", "db.sqlite"), // Windows
     ...zedDbCandidatesFromWindowsEnv(configuredEnv),
-    ...zedDbCandidatesFromWslMount(configuredEnv),
+    ...(await zedDbCandidatesFromWslMount(configuredEnv)),
   ];
 
-  return candidates.find(isFile);
+  for (const candidate of candidates) {
+    if (await isFile(candidate)) return candidate;
+  }
+  return undefined;
 }
 
 function zedDbCandidatesFromWindowsEnv(env: NodeJS.ProcessEnv): string[] {
@@ -75,11 +81,12 @@ function zedDbCandidatesFromWindowsEnv(env: NodeJS.ProcessEnv): string[] {
   return [];
 }
 
-function zedDbCandidatesFromWslMount(env: NodeJS.ProcessEnv): string[] {
+async function zedDbCandidatesFromWslMount(env: NodeJS.ProcessEnv): Promise<string[]> {
   if (!isWsl(env)) return [];
   const usersRoot = "/mnt/c/Users";
   try {
-    return readdirSync(usersRoot, { withFileTypes: true })
+    const entries = await readdir(usersRoot, { withFileTypes: true });
+    return entries
       .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
       .map((entry) => resolve(usersRoot, entry.name, "AppData", "Local", "Zed", "db", "0-stable", "db.sqlite"));
   } catch {
@@ -87,9 +94,9 @@ function zedDbCandidatesFromWslMount(env: NodeJS.ProcessEnv): string[] {
   }
 }
 
-function isFile(path: string): boolean {
+async function isFile(path: string): Promise<boolean> {
   try {
-    return statSync(path).isFile();
+    return (await stat(path)).isFile();
   } catch {
     return false;
   }
@@ -97,10 +104,13 @@ function isFile(path: string): boolean {
 
 interface ZedDatabaseHandle {
   db: DatabaseSync;
-  cleanup: () => void;
+  cleanup: () => Promise<void>;
 }
 
-function openZedDatabase(dbPath: string, env: NodeJS.ProcessEnv = process.env): ZedDatabaseHandle | undefined {
+async function openZedDatabase(
+  dbPath: string,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<ZedDatabaseHandle | undefined> {
   const configuredEnv = resolvePiConfigEnv(env);
   // Direct open on live WAL-mode databases can succeed at construction time
   // but fail on the first query on WSL/Windows mounts. Always snapshot
@@ -108,26 +118,28 @@ function openZedDatabase(dbPath: string, env: NodeJS.ProcessEnv = process.env): 
   if (isWsl(configuredEnv)) return openZedDatabaseSnapshot(dbPath);
 
   try {
-    return { db: new DatabaseSync(dbPath, { readOnly: true }), cleanup: () => undefined };
+    return { db: new DatabaseSync(dbPath, { readOnly: true }), cleanup: () => Promise.resolve() };
   } catch {
     // Fall back to snapshot if direct open throws (e.g. file lock on non-WSL).
     return openZedDatabaseSnapshot(dbPath);
   }
 }
 
-function openZedDatabaseSnapshot(dbPath: string): ZedDatabaseHandle | undefined {
+// The DB snapshot copy is async on purpose: on WSL the source can sit on a drvfs
+// mount, and copying tens of megabytes there synchronously would freeze the TUI.
+async function openZedDatabaseSnapshot(dbPath: string): Promise<ZedDatabaseHandle | undefined> {
   let snapshotDir: string | undefined;
 
   try {
-    snapshotDir = mkdtempSync(join(tmpdir(), "pi-x-ide-zed-db-"));
+    snapshotDir = await mkdtemp(join(tmpdir(), "pi-x-ide-zed-db-"));
     const cleanupDir = snapshotDir;
     const snapshotPath = join(cleanupDir, "db.sqlite");
 
     // Copy the main DB file plus any WAL/SHM sidecars.
-    copyFileSync(dbPath, snapshotPath);
+    await copyFile(dbPath, snapshotPath);
     for (const suffix of ["-wal", "-shm"]) {
       const sidecarPath = `${dbPath}${suffix}`;
-      if (isFile(sidecarPath)) copyFileSync(sidecarPath, `${snapshotPath}${suffix}`);
+      if (await isFile(sidecarPath)) await copyFile(sidecarPath, `${snapshotPath}${suffix}`);
     }
 
     // Merge WAL changes into the main database file so we can open
@@ -143,10 +155,14 @@ function openZedDatabaseSnapshot(dbPath: string): ZedDatabaseHandle | undefined 
 
     return {
       db: new DatabaseSync(snapshotPath, { readOnly: true }),
-      cleanup: () => rmSync(cleanupDir, { recursive: true, force: true }),
+      cleanup: () =>
+        rm(cleanupDir, { recursive: true, force: true }).then(
+          () => undefined,
+          () => undefined,
+        ),
     };
   } catch {
-    if (snapshotDir) rmSync(snapshotDir, { recursive: true, force: true });
+    if (snapshotDir) await rm(snapshotDir, { recursive: true, force: true }).catch(() => undefined);
     return undefined;
   }
 }
@@ -257,14 +273,18 @@ export interface ResolveZedSelectionOptions {
   dbPath: string;
   cwd: string;
   now?: number;
-  readFile?: (path: string) => string;
+  readFile?: (path: string) => string | Promise<string>;
   env?: NodeJS.ProcessEnv;
 }
 
-export function resolveZedSelection(options: ResolveZedSelectionOptions): EditorSelectionSnapshot | undefined {
-  const { dbPath, cwd, readFile = (path) => readFileSync(path, "utf8"), env: inputEnv = process.env } = options;
+// Async so the DB snapshot, sidecar copies, and buffer-file fallback never block the
+// event loop on a drvfs/project mount.
+export async function resolveZedSelection(
+  options: ResolveZedSelectionOptions,
+): Promise<EditorSelectionSnapshot | undefined> {
+  const { dbPath, cwd, readFile = (path) => defaultReadFile(path), env: inputEnv = process.env } = options;
   const env = resolvePiConfigEnv(inputEnv);
-  const dbHandle = openZedDatabase(dbPath, env);
+  const dbHandle = await openZedDatabase(dbPath, env);
   if (!dbHandle) return undefined;
 
   const { db, cleanup } = dbHandle;
@@ -332,7 +352,7 @@ export function resolveZedSelection(options: ResolveZedSelectionOptions): Editor
     } else {
       // Fall back to reading the file on disk.
       try {
-        contents = readFile(normalizedBufferPath);
+        contents = await readFile(normalizedBufferPath);
       } catch {
         return undefined;
       }
@@ -384,9 +404,13 @@ export function resolveZedSelection(options: ResolveZedSelectionOptions): Editor
     try {
       db.close();
     } finally {
-      cleanup();
+      await cleanup();
     }
   }
+}
+
+function defaultReadFile(path: string): Promise<string> {
+  return readFile(path, "utf8");
 }
 
 function bestWorkspaceFolder(workspacePaths: string | null, cwd: string, env: NodeJS.ProcessEnv): string | undefined {
@@ -425,7 +449,7 @@ export function stopZedPolling(runtime: PiIdeRuntime): void {
   runtime.zedPollWalMtimeMs = undefined;
 }
 
-export function startZedPolling(
+export async function startZedPolling(
   runtime: PiIdeRuntime,
   ctx: Pick<ExtensionContext, "cwd" | "hasUI" | "ui">,
   options?: {
@@ -434,11 +458,11 @@ export function startZedPolling(
     generation?: number;
     env?: NodeJS.ProcessEnv;
   },
-): boolean {
+): Promise<boolean> {
   const env = resolvePiConfigEnv(options?.env ?? process.env);
   if (!isZedTerminal(env)) return false;
 
-  const dbPath = options?.dbPath ?? resolveZedDbPath(env);
+  const dbPath = options?.dbPath ?? (await resolveZedDbPath(env));
   if (!dbPath) return false;
 
   const intervalMs = resolveZedPollIntervalMs(env, options?.intervalMs);
@@ -457,7 +481,7 @@ export function startZedPolling(
   runtime.zedPollIntervalMs = intervalMs;
   updateIdeUi(runtime, ctx as ExtensionContext);
 
-  const pollTick = (): "continue" | "stop" => {
+  const pollTick = async (): Promise<"continue" | "stop"> => {
     // Guard: session generation changed
     if (generation !== undefined && runtime.sessionGeneration !== generation) return "stop";
     // Guard: WebSocket has taken over
@@ -469,7 +493,7 @@ export function startZedPolling(
     const walPath = `${dbPath}-wal`;
     let walMtimeMs: number | undefined;
     try {
-      walMtimeMs = statSync(walPath).mtimeMs;
+      walMtimeMs = (await stat(walPath)).mtimeMs;
     } catch {
       // WAL absent — always poll (Zed may be in a different journal mode).
     }
@@ -484,7 +508,7 @@ export function startZedPolling(
 
     let snapshot: EditorSelectionSnapshot | undefined;
     try {
-      snapshot = resolveZedSelection({ dbPath, cwd: ctx.cwd, env });
+      snapshot = await resolveZedSelection({ dbPath, cwd: ctx.cwd, env });
     } catch {
       snapshot = undefined;
     }
@@ -501,28 +525,30 @@ export function startZedPolling(
     return "continue";
   };
 
+  // Effect failures are not JS throws, so contain poll errors inside the task itself.
+  const runPollTick = async (): Promise<{ outcome: "continue" | "stop" } | { outcome: "error"; error: unknown }> => {
+    try {
+      return { outcome: await pollTick() };
+    } catch (error) {
+      return { outcome: "error", error };
+    }
+  };
+
   const program = Effect.gen(function* () {
     while (true) {
       // Match previous setTimeout behavior: wait interval, then poll.
       yield* Effect.sleep(`${intervalMs} millis`);
-      let outcome: "continue" | "stop" | "error";
-      let pollError: unknown;
-      try {
-        outcome = pollTick();
-      } catch (error) {
-        outcome = "error";
-        pollError = error;
-      }
-      if (outcome === "error") {
+      const result = yield* Effect.promise(() => runPollTick());
+      if (result.outcome === "error") {
         // Clear handles without interrupting self; contain like the timer path.
         runtime.zedPollFiber = undefined;
         runtime.zedPollIntervalMs = undefined;
         runtime.zedPollSelectionKey = undefined;
         runtime.zedPollWalMtimeMs = undefined;
-        containPiError(runtime, "Zed polling", pollError, ctx as ExtensionContext);
+        containPiError(runtime, "Zed polling", result.error, ctx as ExtensionContext);
         return;
       }
-      if (outcome === "stop") return;
+      if (result.outcome === "stop") return;
     }
   });
 

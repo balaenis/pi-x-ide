@@ -37,7 +37,10 @@ function formatConnectTimeoutMessage(error: IdeConnectionTimeoutError): string {
   return `${error.message}.`;
 }
 
-/** Session startup: discovery/connect readiness, with fire-and-forget auto-install. */
+/** Session startup: discovery/connect readiness, with fire-and-forget auto-install.
+ *  Runs detached from pi's `session_start` handler (see `index.ts`): pi awaits that
+ *  handler before finishing its own init, and discovery/connect can take seconds on
+ *  WSL mounts. Callers that need completion await `runtime.startupTask` instead. */
 export async function startSession(pi: ExtensionAPI, runtime: PiIdeRuntime, ctx: ExtensionContext): Promise<void> {
   activePi = pi;
   runtime.ctx = ctx;
@@ -51,6 +54,10 @@ export async function startSession(pi: ExtensionAPI, runtime: PiIdeRuntime, ctx:
     updateIdeUi(runtime, ctx);
     return;
   }
+  // Show the spinner before the (potentially slow) first scan so the TUI explains the wait.
+  runtime.connectionStatus = "connecting";
+  runtime.connectionMessage = "Discovering IDE connections...";
+  updateIdeUi(runtime, ctx);
   void maybeAutoInstallAndReconnect(runtime, ctx, generation);
   await connectAutoWithZedFallback(runtime, ctx, generation);
 }
@@ -311,7 +318,7 @@ async function connectAutoWithZedFallback(
 ): Promise<void> {
   await connectAutoInternal(runtime, ctx, options);
   if (runtime.connectionStatus !== "connected") {
-    startZedPolling(runtime, ctx, { generation });
+    await startZedPolling(runtime, ctx, { generation });
   }
 }
 

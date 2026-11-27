@@ -12,7 +12,13 @@ import {
   preloadRuntimeServices as defaultPreloadRuntimeServices,
   type RuntimeServicesModule,
 } from "./runtime-loader.js";
-import { bindPiUiContext, installPiErrorReporter, runPiBoundaryAsync } from "./safety.js";
+import {
+  bindPiUiContext,
+  containPiError,
+  installPiErrorReporter,
+  runPiBoundary,
+  runPiBoundaryAsync,
+} from "./safety.js";
 import { createRuntime, type PiIdeRuntime } from "./state.js";
 import { clearIdeUi } from "./ui.js";
 
@@ -65,10 +71,10 @@ export function registerPiIdeExtension(pi: ExtensionAPI, options: RegisterPiIdeE
   });
 
   pi.on("session_start", (_event, ctx) =>
-    runPiBoundaryAsync(
+    runPiBoundary(
       "Pi session start",
       runtime,
-      async () => {
+      () => {
         // Session startup begins here (not at factory preload).
         runtime.sessionGeneration += 1;
         const generation = runtime.sessionGeneration;
@@ -77,23 +83,28 @@ export function registerPiIdeExtension(pi: ExtensionAPI, options: RegisterPiIdeE
         runtime.cwd = ctx.cwd;
         runtime.sessionStarting = true;
 
+        // Pi awaits every session_start handler before its own init finishes, and IDE
+        // discovery/connect can take seconds on WSL mounts. Keep the handler immediate:
+        // the heavy work runs in the background and shutdown still awaits startupTask.
         const startupTask = (async () => {
-          const services = await loadRuntimeServices();
-          if (runtime.sessionGeneration !== generation) return;
-          await services.startSession(pi, runtime, ctx);
+          try {
+            const services = await loadRuntimeServices();
+            if (runtime.sessionGeneration !== generation) return;
+            await services.startSession(pi, runtime, ctx);
+          } catch (error) {
+            // No outer session_start boundary anymore: the handler already returned.
+            // Report through the same scope name so failures keep surfacing as session-start errors.
+            containPiError(runtime, "Pi session start", error, ctx);
+          } finally {
+            // A newer session_start always bumps the generation, so this single guard is
+            // enough to avoid clearing a successor task.
+            if (runtime.sessionGeneration === generation) {
+              runtime.startupTask = undefined;
+              runtime.sessionStarting = false;
+            }
+          }
         })();
         runtime.startupTask = startupTask;
-
-        try {
-          await startupTask;
-        } finally {
-          if (runtime.startupTask === startupTask) {
-            runtime.startupTask = undefined;
-          }
-          if (runtime.sessionGeneration === generation) {
-            runtime.sessionStarting = false;
-          }
-        }
       },
       ctx,
     ),

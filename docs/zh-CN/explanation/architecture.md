@@ -79,6 +79,15 @@ Pi 直接读取 Zed 的状态数据库（`src/pi/zed.ts`）。每次轮询（默
 3. 按 workspace 匹配度打分，选出最佳。
 4. 把 UTF-8 字节偏移转换为 VS Code/LSP 风格的 line/character 位置。
 
+## 启动与 TUI 事件循环
+
+Pi 会等待每个 `session_start` handler 返回后才完成自身初始化，而 TUI 在单线程事件循环被占用时既无法重绘也无法接收输入。两条规则避免让 Pi 显得卡死 —— 在 WSL 下尤其重要，因为 `/mnt/c` 是 9P 挂载，每次调用都是一次往返：
+
+1. **`session_start` 不等待发现/连接完成。** `src/pi/index.ts` 把 `startSession` 作为后台任务启动（`runtime.startupTask`）并立即返回；`session_shutdown` 仍会等待该任务。状态 widget 会先显示 spinner，让等待可见而不是静默卡住。
+2. **跨 OS 挂载上不做同步文件操作。** lock 目录、Windows 用户目录（`/mnt/c/Users`）、Zed 数据库和配置文件都使用 `fs/promises` 读取。在这些路径上一旦使用同步 `readdir`、`realpath` 或 `copyFile`，整个 9P 往返期间输入与渲染都会被阻塞。配置读取带缓存并用 `stat` 校验，因此热路径（WSL 判定、发现、widget 更新）不会每次都重新读文件。
+
+发现过程仍是逐个 lock file 串行处理的，且 WSL 下每个 Windows 侧 lock 都要付一次 TCP 探测（500 ms 超时）。陈旧 lock 多了会累加：启动感觉慢时清理 `/mnt/c/Users/<you>/.pi/pi-x-ide/lock/`。
+
 ## 认证模型
 
 每个 IDE 进程每次会话用 `randomBytes(32).toString("hex")` 生成新 token - 64 字符的十六进制串（`src/shared/lock-file.ts`）。JetBrains 用 `SecureRandom` 生成等价 token。token 写入 lock file（mode `0600`），仅在 WebSocket 升级握手时通过 `x-pi-x-ide-authorization` 头发送。服务器的 `verifyClient` 回调会拒绝头不匹配的连接（`src/shared/ide-server.ts`）。

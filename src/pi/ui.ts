@@ -6,8 +6,8 @@ import type { ExtensionContext, ThemeColor } from "@earendil-works/pi-coding-age
 import { isStaleContextError, logExtensionError } from "../shared/errors.js";
 import { describeRanges } from "../shared/format.js";
 import { basename } from "node:path";
-import { EXT_CONFIG_NAME, readPiConfigStatusDisplay } from "../shared/config.js";
-import type { StatusDisplay } from "../shared/config-options.js";
+import { EXT_CONFIG_NAME, getConfigEpoch, readPiConfigStatusDisplay } from "../shared/config.js";
+import { DEFAULT_STATUS_DISPLAY, type StatusDisplay } from "../shared/config-options.js";
 import { toRelativeDisplayPath } from "../shared/paths.js";
 import { truncateToWidth, visibleWidth } from "../shared/display-width.js";
 import type { PiIdeRuntime } from "./state.js";
@@ -15,6 +15,49 @@ import type { PiIdeRuntime } from "./state.js";
 const IDE_ICON = "⧉";
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 const SPINNER_INTERVAL_MS = 90;
+// Selection updates call updateIdeUi on every IDE cursor move. Re-reading config from
+// disk there is a synchronous syscall (a drvfs round trip when the project lives on
+// /mnt/c), so cache the resolved value and let writes invalidate it via the epoch.
+const STATUS_DISPLAY_CACHE_TTL_MS = 1_000;
+
+interface StatusDisplayCacheEntry {
+  epoch: number;
+  projectDir: string | undefined;
+  at: number;
+  value: StatusDisplay;
+}
+
+let statusDisplayCache: StatusDisplayCacheEntry | undefined;
+
+function resolveStatusDisplayCached(projectDir: string | undefined): StatusDisplay {
+  const now = Date.now();
+  const epoch = getConfigEpoch();
+  const cached = statusDisplayCache;
+  if (
+    cached &&
+    cached.epoch === epoch &&
+    cached.projectDir === projectDir &&
+    now - cached.at < STATUS_DISPLAY_CACHE_TTL_MS
+  ) {
+    return cached.value;
+  }
+
+  let value: StatusDisplay;
+  try {
+    value = readPiConfigStatusDisplay({ projectDir });
+  } catch {
+    // A malformed or unreadable config must never break the TUI refresh path.
+    value = DEFAULT_STATUS_DISPLAY;
+  }
+  statusDisplayCache = { epoch, projectDir, at: now, value };
+  return value;
+}
+
+/** Test-only: drop the cached status display so the next update re-reads config. */
+export function resetStatusDisplayCacheForTests(): void {
+  statusDisplayCache = undefined;
+}
+
 // Pi stores the active theme on globalThis so every module loader sees the same instance.
 const PI_THEME_KEYS = [
   Symbol.for("@earendil-works/pi-coding-agent:theme"),
@@ -70,11 +113,7 @@ export function updateIdeUi(
   const uiContext = getActiveUiContext(ctx);
   if (!uiContext) return;
 
-  const display =
-    statusDisplay ??
-    readPiConfigStatusDisplay({
-      projectDir: ctx?.cwd ?? runtime.cwd,
-    });
+  const display = statusDisplay ?? resolveStatusDisplayCached(ctx?.cwd ?? runtime.cwd);
 
   if (display === "statusline") {
     clearWidget(uiContext);
