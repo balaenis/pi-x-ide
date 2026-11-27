@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.2](https://github.com/balaenis/pi-x-ide/compare/v1.20.1...v1.20.2) (2026-11-27)
+
+
+### Performance Improvements
+
+* **wsl:** keep the TUI responsive during startup and discovery ([e7d4a69](https://github.com/balaenis/pi-x-ide/commit/e7d4a6958b30ff353c4856bb77855f0f3da3bd22))
+
 ## [1.20.1](https://github.com/balaenis/pi-x-ide/compare/v1.20.0...v1.20.1) (2026-09-21)
 
 
